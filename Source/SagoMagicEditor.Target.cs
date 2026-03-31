@@ -11,5 +11,11 @@ public class SagoMagicEditorTarget : TargetRules
 		DefaultBuildSettings = BuildSettingsVersion.V5;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_6;
 		ExtraModuleNames.Add("SagoMagic");
-	}
+        RegisterModulesCreatedByRider();
+    }
+
+    private void RegisterModulesCreatedByRider()
+    {
+        ExtraModuleNames.AddRange(new string[] { "GitStatusBranch" });
+    }
 }

@@ -26,18 +26,6 @@ void UGA_SkillBase::ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const
     Super::ApplyCooldown(Handle, ActorInfo, ActivationInfo);
 }
 
-/*
-//TODO : ASC 완성 후 후첨
-bool UGA_SkillBase::BatchRPCTryActivateAbility(FGameplayAbilitySpecHandle InAbilityHandle, bool EndAbilityImmediately)
-{
-    USMAbilitySystemComponent* SMASC = Cast<USMAbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo());
-    if (SMASC)
-    {
-        return SMASC->BatchRPCTryActivateAbility(InAbilityHandle, EndAbilityImmediately);
-    }
-    return false;
-}
-*/
 
 FString UGA_SkillBase::GetCurrentPredictionKeyStatus()
 {

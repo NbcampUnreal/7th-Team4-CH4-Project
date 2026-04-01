@@ -7,7 +7,11 @@
 		{
 			"Name": "SagoMagic",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine",
+				"AIModule"
+			]
 		},
 		{
 			"Name": "GitStatusBranch",

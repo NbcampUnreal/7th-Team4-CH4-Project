@@ -1,9 +1,10 @@
 ﻿#include "Enemy/MonsterBase.h"
+#include "Enemy/MonsterAIController.h"
 
 AMonsterBase::AMonsterBase()
 {
- 	PrimaryActorTick.bCanEverTick = true;
-
+    AIControllerClass = AMonsterAIController::StaticClass();
+    AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 void AMonsterBase::BeginPlay()
@@ -12,15 +13,15 @@ void AMonsterBase::BeginPlay()
 	
 }
 
-void AMonsterBase::Tick(float DeltaTime)
+void AMonsterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	Super::Tick(DeltaTime);
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+    // Health 변수를 복제 대상으로 등록
+    DOREPLIFETIME(AMonsterBase, Health);
 }
 
-void AMonsterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AMonsterBase::OnRepHealth()
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
-

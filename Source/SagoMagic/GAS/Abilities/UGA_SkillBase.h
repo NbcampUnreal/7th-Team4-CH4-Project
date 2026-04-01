@@ -10,9 +10,10 @@ UCLASS()
 class SAGOMAGIC_API UGA_SkillBase : public UGameplayAbility
 {
 	GENERATED_BODY()
-	UGA_SkillBase();
+
 
 public:
+    UGA_SkillBase();
 
     //** 어빌리티 인터페이스 */
 
@@ -30,11 +31,9 @@ public:
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SagoMagic|Ability")
     virtual bool IsPredictionKeyValidForMorePrediction() const;
 
-
-
 protected:
 
-    /**ㅅ,킬효과 서버*/
+    /** 스킬효과 서버 */
     virtual void OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo) {}
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
@@ -43,7 +42,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
     FGameplayTag SkillEffectCueTag;
 
-    //** 수치들*/
+    //** 수치 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SagoMagic|Stats")
     float BaseDamage = 30.f;
 

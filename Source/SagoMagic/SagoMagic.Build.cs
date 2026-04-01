@@ -22,12 +22,14 @@ public class SagoMagic : ModuleRules
 			"Niagara",
 			"UMG",
 			"Slate",
-            "GameplayTags"
+            "GameplayAbilities",
+            "GameplayTags",
+            "GameplayTasks",
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]
         {
-            "GameplayAbilities",
+
         });
 
 		PublicIncludePaths.AddRange(new string[]

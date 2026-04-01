@@ -1,32 +1,84 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// SMPlayerCharacter.cpp
 
 
 #include "SMPlayerCharacter.h"
 
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "SMPlayerController.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 
-// Sets default values
 ASMPlayerCharacter::ASMPlayerCharacter()
 {
-    // Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
+    bReplicates = true;
+    SetReplicateMovement(true);
+
+    SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+    SpringArmComp->SetupAttachment(RootComponent);
+
+    SpringArmComp->TargetArmLength = CameraLength;
+    SpringArmComp->bDoCollisionTest = false;
+    SpringArmComp->bUsePawnControlRotation = false;
+
+    SpringArmComp->SetUsingAbsoluteRotation(true);
+    SpringArmComp->bInheritPitch = false;
+    SpringArmComp->bInheritYaw = false;
+    SpringArmComp->bInheritRoll = false;
+
+    CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+    CameraComp->SetupAttachment(SpringArmComp);
 }
 
-// Called when the game starts or when spawned
+void ASMPlayerCharacter::OnConstruction(const FTransform& Transform)
+{
+    Super::OnConstruction(Transform);
+
+    if (SpringArmComp)
+    {
+        SpringArmComp->SetRelativeRotation(FRotator(-CameraAngle, 0.0f, 0.0f));
+    }
+}
+
+void ASMPlayerCharacter::Move(const FInputActionValue& Value)
+{
+    FVector2D MovementVector = Value.Get<FVector2D>();
+
+    if (Controller)
+    {
+        AddMovementInput(FVector::ForwardVector, MovementVector.X);
+        AddMovementInput(FVector::RightVector, MovementVector.Y);
+    }
+}
+
 void ASMPlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
-    
+
+    if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
+    {
+        if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+            ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+        {
+            Subsystem->AddMappingContext(DefaultMappingContext, 0);
+        }
+    }
 }
 
-// Called every frame
-void ASMPlayerCharacter::Tick(float DeltaTime)
 {
-    Super::Tick(DeltaTime);
 }
 
-// Called to bind functionality to input
 void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
-}
 
+    if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+    {
+        if (MoveAction)
+        {
+            EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
+        }
+    }
+}

@@ -8,7 +8,8 @@ public class SagoMagic : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] {
+		PublicDependencyModuleNames.AddRange(new string[]
+        {
 			"Core",
 			"CoreUObject",
 			"Engine",
@@ -21,12 +22,18 @@ public class SagoMagic : ModuleRules
 			"Niagara",
 			"UMG",
 			"Slate",
-            "GameplayTags"
+            "GameplayAbilities",
+            "GameplayTags",
+            "GameplayTasks",
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		PrivateDependencyModuleNames.AddRange(new string[]
+        {
 
-		PublicIncludePaths.AddRange(new string[] {
+        });
+
+		PublicIncludePaths.AddRange(new string[]
+        {
 			"SagoMagic",
 			"SagoMagic/SampleProject",
 			"SagoMagic/SampleProject/Variant_Strategy",

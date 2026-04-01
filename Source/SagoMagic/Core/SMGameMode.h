@@ -4,7 +4,7 @@
 #include "GameFramework/GameMode.h"
 #include "SMGameMode.generated.h"
 
-class ASagoMagicPlayerController;
+class ASMPlayerController;
 
 /** Wave 진행 총괄, 서버 권위 */
 UCLASS()
@@ -14,12 +14,11 @@ class SAGOMAGIC_API ASMGameMode : public AGameMode
 public:
     ASMGameMode();
 
-    /** 로그인 */
     virtual void OnPostLogin(AController* NewPlayer) override;
-    /** 로그아웃 */
     virtual void Logout(AController* Exiting) override;
 
 protected:
-    //TODO 은서 : SMPlayerController 생성 시 교체 되어야함 (Forward include도 제외)
-    TArray<TObjectPtr<ASagoMagicPlayerController>> AllPlayerController;
+    /** 로그인 한 플레이어 Controller 모음 */
+    UPROPERTY()
+    TArray<TObjectPtr<ASMPlayerController>> AllPlayerController;
 };

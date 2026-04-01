@@ -13,6 +13,8 @@
 ASMPlayerCharacter::ASMPlayerCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
+    
+    // 네트워크 설정
     bReplicates = true;
     SetReplicateMovement(true);
 
@@ -30,6 +32,14 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 
     CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
     CameraComp->SetupAttachment(SpringArmComp);
+
+    // 캐릭터의 움직임으로 몸 회전 금지
+    GetCharacterMovement()->bOrientRotationToMovement = false;
+
+    // 컨트롤러 입력으로만 몸 회전
+    bUseControllerRotationYaw = true;
+    bUseControllerRotationPitch = false;
+    bUseControllerRotationRoll = false;
 }
 
 void ASMPlayerCharacter::OnConstruction(const FTransform& Transform)
@@ -64,10 +74,39 @@ void ASMPlayerCharacter::BeginPlay()
         {
             Subsystem->AddMappingContext(DefaultMappingContext, 0);
         }
+
+        PC->SetShowMouseCursor(true);
     }
 }
 
+void ASMPlayerCharacter::Tick(float DeltaTime)
 {
+    Super::Tick(DeltaTime);
+
+    // 로컬만 틱에서 실행
+    if (IsLocallyControlled() && Controller)
+    {
+        if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
+        {
+            FHitResult Hit;
+
+            // TODO: 채널 설정을 바닥으로만 할 필요 있음
+            bool bHit =PC->GetHitResultUnderCursor(ECC_Visibility, true, Hit);
+
+            if (bHit)
+            {
+                FVector LookDirection = Hit.Location - GetActorLocation();
+
+                LookDirection.Z = 0.0f;
+
+                if (!LookDirection.IsNearlyZero())
+                {
+                    FRotator NewTargetRotation = LookDirection.Rotation();
+                    PC->SetControlRotation(NewTargetRotation);
+                }
+            }
+        }
+    }
 }
 
 void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

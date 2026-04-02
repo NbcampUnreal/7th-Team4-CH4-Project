@@ -15,7 +15,7 @@ class SAGOMAGIC_API UGA_SkillBase : public UGameplayAbility
 public:
     UGA_SkillBase();
 
-    //** 어빌리티 인터페이스 */
+    //어빌리티 인터페이스
 
     virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const override;
 
@@ -27,13 +27,13 @@ public:
     UFUNCTION(BlueprintCallable, Category = "SagoMagic|Ability")
     virtual FString GetCurrentPredictionKeyStatus();
 
-    //* 현재 Prediction Key가 추가 예측에 유효한지 -> Prediction Key가 여전히 사용 가능한지 여부 확인 */
+    //** 현재 Prediction Key가 추가 예측에 유효한지 -> Prediction Key가 여전히 사용 가능한지 여부 확인 */
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SagoMagic|Ability")
     virtual bool IsPredictionKeyValidForMorePrediction() const;
 
 protected:
 
-    /** 스킬효과 서버 */
+    //스킬효과 서버
     virtual void OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo) {}
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
@@ -42,7 +42,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
     FGameplayTag SkillEffectCueTag;
 
-    //** 수치 */
+    //수치-----
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SagoMagic|Stats")
     float BaseDamage = 30.f;
 

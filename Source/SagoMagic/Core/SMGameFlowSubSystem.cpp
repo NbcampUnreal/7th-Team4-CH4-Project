@@ -21,6 +21,11 @@ void USMGameFlowSubSystem::Tick(float DeltaTime)
 {
 }
 
+TStatId USMGameFlowSubSystem::GetStatId() const
+{
+    RETURN_QUICK_DECLARE_CYCLE_STAT(USMGameFlowSubSystem, STATGROUP_Tickables);
+}
+
 void USMGameFlowSubSystem::AdvanceCommand()
 {
     if (CurrentCommand)
@@ -34,9 +39,5 @@ void USMGameFlowSubSystem::AdvanceCommand()
             this, &USMGameFlowSubSystem::AdvanceCommand);
         CurrentCommand->Enter(GetWorld()->GetAuthGameMode<ASMGameMode>());
     }
-
-    if (ASMGameState* GS = GetWorld()->GetGameState<ASMGameState>())
-        GS->Set
-
 
 }

@@ -9,7 +9,7 @@
  * GameFlow를 CommandQueue로 관리하는 subsystem
  */
 UCLASS()
-class SAGOMAGIC_API USMGameFlowSubSystem : public UWorldSubsystem,public FTickableGameObject
+class SAGOMAGIC_API USMGameFlowSubSystem : public UWorldSubsystem, public FTickableGameObject
 {
     GENERATED_BODY()
 public:
@@ -17,6 +17,7 @@ public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
     virtual void Tick(float DeltaTime) override;
+    virtual TStatId GetStatId() const override;
 private:
     void AdvanceCommand();
 private:

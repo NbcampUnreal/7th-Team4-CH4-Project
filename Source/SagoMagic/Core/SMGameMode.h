@@ -6,7 +6,9 @@
 
 class ASMPlayerController;
 
-/** Wave 진행 총괄, 서버 권위 */
+/**
+ * Wave 진행 총괄, 서버 권위
+*/
 UCLASS()
 class SAGOMAGIC_API ASMGameMode : public AGameMode
 {

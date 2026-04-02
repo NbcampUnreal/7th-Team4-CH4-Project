@@ -23,11 +23,11 @@ public:
 
     virtual void ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const override;
 
-    //** 현재 Prediction Key를 반환하고 더 많은? 예측에 유효한지 Vaild 한다 - 디버깅에 사용 */
+    /** 현재 Prediction Key를 반환하고 더 많은? 예측에 유효한지 Vaild 한다 - 디버깅에 사용 */
     UFUNCTION(BlueprintCallable, Category = "SagoMagic|Ability")
     virtual FString GetCurrentPredictionKeyStatus();
 
-    //** 현재 Prediction Key가 추가 예측에 유효한지 -> Prediction Key가 여전히 사용 가능한지 여부 확인 */
+    /** 현재 Prediction Key가 추가 예측에 유효한지 -> Prediction Key가 여전히 사용 가능한지 여부 확인 */
     UFUNCTION(BlueprintCallable, BlueprintPure, Category = "SagoMagic|Ability")
     virtual bool IsPredictionKeyValidForMorePrediction() const;
 
@@ -39,12 +39,11 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
     FGameplayTag SkillTag;
 
-    //** 쿨다운중 쿨다운 재발동 차단용
-    // ex) Cooldown.Skill.Projectile*/
+    /** 쿨다운중 쿨다운 재발동 차단용 ex) Cooldown.Skill.Projectile */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
     FGameplayTag CooldownTag;
 
-    //** 수치들 나중에 DA로 옮길 예정, 아직 스켈레탈 코드라서 */
+    /** 수치들 나중에 DA로 옮길 예정, 아직 스켈레탈 코드라서 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SagoMagic|Stats")
     float BaseDamage = 30.f;
 

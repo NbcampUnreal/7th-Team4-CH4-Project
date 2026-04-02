@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿// SMSessionSubsystem.cpp
 
 
 #include "SMSessionSubsystem.h"
@@ -47,7 +47,7 @@ void USMSessionSubsystem::CreateSession(int32 MaxPlayer)
             FOnCreateSessionCompleteDelegate::CreateUObject(
                 this, &ThisClass::OnCreateSessionCompleteInternal));
 
-    //세션 세팅갑 설정
+    //세션 세팅 설정
     TSharedPtr<FOnlineSessionSettings> Settings = MakeShareable(new FOnlineSessionSettings());
     bool bIsDedicated = IsRunningDedicatedServer();
     Settings->NumPublicConnections = MaxPlayer;

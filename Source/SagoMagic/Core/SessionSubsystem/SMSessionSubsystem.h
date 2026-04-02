@@ -16,6 +16,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSMCreateSessionComplete, bool, bWasSuccessful);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnSMJoinSessionComplete, EOnJoinSessionCompleteResult::Type);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSMDestroySessionComplete, bool, bWasSuccessful);
+
 UCLASS()
 class SAGOMAGIC_API USMSessionSubsystem : public UGameInstanceSubsystem
 {

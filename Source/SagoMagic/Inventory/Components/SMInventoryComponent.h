@@ -9,7 +9,7 @@
 #include "SMInventoryComponent.generated.h"
 
 class USMItemDefinition;
-class USMIF_GemModifier;
+class USMGemModifierFragment;
 class ASMBaseItemDropActor;
 
 /**
@@ -192,7 +192,7 @@ protected:
 	bool CreateSkillInternalContainer(const FGuid& InSkillInstanceId, const FSMGridMaskData& InInternalMask, FGuid& OutCreatedContainerId);
 
 	/** 장착 대상 스킬 태그 충족 여부 검사 */
-	bool CanApplyGemToSkillByTags(const USMIF_GemModifier* InGemModifierFragment, const USMItemDefinition* InTargetSkillDefinition) const;
+	bool CanApplyGemToSkillByTags(const USMGemModifierFragment* InGemModifierFragment, const USMItemDefinition* InTargetSkillDefinition) const;
 
 private:
 	/** 점유 셀 계산 */

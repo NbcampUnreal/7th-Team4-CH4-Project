@@ -237,7 +237,7 @@ bool USMInventoryComponent::CreateSkillInternalContainer(const FGuid& InSkillIns
 	return false;
 }
 
-bool USMInventoryComponent::CanApplyGemToSkillByTags(const USMIF_GemModifier* InGemModifierFragment, const USMItemDefinition* InTargetSkillDefinition) const
+bool USMInventoryComponent::CanApplyGemToSkillByTags(const USMGemModifierFragment* InGemModifierFragment, const USMItemDefinition* InTargetSkillDefinition) const
 {
 	/** TODO: RequiredTargetTags / BlockedTargetTags 검사 */
 	return false;
@@ -293,7 +293,7 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 
 bool USMInventoryComponent::IsValidQuickSlotIndex(int32 InSlotIndex) const
 {
-	/** TODO: 1~3 슬롯 범위 검사 */
+	/** TODO: 1~2 슬롯 범위 검사 */
 	return false;
 }
 

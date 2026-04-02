@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// SMPlayerController.h
 
 #pragma once
 
@@ -7,10 +7,13 @@
 #include "SMPlayerController.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class SAGOMAGIC_API ASMPlayerController : public APlayerController
 {
     GENERATED_BODY()
+
+protected:
+    virtual void BeginPlay() override;
 };

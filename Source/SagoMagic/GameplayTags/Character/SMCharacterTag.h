@@ -4,14 +4,14 @@
 
 namespace SMCharacterTag
 {
-    /**
-    *사용 양식
-    *UE_DECLARE_GAMEPLAY_TAG_EXTERN(간편하게 사용할 태그이름);
-    *예시
-    *UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Reload_Ammo);
-    */
+	/**
+	*사용 양식
+	*UE_DECLARE_GAMEPLAY_TAG_EXTERN(간편하게 사용할 태그이름);
+	*예시
+	*UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Reload_Ammo);
+	*/
 
-    /** 캐릭터의 상태 */
-    UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat)
-    UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Construct)
+	/** 캐릭터의 상태 */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Construct)
 }

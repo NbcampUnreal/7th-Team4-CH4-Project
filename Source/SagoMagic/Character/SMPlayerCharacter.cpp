@@ -13,7 +13,7 @@
 ASMPlayerCharacter::ASMPlayerCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
-    
+
     // 네트워크 설정
     bReplicates = true;
     SetReplicateMovement(true);
@@ -74,8 +74,6 @@ void ASMPlayerCharacter::BeginPlay()
         {
             Subsystem->AddMappingContext(DefaultMappingContext, 0);
         }
-
-        PC->SetShowMouseCursor(true);
     }
 }
 

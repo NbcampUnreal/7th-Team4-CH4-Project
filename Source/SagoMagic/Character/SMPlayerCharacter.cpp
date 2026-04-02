@@ -3,10 +3,12 @@
 
 #include "SMPlayerCharacter.h"
 
+#include "AbilitySystemComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "SMPlayerController.h"
 #include "Camera/CameraComponent.h"
+#include "Core/SMPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
@@ -40,6 +42,41 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
+}
+
+UAbilitySystemComponent* ASMPlayerCharacter::GetAbilitySystemComponent() const
+{
+	if (SMAbilitySystemComponent)
+	{
+		return SMAbilitySystemComponent;
+	}
+	
+	if (const ASMPlayerState* PS = GetPlayerState<ASMPlayerState>())
+	{
+		return PS->GetSMAbilitySystemComponent();
+	}
+	
+	return nullptr;
+}
+
+USMAbilitySystemComponent* ASMPlayerCharacter::GetSMAbilitySystemComponent() const
+{
+	return SMAbilitySystemComponent;
+}
+
+USMPlayerAttributeSet* ASMPlayerCharacter::GetAttributeSet() const
+{
+	if (AttributeSet)
+	{
+		return AttributeSet;
+	}
+	
+	if (const ASMPlayerState* PS = GetPlayerState<ASMPlayerState>())
+	{
+		return PS->GetAttributeSet();
+	}
+	
+	return nullptr;
 }
 
 void ASMPlayerCharacter::OnConstruction(const FTransform& Transform)
@@ -94,6 +131,70 @@ void ASMPlayerCharacter::Tick(float DeltaTime)
 					PC->SetControlRotation(NewTargetRotation);
 				}
 			}
+		}
+	}
+}
+
+void ASMPlayerCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	
+	// 서버에서 호출
+	InitializeAbilitySystem();
+	GiveDefaultAbilities();
+}
+
+void ASMPlayerCharacter::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+	
+	// 클라에서 호출
+	// Ability 부여는 서버에서만(클라는 복제)
+	InitializeAbilitySystem();
+}
+
+void ASMPlayerCharacter::InitializeAbilitySystem()
+{
+	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
+	
+	if (!PS)
+	{
+		return;
+	}
+	
+	SMAbilitySystemComponent = PS->GetSMAbilitySystemComponent();
+	AttributeSet = PS->GetAttributeSet();
+	
+	if (SMAbilitySystemComponent)
+	{
+		// Owner는 PlayerState
+		SMAbilitySystemComponent->InitAbilityActorInfo(PS, this);
+
+		UE_LOG(LogTemp, Log, TEXT("[%s] SMASC initialized from PlayerState"), *GetName());
+	}
+}
+
+void ASMPlayerCharacter::GiveDefaultAbilities()
+{
+	if (!SMAbilitySystemComponent)
+	{
+		return;
+	}
+	
+	// 서버에서만 부여
+	if (!HasAuthority())
+	{
+		return;;
+	}
+	
+	for (TSubclassOf<UGameplayAbility>& AbilityClass : DefaultAbilities)
+	{
+		if (AbilityClass)
+		{
+			// Ability Spec 생성
+			// - InputID 없음 (나중에 Input Binding에서 설정)
+			FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, INDEX_NONE, this);
+			SMAbilitySystemComponent->GiveAbility(AbilitySpec);
 		}
 	}
 }

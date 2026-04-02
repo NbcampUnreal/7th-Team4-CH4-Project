@@ -4,18 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "ASkillProjectile.generated.h"
+#include "SMASkillProjectile.generated.h"
 
 class USphereComponent;
 class UProjectileMovementComponent;
 
 UCLASS()
-class SAGOMAGIC_API AASkillProjectile : public AActor
+class SAGOMAGIC_API ASMASkillProjectile : public AActor
 {
     GENERATED_BODY()
 
 public:
-    AASkillProjectile();
+    ASMASkillProjectile();
 
     void InitProjectile(float InDamage, float InRangeCm, const FVector& InDirection, AActor* InInstigatorActor, AController* InController);
 

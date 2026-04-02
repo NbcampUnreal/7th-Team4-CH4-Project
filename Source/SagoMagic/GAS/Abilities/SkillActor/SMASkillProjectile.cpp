@@ -1,11 +1,11 @@
-﻿#include "ASkillProjectile.h"
+﻿#include "SMASkillProjectile.h"
 
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "GAS/SMAbilitySystemComponent.h"
 
 
-AASkillProjectile::AASkillProjectile()
+ASMASkillProjectile::ASMASkillProjectile()
 {
     PrimaryActorTick.bCanEverTick = false;
     bReplicates = true;
@@ -14,7 +14,7 @@ AASkillProjectile::AASkillProjectile()
     CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
     CollisionComponent->InitSphereRadius(20.f);
     CollisionComponent->SetCollisionProfileName(TEXT("Projectile"));
-    CollisionComponent->OnComponentHit.AddDynamic(this, &AASkillProjectile::OnProjectileHit);
+    CollisionComponent->OnComponentHit.AddDynamic(this, &ASMASkillProjectile::OnProjectileHit);
     SetRootComponent(CollisionComponent);
 
     //메쉬
@@ -32,7 +32,7 @@ AASkillProjectile::AASkillProjectile()
     ProjectileMovement->ProjectileGravityScale = 0.f;
 }
 
-void AASkillProjectile::InitProjectile(float InDamage, float InRangeCm, const FVector& InDirection,
+void ASMASkillProjectile::InitProjectile(float InDamage, float InRangeCm, const FVector& InDirection,
     AActor* InInstigatorActor, AController* InController)
 {
     //충돌 시 ApplySkillDamage에 전달 -> GE의 IncomingDamage -> AttributeSet(체력 차감)
@@ -49,17 +49,17 @@ void AASkillProjectile::InitProjectile(float InDamage, float InRangeCm, const FV
     if (RangeCm > 0.f && ProjectileSpeed > 0.f)
     {
         const float FlightTime = RangeCm / ProjectileSpeed;
-        GetWorldTimerManager().SetTimer(TimerHandleMaxRange, this, &AASkillProjectile::OnMaxRangeReached, FlightTime, false);
+        GetWorldTimerManager().SetTimer(TimerHandleMaxRange, this, &ASMASkillProjectile::OnMaxRangeReached, FlightTime, false);
     }
 }
 
 
-void AASkillProjectile::BeginPlay()
+void ASMASkillProjectile::BeginPlay()
 {
     Super::BeginPlay();
 }
 
-void AASkillProjectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+void ASMASkillProjectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
     UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
 {
     if (!HasAuthority()) return;
@@ -74,7 +74,7 @@ void AASkillProjectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AActo
     Destroy();
 }
 
-void AASkillProjectile::OnMaxRangeReached()
+void ASMASkillProjectile::OnMaxRangeReached()
 {
     Destroy();
 }

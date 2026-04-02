@@ -57,19 +57,19 @@ public:
 	}
 
 	/** 일반 아이템 레지스트리 Getter */
-	const TMap<FGuid, FSMItemInstanceData>& GetItemRegistry() const
+	const TArray<FSMItemInstanceData>& GetItemEntries() const
 	{
-		return ItemRegistry;
+		return ItemEntries;
 	}
 
 	/** 스킬 아이템 레지스트리 Getter */
-	const TMap<FGuid, FSMSkillItemInstanceData>& GetSkillRegistry() const
+	const TArray<FSMSkillItemInstanceData>& GetSkillEntries() const
 	{
-		return SkillRegistry;
+		return SkillEntries;
 	}
 
 	/** 스킬 내부 컨테이너 레지스트리 Getter */
-	const TMap<FGuid, FSMGridContainerState>& GetSkillInternalContainers() const
+	const TArray<FSMGridContainerState>& GetSkillInternalContainers() const
 	{
 		return SkillInternalContainers;
 	}
@@ -249,15 +249,15 @@ protected:
 	UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly, Category="Inventory|Runtime")
 	FSMQuickSlotSetState QuickSlots;
 
-	/** 일반 아이템 레지스트리 */
-	UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly, Category="Inventory|Runtime")
-	TMap<FGuid, FSMItemInstanceData> ItemRegistry;
+    /** 일반 아이템 엔트리 배열 */
+    UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly, Category="Inventory|Runtime")
+    TArray<FSMItemInstanceData> ItemEntries;
 
-	/** 스킬 아이템 레지스트리 */
-	UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly, Category="Inventory|Runtime")
-	TMap<FGuid, FSMSkillItemInstanceData> SkillRegistry;
+    /** 스킬 아이템 엔트리 배열 */
+    UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly, Category="Inventory|Runtime")
+    TArray<FSMSkillItemInstanceData> SkillEntries;
 
-	/** 스킬 내부 컨테이너 레지스트리 */
-	UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly, Category="Inventory|Runtime")
-	TMap<FGuid, FSMGridContainerState> SkillInternalContainers;
+    /** 스킬 내부 컨테이너 배열 */
+    UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly, Category="Inventory|Runtime")
+    TArray<FSMGridContainerState> SkillInternalContainers;
 };

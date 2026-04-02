@@ -29,7 +29,7 @@ void UGA_SkillBase::ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const
 
 FString UGA_SkillBase::GetCurrentPredictionKeyStatus()
 {
-    //1. 현재 사용 중인 Prediction Key에 대한 번호를 가져옴 ex) 7
+    //1. 현재 사용 중인 Prediction Key에 대한 번호를 가져옴
     //2. 이 키로 아직 더 예측을 더 할 수 있는가를 확인하고 물어보고 맞으면 true, 번호가 틀리거나 아니면 false를 반환
     UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
     return ASC->ScopedPredictionKey.ToString() + " is valid for more prediction: " + (ASC->ScopedPredictionKey.IsValidForMorePrediction() ? TEXT("true") : TEXT("false"));
@@ -37,6 +37,7 @@ FString UGA_SkillBase::GetCurrentPredictionKeyStatus()
 
 bool UGA_SkillBase::IsPredictionKeyValidForMorePrediction() const
 {
+    //현재 예측 키 가 추가적인 예측을 더 할 수 있는 상태인지 bool값으로 반환.
     UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
     return ASC->ScopedPredictionKey.IsValidForMorePrediction();
 }

@@ -26,7 +26,7 @@ public:
     class UAbilitySystemComponent* MonsterAbilitySystemComponent;
 
     /** 몬스터.능력치 세트(HP, MaxHP등등)**/
-    // UPROPERTY()
+    UPROPERTY()
     class USMMonsterAttributeSet* MonsterAttributeSet;
 };
 

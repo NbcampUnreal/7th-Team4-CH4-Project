@@ -13,8 +13,6 @@ class SAGOMAGIC_API USMMonsterAttributeSet : public UAttributeSet
 public:
     USMMonsterAttributeSet();
 
-    // --- 기본 속성 예시 ---
-
     /** HP **/
     UPROPERTY(BlueprintReadOnly, Category = "Attributes")
     FGameplayAttributeData Health;

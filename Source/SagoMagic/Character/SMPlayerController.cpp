@@ -9,10 +9,12 @@ void ASMPlayerController::BeginPlay()
 
 	SetShowMouseCursor(true);
 
-	FInputModeGameOnly InputMode;
+	FInputModeGameAndUI InputMode;
 
 	// 마우스 가두기
-	InputMode.SetConsumeCaptureMouseDown(false);
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+	InputMode.SetHideCursorDuringCapture(false);
+
 
 	SetInputMode(InputMode);
 }

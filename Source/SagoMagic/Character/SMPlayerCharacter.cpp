@@ -66,15 +66,6 @@ void ASMPlayerCharacter::Move(const FInputActionValue& Value)
 void ASMPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
-			ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
-		}
-	}
 }
 
 void ASMPlayerCharacter::Tick(float DeltaTime)
@@ -113,6 +104,15 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 	if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
+		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
+		{
+			if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+				ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+			{
+				Subsystem->AddMappingContext(DefaultMappingContext, 0);
+			}
+		}
+		
 		if (MoveAction)
 		{
 			EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);

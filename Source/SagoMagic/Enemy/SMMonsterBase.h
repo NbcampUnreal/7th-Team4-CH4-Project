@@ -3,24 +3,29 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Net/UnrealNetwork.h"
+#include "AbilitySystemInterface.h"
 #include "SMMonsterBase.generated.h"
 
 UCLASS()
-class SAGOMAGIC_API ASMMonsterBase : public ACharacter
+class SAGOMAGIC_API ASMMonsterBase : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
 public:
 	ASMMonsterBase();
 
+    /** IAbilitySystemInterface 구현(외부에서 ASC를 찾을 때 사용) **/
+    virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 protected:
     virtual void BeginPlay() override;
-    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+    virtual void PossessedBy(AController* NewController) override;
 public:
-    UPROPERTY(ReplicatedUsing = OnRepHealth, BlueprintReadOnly, Category = "Monster")
-    float Health;
+    /** 1. ASC 컴포넌트* */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
+    class UAbilitySystemComponent* AbilitySystemComponent;
 
-    UFUNCTION()
-    void OnRepHealth(); // 체력이 변했을 때 클라이언트에서 실행될 시각적 효과(UI 업데이트 등)
+    // 2. 능력치 세트 (HP, MaxHP등등)
+    // UPROPERTY()
+    //class UMyAttributeSet* AttributeSet;
 };
 

@@ -23,7 +23,7 @@ public:
 
     virtual void ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const override;
 
-    //** 현재 Prediction Key를 반환하고 더 많은? 예측에 유효한지 Vaild 한다 ,Ability Prediction Window 디버깅에 사용 */
+    //** 현재 Prediction Key를 반환하고 더 많은? 예측에 유효한지 Vaild 한다 - 디버깅에 사용 */
     UFUNCTION(BlueprintCallable, Category = "SagoMagic|Ability")
     virtual FString GetCurrentPredictionKeyStatus();
 
@@ -34,23 +34,31 @@ public:
 protected:
 
     //스킬효과 서버
-    virtual void OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo) {}
+    virtual void OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo){}
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
     FGameplayTag SkillTag;
 
+    //** 쿨다운중 쿨다운 재발동 차단용
+    // ex) Cooldown.Skill.Projectile*/
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
-    FGameplayTag SkillEffectCueTag;
+    FGameplayTag CooldownTag;
 
-    //수치-----
+    //** 수치들 나중에 DA로 옮길 예정, 아직 스켈레탈 코드라서 */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SagoMagic|Stats")
     float BaseDamage = 30.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SagoMagic|Stats")
     float RangeCm = 300.f;
-
+    /** 쿨타임 0.5초로 설정*/
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SagoMagic|Stats")
-    float CooldownSeconds= 3.f;
+    float CooldownSeconds= 0.5f;
 
-    // TODO:마우스 정보 데이터 가져오기
+    FVector CurrentAimOrigin = FVector::ZeroVector;
+    FVector CurrentAimDirection = FVector::ForwardVector;
+
+private:
+
+    // 마우스 정보
+    void ExtractAimData(const FGameplayAbilityActorInfo* ActorInfo);
 };

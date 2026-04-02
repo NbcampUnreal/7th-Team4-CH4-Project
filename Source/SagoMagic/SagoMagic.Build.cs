@@ -26,6 +26,7 @@ public class SagoMagic : ModuleRules
             "GameplayTags",
             "GameplayTasks",
             "GameplayMessageRuntime",
+            "OnlineSubsystem",
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

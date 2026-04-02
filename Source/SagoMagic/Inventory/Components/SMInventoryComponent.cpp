@@ -1,7 +1,7 @@
 ﻿#include "Inventory/Components/SMInventoryComponent.h"
 
 #include "Net/UnrealNetwork.h"
-#include "GameplayMessageSubsystem.h"
+#include "GameplayMessageRuntime/Public/GameFramework/GameplayMessageSubsystem.h"
 
 #include "Inventory/Core/SMInventoryMessageTypes.h"
 
@@ -38,8 +38,8 @@ void USMInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 
 	DOREPLIFETIME(USMInventoryComponent, MainInventory);
 	DOREPLIFETIME(USMInventoryComponent, QuickSlots);
-	DOREPLIFETIME(USMInventoryComponent, ItemRegistry);
-	DOREPLIFETIME(USMInventoryComponent, SkillRegistry);
+	DOREPLIFETIME(USMInventoryComponent, ItemEntries);
+	DOREPLIFETIME(USMInventoryComponent, ItemEntries);
 	DOREPLIFETIME(USMInventoryComponent, SkillInternalContainers);
 }
 

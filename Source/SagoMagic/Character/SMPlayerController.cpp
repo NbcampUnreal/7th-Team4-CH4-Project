@@ -5,14 +5,14 @@
 
 void ASMPlayerController::BeginPlay()
 {
-    Super::BeginPlay();
+	Super::BeginPlay();
 
-    SetShowMouseCursor(true);
+	SetShowMouseCursor(true);
 
-    FInputModeGameOnly InputMode;
+	FInputModeGameOnly InputMode;
 
-    // 마우스 가두기
-    InputMode.SetConsumeCaptureMouseDown(false);
+	// 마우스 가두기
+	InputMode.SetConsumeCaptureMouseDown(false);
 
-    SetInputMode(InputMode);
+	SetInputMode(InputMode);
 }

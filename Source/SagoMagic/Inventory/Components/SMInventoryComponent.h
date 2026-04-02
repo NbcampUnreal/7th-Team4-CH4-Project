@@ -18,9 +18,9 @@ class ASMBaseItemDropActor;
  * 포함 내용:
  * - 메인 인벤토리 상태
  * - 퀵슬롯 상태
- * - 아이템 레지스트리
- * - 스킬 레지스트리
- * - 스킬 내부 컨테이너 상태
+ * - 일반 아이템 엔트리 배열
+ * - 스킬 아이템 엔트리 배열
+ * - 스킬 내부 컨테이너 배열
  * - 이동, 회전, 장착, 해제, 드랍, 요약 계산 함수
  * - Gameplay Message Subsystem 기반 UI 갱신 함수
  *
@@ -56,19 +56,19 @@ public:
 		return QuickSlots;
 	}
 
-	/** 일반 아이템 레지스트리 Getter */
+	/** 일반 아이템 엔트리 배열 Getter */
 	const TArray<FSMItemInstanceData>& GetItemEntries() const
 	{
 		return ItemEntries;
 	}
 
-	/** 스킬 아이템 레지스트리 Getter */
+	/** 스킬 아이템 엔트리 배열 Getter */
 	const TArray<FSMSkillItemInstanceData>& GetSkillEntries() const
 	{
 		return SkillEntries;
 	}
 
-	/** 스킬 내부 컨테이너 레지스트리 Getter */
+	/** 스킬 내부 컨테이너 배열 Getter */
 	const TArray<FSMGridContainerState>& GetSkillInternalContainers() const
 	{
 		return SkillInternalContainers;

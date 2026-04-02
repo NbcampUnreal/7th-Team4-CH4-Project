@@ -91,3 +91,6 @@ UpgradeLog*.xml
 Content/Test/*
 Content/__ExternalObjects__/Test/*
 Content/__ExternalActors__/Test/*
+
+#Personal Plugin
+Plugins/KoEnChangePlugin-main

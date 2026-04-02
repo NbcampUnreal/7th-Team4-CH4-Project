@@ -8,4 +8,8 @@ namespace SMCharacterTag
      *예시
      *UE_DEFINE_GAMEPLAY_TAG(Data_Reload_Ammo, "Data.Reload.Ammo");
      */
+
+    /** 캐릭터의 상태 */
+    UE_DEFINE_GAMEPLAY_TAG(State_Combat , TEXT("State.Combat"))
+    UE_DEFINE_GAMEPLAY_TAG(State_Construct , TEXT("State.Construct"))
 }

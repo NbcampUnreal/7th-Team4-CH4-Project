@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AbilitySystemComponent.h"
+#include "SagoMagic.h"
 #include "AttributeSet.h"
 
 #include "SMPlayerAttributeSet.generated.h"

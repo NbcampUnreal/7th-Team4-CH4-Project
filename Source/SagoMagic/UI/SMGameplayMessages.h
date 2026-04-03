@@ -45,6 +45,7 @@ struct FWaveMsg
 /**
  * UI.Event.Player
  * Listener :
+ * PlayerHP, Gold는 GAS 델리게이트로 처리
  */
 USTRUCT(blueprintType)
 struct FPlayerStatusMsg
@@ -54,11 +55,7 @@ struct FPlayerStatusMsg
     UPROPERTY(BlueprintReadOnly)
     int32 PlayerIndex = 0;
     UPROPERTY(BlueprintReadOnly)
-    float PlayerHP = 1.f;
-    UPROPERTY(BlueprintReadOnly)
-    bool bIsDead = false;
-    UPROPERTY(BlueprintReadOnly)
-    int32 Gold = 0;
+    float RespawnTime = 5.0f;
 };
 
 /**

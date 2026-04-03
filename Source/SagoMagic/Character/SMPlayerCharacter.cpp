@@ -207,13 +207,20 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	{
 		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 		{
-			if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
-				ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+			if (PC->IsLocalController() && DefaultMappingContext)
 			{
-				Subsystem->AddMappingContext(DefaultMappingContext, 0);
+				if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
+				{
+					if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+							ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+					{
+						Subsystem->RemoveMappingContext(DefaultMappingContext);
+						Subsystem->AddMappingContext(DefaultMappingContext, 0);
+					}
+				}
 			}
 		}
-		
+
 		if (MoveAction)
 		{
 			EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);

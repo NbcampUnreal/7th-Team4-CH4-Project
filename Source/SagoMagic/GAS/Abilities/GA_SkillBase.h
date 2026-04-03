@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Abilities/GameplayAbility.h"
-#include "UGA_SkillBase.generated.h"
+#include "GA_SkillBase.generated.h"
 
 class UGameplayEffect;
 

@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbility.h"
-#include "UGA_MonsterAttackBase.generated.h"
+#include "GA_MonsterAttackBase.generated.h"
 
 UCLASS()
-class SAGOMAGIC_API UUGA_MonsterAttackBase : public UGameplayAbility
+class SAGOMAGIC_API UGA_MonsterAttackBase : public UGameplayAbility
 {
 	GENERATED_BODY()
 	

@@ -1,4 +1,4 @@
-﻿#include "UGA_Projectile.h"
+﻿#include "GA_Projectile.h"
 #include "SkillActor/SMASkillProjectile.h"
 
 

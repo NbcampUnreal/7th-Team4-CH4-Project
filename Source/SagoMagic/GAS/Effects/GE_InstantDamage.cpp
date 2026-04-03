@@ -1,4 +1,4 @@
-﻿#include "UGE_InstantDamage.h"
+﻿#include "GE_InstantDamage.h"
 
 UGE_InstantDamage::UGE_InstantDamage()
 {

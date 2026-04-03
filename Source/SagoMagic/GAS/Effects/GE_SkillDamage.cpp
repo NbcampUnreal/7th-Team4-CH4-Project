@@ -1,4 +1,4 @@
-﻿#include "UGE_SkillDamage.h"
+﻿#include "GE_SkillDamage.h"
 
 UGE_SkillDamage::UGE_SkillDamage()
 {

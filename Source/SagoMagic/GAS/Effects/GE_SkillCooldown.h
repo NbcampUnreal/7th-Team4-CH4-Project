@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayEffect.h"
-#include "UGE_SkillCooldown.generated.h"
+#include "GE_SkillCooldown.generated.h"
 
 /**
  * HasDuration

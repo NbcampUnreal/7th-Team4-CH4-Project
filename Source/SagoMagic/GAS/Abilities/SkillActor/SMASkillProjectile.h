@@ -1,6 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -29,7 +27,7 @@ protected:
     TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
-    TObjectPtr<class UStaticMeshComponent> MeshComponent;
+    TObjectPtr<UStaticMeshComponent> MeshComponent;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
     float ProjectileSpeed = 1000.f;

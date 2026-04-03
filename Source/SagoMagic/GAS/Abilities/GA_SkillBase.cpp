@@ -1,4 +1,4 @@
-#include "GAS/Abilities/UGA_SkillBase.h"
+#include "GAS/Abilities/GA_SkillBase.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameFramework/Character.h"
@@ -68,8 +68,7 @@ void UGA_SkillBase::ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const
     {
         SpecHandle.Data->DynamicGrantedTags.AddTag(CooldownTag);
     }
-
-    //TODO : SetByCaller 확인
+    
     //동적으로 쿨다운을 적용시켜주는 함수
     ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle);
 }

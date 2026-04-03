@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayEffect.h"
-#include "UGE_SkillDamage.generated.h"
+#include "GE_SkillDamage.generated.h"
 
 /**
  * 스킬 피해 InstantDamage 상위 클래스

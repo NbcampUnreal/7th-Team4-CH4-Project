@@ -11,15 +11,14 @@
 USTRUCT(BlueprintType)
 struct FSMPlayerSlotInfo
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly)
-    FString PlayerName = TEXT("");
+	UPROPERTY(BlueprintReadOnly)
+	FString PlayerName = TEXT("");
 
-    UPROPERTY(BlueprintReadOnly)
-    bool bIsReady = false;
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsReady = false;
 
-    UPROPERTY(BlueprintReadOnly)
-    bool bIsHost = false;
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsHost = false;
 };
-

@@ -6,16 +6,16 @@
 
 void ASMLobbyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    DOREPLIFETIME(ASMLobbyGameState, PlayerSlots);
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ASMLobbyGameState, PlayerSlots);
 }
 
 void ASMLobbyGameState::UpdatePlayerSlots(const TArray<FSMPlayerSlotInfo>& NewSlots)
 {
-    PlayerSlots = NewSlots;
+	PlayerSlots = NewSlots;
 }
 
 void ASMLobbyGameState::OnRep_PlayerSlots()
 {
-    OnPlayerSlotChanged.Broadcast();
+	OnPlayerSlotChanged.Broadcast();
 }

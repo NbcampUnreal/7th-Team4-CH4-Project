@@ -9,137 +9,134 @@
 
 ASMLobbyGameMode::ASMLobbyGameMode()
 {
-    PlayerStateClass = ASMPlayerState::StaticClass();
-    //GameStateClass = ASMLobbyGameState::StaticClass();
-    bUseSeamlessTravel = true;
+	PlayerStateClass = ASMPlayerState::StaticClass();
+	//GameStateClass = ASMLobbyGameState::StaticClass();
+	bUseSeamlessTravel = true;
 }
 
 void ASMLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
-    Super::PostLogin(NewPlayer);
+	Super::PostLogin(NewPlayer);
 
-    PlayerList.Add(NewPlayer);
+	PlayerList.Add(NewPlayer);
 
-    ASMPlayerState* NewPlayerState = GetSMPlayerState(NewPlayer);
-    if (IsValid(NewPlayerState) == false) return;
+	ASMPlayerState* NewPlayerState = GetSMPlayerState(NewPlayer);
+	if (IsValid(NewPlayerState) == false) return;
 
-    //첫 번째 접속자를 방장으로 지정
-    //bIsHost는 Replicated이므로 클라이언트에 자동 전파
-    //PS->bIsHost = PlayerList.Num() == 1;
-    //PS-> bISReady = false;
+	//첫 번째 접속자를 방장으로 지정
+	//bIsHost는 Replicated이므로 클라이언트에 자동 전파
+	//PS->bIsHost = PlayerList.Num() == 1;
+	//PS-> bISReady = false;
 
-    if (PlayerList.Num() == 1)
-    {
-        HostController = NewPlayer;
-    }
+	if (PlayerList.Num() == 1)
+	{
+		HostController = NewPlayer;
+	}
 
-    UpdateLobbyState();
-
+	UpdateLobbyState();
 }
 
 void ASMLobbyGameMode::Logout(AController* ExitingController)
 {
-    APlayerController* PC = Cast<APlayerController>(ExitingController);
-    if (IsValid(PC) == false) return;
+	APlayerController* PC = Cast<APlayerController>(ExitingController);
+	if (IsValid(PC) == false) return;
 
-    PlayerList.Remove(PC);
-    if (PC == HostController)
-    {
-        AssignNewHost();
-    }
+	PlayerList.Remove(PC);
+	if (PC == HostController)
+	{
+		AssignNewHost();
+	}
 
-    UpdateLobbyState();
+	UpdateLobbyState();
 
-    Super::Logout(ExitingController);
+	Super::Logout(ExitingController);
 }
 
 void ASMLobbyGameMode::SetPlayerReady(APlayerController* PC, bool bReady)
 {
-    ASMPlayerState* PS = GetSMPlayerState(PC);
-    if (IsValid(PS) == false) return;
+	ASMPlayerState* PS = GetSMPlayerState(PC);
+	if (IsValid(PS) == false) return;
 
-    //PS->bIsReady = bReady;
+	//PS->bIsReady = bReady;
 
-    UpdateLobbyState();
+	UpdateLobbyState();
 }
 
 void ASMLobbyGameMode::TryStartGame()
 {
-    if (PlayerList.IsEmpty() == true) return;
-    if (IsAllReady() == false) return;
+	if (PlayerList.IsEmpty() == true) return;
+	if (IsAllReady() == false) return;
 
-    FString URL = FString::Printf(
-        TEXT("/Game/Maps/L_Play?Listen?MaxPlayers=%d"),
-        PlayerList.Num());
+	FString URL = FString::Printf(
+		TEXT("/Game/Maps/L_Play?Listen?MaxPlayers=%d"),
+		PlayerList.Num());
 
-    GetWorld()->ServerTravel(URL);
-
+	GetWorld()->ServerTravel(URL);
 }
 
 bool ASMLobbyGameMode::IsAllReady() const
 {
-    if (PlayerList.IsEmpty() == true) return false;
+	if (PlayerList.IsEmpty() == true) return false;
 
-    for (APlayerController* PC : PlayerList)
-    {
-        ASMPlayerState* PS = GetSMPlayerState(PC);
-        if (IsValid(PS) == false) return false;
+	for (APlayerController* PC : PlayerList)
+	{
+		ASMPlayerState* PS = GetSMPlayerState(PC);
+		if (IsValid(PS) == false) return false;
 
-        //TODO:PlayerState에서 호스트 판별 및 Ready 상태 체크
-        //if(PS->GetIsHost()) continue;
-        //if(PS->GetIsReady()) return false;
-    }
+		//TODO:PlayerState에서 호스트 판별 및 Ready 상태 체크
+		//if(PS->GetIsHost()) continue;
+		//if(PS->GetIsReady()) return false;
+	}
 
-    return true;
+	return true;
 }
 
 void ASMLobbyGameMode::AssignNewHost()
 {
-    HostController = nullptr;
+	HostController = nullptr;
 
-    if (PlayerList.IsEmpty() == true) return;
+	if (PlayerList.IsEmpty() == true) return;
 
-    HostController = PlayerList[0];
+	HostController = PlayerList[0];
 
-    ASMPlayerState* PS = GetSMPlayerState(HostController);
-    if (IsValid(PS) == true)
-    {
-        //TODO: PlayerState에 host 설정
-        //PS->bIsHost = true;
-    }
+	ASMPlayerState* PS = GetSMPlayerState(HostController);
+	if (IsValid(PS) == true)
+	{
+		//TODO: PlayerState에 host 설정
+		//PS->bIsHost = true;
+	}
 }
 
 void ASMLobbyGameMode::UpdateLobbyState()
 {
-    ASMLobbyGameState* GS = GetLobbyGameState();
-    if (IsValid(GS) == false) return;
+	ASMLobbyGameState* GS = GetLobbyGameState();
+	if (IsValid(GS) == false) return;
 
-    TArray<FSMPlayerSlotInfo> PlayerSlots;
+	TArray<FSMPlayerSlotInfo> PlayerSlots;
 
-    for (APlayerController* PC : PlayerList)
-    {
-        ASMPlayerState* PS = GetSMPlayerState(PC);
-        if (IsValid(PS) == false) continue;
+	for (APlayerController* PC : PlayerList)
+	{
+		ASMPlayerState* PS = GetSMPlayerState(PC);
+		if (IsValid(PS) == false) continue;
 
-        FSMPlayerSlotInfo SlotInfo;
-        SlotInfo.PlayerName = PS->GetPlayerName();
-        //TODO:PlayerState작성 이후 추가
-        //SlotInfo.bIsReady = PS->GetIsReady();
-        //SlotInfo.bIsHost = PS->GetIsHost();
-        PlayerSlots.Add(SlotInfo);
-    }
+		FSMPlayerSlotInfo SlotInfo;
+		SlotInfo.PlayerName = PS->GetPlayerName();
+		//TODO:PlayerState작성 이후 추가
+		//SlotInfo.bIsReady = PS->GetIsReady();
+		//SlotInfo.bIsHost = PS->GetIsHost();
+		PlayerSlots.Add(SlotInfo);
+	}
 
-    GS->UpdatePlayerSlots(PlayerSlots);
+	GS->UpdatePlayerSlots(PlayerSlots);
 }
 
 ASMPlayerState* ASMLobbyGameMode::GetSMPlayerState(APlayerController* PC) const
 {
-    if (IsValid(PC) == false) return nullptr;
-    return PC->GetPlayerState<ASMPlayerState>();
+	if (IsValid(PC) == false) return nullptr;
+	return PC->GetPlayerState<ASMPlayerState>();
 }
 
 ASMLobbyGameState* ASMLobbyGameMode::GetLobbyGameState() const
 {
-    return GetGameState<ASMLobbyGameState>();
+	return GetGameState<ASMLobbyGameState>();
 }
-

@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
-#include "GameplayEffect.h"
 #include "Abilities/GameplayAbility.h"
 #include "UGA_SkillBase.generated.h"
 
+class UGameplayEffect;
 
 UCLASS()
 class SAGOMAGIC_API UGA_SkillBase : public UGameplayAbility

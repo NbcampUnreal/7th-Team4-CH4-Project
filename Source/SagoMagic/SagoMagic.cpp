@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// SagoMagic.cpp
 
 #include "SagoMagic.h"
 #include "Modules/ModuleManager.h"

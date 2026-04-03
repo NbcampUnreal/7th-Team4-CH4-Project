@@ -1,4 +1,4 @@
-﻿#include "Enemy/SMMonsterBase.h"
+#include "Enemy/SMMonsterBase.h"
 #include "Enemy/SMMonsterAIController.h"
 #include "AbilitySystemComponent.h"
 
@@ -20,7 +20,8 @@ ASMMonsterBase::ASMMonsterBase()
 
 UAbilitySystemComponent* ASMMonsterBase::GetAbilitySystemComponent() const
 {
-    return nullptr;
+    // return nullptr;
+    return MonsterAbilitySystemComponent;
 }
 
 void ASMMonsterBase::BeginPlay()

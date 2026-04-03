@@ -1,4 +1,4 @@
-﻿#include "Enemy/SMMonsterBase.h"
+#include "Enemy/SMMonsterBase.h"
 #include "Enemy/SMMonsterAIController.h"
 #include "AbilitySystemComponent.h"
 
@@ -8,19 +8,20 @@ ASMMonsterBase::ASMMonsterBase()
     AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
     // ASC 생성
-    AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+    MonsterAbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
     // 서버-클라이언트 복제 설정
-    AbilitySystemComponent->SetIsReplicated(true);
+    MonsterAbilitySystemComponent->SetIsReplicated(true);
     // 몬스터는 보통 혼합(Mixed) 모드나 미니멀(Minimal) 복제 모드를 사용합니다.
-    AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+    MonsterAbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 
     // AttributeSet 생성
-    //AttributeSet = CreateDefaultSubobject<UMyAttributeSet>(TEXT("AttributeSet"));
+    MonsterAttributeSet = CreateDefaultSubobject<USMMonsterAttributeSet>(TEXT("AttributeSet"));
 }
 
 UAbilitySystemComponent* ASMMonsterBase::GetAbilitySystemComponent() const
 {
-    return nullptr;
+    // return nullptr;
+    return MonsterAbilitySystemComponent;
 }
 
 void ASMMonsterBase::BeginPlay()
@@ -28,18 +29,18 @@ void ASMMonsterBase::BeginPlay()
 	Super::BeginPlay();
 	
 }
-void ASMMonsterBase::PossessedBy(AController* NewController)
-{
-    Super::PossessedBy(NewController);
-
-    // 서버에서 ASC 초기화
-    if (AbilitySystemComponent)
-    {
-        AbilitySystemComponent->InitAbilityActorInfo(this, this);
-    }
-
-    // 여기서 초기 스킬(Ability)을 부여하거나 스탯 기본값을 설정
-}
+//void ASMMonsterBase::PossessedBy(AController* NewController)
+//{
+//    Super::PossessedBy(NewController);
+//
+//    // 서버에서 ASC 초기화
+//    if (MonsterAbilitySystemComponent)
+//    {
+//        MonsterAbilitySystemComponent->InitAbilityActorInfo(this, this);
+//    }
+//
+//    // 여기서 초기 스킬(Ability)을 부여하거나 스탯 기본값을 설정
+//}
 //void ASMMonsterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 //{
 //    Super::GetLifetimeReplicatedProps(OutLifetimeProps);

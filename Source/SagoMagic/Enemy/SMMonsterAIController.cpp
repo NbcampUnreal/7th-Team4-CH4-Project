@@ -22,15 +22,13 @@ void ASMMonsterAIController::OnPossess(APawn* InPawn)
     //나중에 behaviorTree
     //MoveToLocation(FVector::ZeroVector);
     // 블랙보드 에셋이 유효한지 확인 후 초기화
-     GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("Onpossess!")));
     if (BBAsset && BTAsset)
     {
-         GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("BBAsset!")));
         if (UseBlackboard(BBAsset, BlackboardComp))
         {
             // 2. 월드에서 플레이어 캐릭터를 찾아 블랙보드에 강제 주입
             APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-            GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("UseBlackboard!")));
+            //GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("UseBlackboard!")));
             if (PlayerPawn)
             {
                 GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("Target find!")));
@@ -39,6 +37,14 @@ void ASMMonsterAIController::OnPossess(APawn* InPawn)
 
             // 3. 비헤이비어 트리 실행
             RunBehaviorTree(BTAsset);
+            if (Blackboard->GetKeyID(FName("TargetActor")) == FBlackboard::InvalidKey)
+            {
+                GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("블랙보드에 'TargetActor' 키가 존재하지 않습니다!")));
+            }
+            else {
+                GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("블랙보드에 'TargetActor' 키가 존재함!")));
+
+            }
         }
     }
 }

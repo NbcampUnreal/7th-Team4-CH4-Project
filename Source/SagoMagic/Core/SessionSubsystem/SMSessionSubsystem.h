@@ -14,7 +14,6 @@
 
 //위젯 바인딩용 델리게이트
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSMCreateSessionComplete, bool, bWasSuccessful);
-
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnSMJoinSessionComplete, EOnJoinSessionCompleteResult::Type);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSMDestroySessionComplete, bool, bWasSuccessful);
 

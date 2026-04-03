@@ -2,7 +2,6 @@
 
 
 #include "SMSessionSubsystem.h"
-
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystem.h"
 

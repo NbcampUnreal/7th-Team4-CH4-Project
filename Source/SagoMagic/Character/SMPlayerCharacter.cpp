@@ -11,6 +11,8 @@
 #include "Core/SMPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameplayTags/Character/SMCharacterTag.h"
+#include "GameplayTags/Character/SMSkillTag.h"
 
 ASMPlayerCharacter::ASMPlayerCharacter()
 {
@@ -98,6 +100,22 @@ void ASMPlayerCharacter::Move(const FInputActionValue& Value)
 		AddMovementInput(FVector::ForwardVector, MovementVector.X);
 		AddMovementInput(FVector::RightVector, MovementVector.Y);
 	}
+}
+
+void ASMPlayerCharacter::Attack()
+{
+	if (!SMAbilitySystemComponent) return;
+	
+	FGameplayTag AttackTag = SMSkillTag::Ability_Skill_Projectile;
+	SMAbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
+}
+
+void ASMPlayerCharacter::Interact()
+{
+	if (!SMAbilitySystemComponent) return;
+	
+	FGameplayTag InteractTag = SMCharacterTag::Ability_Default_Interact;
+	SMAbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(InteractTag));
 }
 
 void ASMPlayerCharacter::BeginPlay()
@@ -207,16 +225,33 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	{
 		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 		{
-			if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
-				ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+			if (PC->IsLocalController() && DefaultMappingContext)
 			{
-				Subsystem->AddMappingContext(DefaultMappingContext, 0);
+				if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
+				{
+					if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+							ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+					{
+						Subsystem->RemoveMappingContext(DefaultMappingContext);
+						Subsystem->AddMappingContext(DefaultMappingContext, 0);
+					}
+				}
 			}
 		}
-		
+
 		if (MoveAction)
 		{
 			EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
+		}
+		
+		if (AttackAction)
+		{
+			EIC->BindAction(AttackAction, ETriggerEvent::Started, this, &ThisClass::Attack);
+		}
+		
+		if (InteractAction)
+		{
+			EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &ThisClass::Interact);
 		}
 	}
 }

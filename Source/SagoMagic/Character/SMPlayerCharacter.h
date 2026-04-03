@@ -36,6 +36,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
+	
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> AttackAction;
+	
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> InteractAction;
 
 	/** Pitch(상하 각도) 조정용 */
 	UPROPERTY(EditAnywhere,
@@ -92,4 +98,8 @@ public:
 
 protected:
 	void Move(const FInputActionValue& Value);
+	
+	void Attack();
+	
+	void Interact();
 };

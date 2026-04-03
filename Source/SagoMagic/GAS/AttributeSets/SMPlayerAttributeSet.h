@@ -36,8 +36,8 @@ public:
 	FGameplayAttributeData Gold;
 	ATTRIBUTE_ACCESSORS(USMPlayerAttributeSet, Gold)
 
-	/** Player Gold */
-	UPROPERTY(BlueprintReadOnly, Category = "Attributes|Gold", ReplicatedUsing = OnRep_MaxGold)
+	/** Player MaxGold */
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes|MaxGold", ReplicatedUsing = OnRep_MaxGold)
 	FGameplayAttributeData MaxGold;
 	ATTRIBUTE_ACCESSORS(USMPlayerAttributeSet, MaxGold)
 

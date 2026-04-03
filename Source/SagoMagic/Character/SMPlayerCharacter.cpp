@@ -246,7 +246,7 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		
 		if (AttackAction)
 		{
-			EIC->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::Attack);
+			EIC->BindAction(AttackAction, ETriggerEvent::Started, this, &ThisClass::Attack);
 		}
 		
 		if (InteractAction)

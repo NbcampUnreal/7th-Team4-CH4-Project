@@ -3,9 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemInterface.h"
 #include "GameFramework/Character.h"
 #include "SMPlayerCharacter.generated.h"
 
+class USMAbilitySystemComponent;
+class UGameplayAbility;
+class USMPlayerAttributeSet;
+class UAbilitySystemComponent;
 class UInputMappingContext;
 struct FInputActionValue;
 class UInputAction;
@@ -15,7 +20,7 @@ class UCameraComponent;
  * 플레이어가 조종할 캐릭터 클래스
  */
 UCLASS()
-class SAGOMAGIC_API ASMPlayerCharacter : public ACharacter
+class SAGOMAGIC_API ASMPlayerCharacter : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -46,13 +51,40 @@ protected:
 public:
 	/** Constructor */
 	ASMPlayerCharacter();
+	
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	
+	UFUNCTION(BlueprintCallable, Category = "GAS")
+	USMAbilitySystemComponent* GetSMAbilitySystemComponent() const;
+	
+	UFUNCTION(BlueprintCallable, Category = "Attributes")
+	USMPlayerAttributeSet* GetAttributeSet() const;
 
 	virtual void OnConstruction(const FTransform& Transform) override;
-
-protected:
+	
 	virtual void BeginPlay() override;
 
 	virtual void Tick(float DeltaTime) override;
+	
+	virtual void PossessedBy(AController* NewController) override;
+	
+	virtual void OnRep_PlayerState() override;
+	
+protected:
+	virtual void InitializeAbilitySystem();
+	
+	void GiveDefaultAbilities();
+	
+	/** PS에서 가져와 캐시된 ASC */
+	UPROPERTY()
+	TObjectPtr<USMAbilitySystemComponent> SMAbilitySystemComponent;
+	
+	/** PS에서 가져와 캐시된 AttributeSet */
+	UPROPERTY()
+	TObjectPtr<USMPlayerAttributeSet> AttributeSet;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Abilities")
+	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilities;
 
 public:
 	/** Adds inputs bindings */

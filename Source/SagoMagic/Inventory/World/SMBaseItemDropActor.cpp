@@ -8,51 +8,51 @@
 #include "Inventory/Items/Fragments/SMWorldVisualFragment.h"
 
 ASMBaseItemDropActor::ASMBaseItemDropActor()
-    : bInitialized(false)
+	: bInitialized(false)
 {
-    PrimaryActorTick.bCanEverTick = false;
-    bReplicates = true;
+	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
-    RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
-    SetRootComponent(RootSceneComponent);
+	RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
+	SetRootComponent(RootSceneComponent);
 
-    StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
-    StaticMeshComponent->SetupAttachment(RootSceneComponent);
+	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
+	StaticMeshComponent->SetupAttachment(RootSceneComponent);
 }
 
 void ASMBaseItemDropActor::BeginPlay()
 {
-    Super::BeginPlay();
+	Super::BeginPlay();
 }
 
 void ASMBaseItemDropActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-    DOREPLIFETIME(ASMBaseItemDropActor, ItemDropPayload);
+	DOREPLIFETIME(ASMBaseItemDropActor, ItemDropPayload);
 }
 
 void ASMBaseItemDropActor::InitializeFromPayload(const FSMItemDropPayload& InItemDropPayload)
 {
-    ItemDropPayload = InItemDropPayload;
-    bInitialized = true;
+	ItemDropPayload = InItemDropPayload;
+	bInitialized = true;
 
-    ApplyWorldVisual();
+	ApplyWorldVisual();
 }
 
 void ASMBaseItemDropActor::OnRep_ItemDropPayload()
 {
-    bInitialized = HasValidPayload();
+	bInitialized = HasValidPayload();
 
-    if (bInitialized)
-    {
-        ApplyWorldVisual();
-    }
+	if (bInitialized)
+	{
+		ApplyWorldVisual();
+	}
 }
 
 const USMItemDefinition* ASMBaseItemDropActor::ResolveItemDefinition() const
 {
-    return nullptr;
+	return nullptr;
 }
 
 void ASMBaseItemDropActor::ApplyWorldVisual()
@@ -61,10 +61,11 @@ void ASMBaseItemDropActor::ApplyWorldVisual()
 
 bool ASMBaseItemDropActor::HasValidPayload() const
 {
-    return false;
+	return false;
 }
 
-const USMWorldVisualFragment* ASMBaseItemDropActor::FindWorldVisualFragment(const USMItemDefinition* InItemDefinition) const
+const USMWorldVisualFragment* ASMBaseItemDropActor::FindWorldVisualFragment(
+	const USMItemDefinition* InItemDefinition) const
 {
-    return nullptr;
+	return nullptr;
 }

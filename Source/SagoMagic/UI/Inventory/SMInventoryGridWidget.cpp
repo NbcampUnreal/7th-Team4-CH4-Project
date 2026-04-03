@@ -15,14 +15,14 @@
 
 USMInventoryGridWidget::USMInventoryGridWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, InventoryComponent(nullptr)
-	, CellLayerPanel(nullptr)
-	, ItemLayerPanel(nullptr)
-	, GridWidth(0)
-	, GridHeight(0)
-	, HoveredGridX(-1)
-	, HoveredGridY(-1)
-	, ActiveDragDropOperation(nullptr)
+	  , InventoryComponent(nullptr)
+	  , CellLayerPanel(nullptr)
+	  , ItemLayerPanel(nullptr)
+	  , GridWidth(0)
+	  , GridHeight(0)
+	  , HoveredGridX(-1)
+	  , HoveredGridY(-1)
+	  , ActiveDragDropOperation(nullptr)
 {
 }
 
@@ -112,7 +112,8 @@ bool USMInventoryGridWidget::NativeOnDrop(
 	return bMoveSucceeded;
 }
 
-void USMInventoryGridWidget::InitializeGridWidget(const FGuid& InContainerId, USMInventoryComponent* InInventoryComponent)
+void USMInventoryGridWidget::InitializeGridWidget(const FGuid& InContainerId,
+                                                  USMInventoryComponent* InInventoryComponent)
 {
 	ContainerId = InContainerId;
 	InventoryComponent = InInventoryComponent;
@@ -208,7 +209,8 @@ bool USMInventoryGridWidget::CalculateDropGridPosition(
 	return true;
 }
 
-USMInventoryDragDropOperation* USMInventoryGridWidget::GetInventoryDragDropOperation(UDragDropOperation* InOperation) const
+USMInventoryDragDropOperation* USMInventoryGridWidget::GetInventoryDragDropOperation(
+	UDragDropOperation* InOperation) const
 {
 	return Cast<USMInventoryDragDropOperation>(InOperation);
 }

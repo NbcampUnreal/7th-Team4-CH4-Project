@@ -19,9 +19,9 @@
 UCLASS(Abstract, BlueprintType, EditInlineNew, DefaultToInstanced)
 class SAGOMAGIC_API USMItemFragment : public UObject
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    /** 기본 생성자 */
-    USMItemFragment() = default;
+	/** 기본 생성자 */
+	USMItemFragment() = default;
 };

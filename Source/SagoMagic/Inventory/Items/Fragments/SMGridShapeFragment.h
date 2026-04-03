@@ -20,26 +20,26 @@
 UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
 class SAGOMAGIC_API USMGridShapeFragment : public USMItemFragment
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    /** 기본 생성자 */
-    USMGridShapeFragment() = default;
+	/** 기본 생성자 */
+	USMGridShapeFragment() = default;
 
-    /** 모양 마스크 Getter */
-    const FSMGridMaskData& GetShapeMask() const
-    {
-        return ShapeMask;
-    }
+	/** 모양 마스크 Getter */
+	const FSMGridMaskData& GetShapeMask() const
+	{
+		return ShapeMask;
+	}
 
-    /** 모양 마스크 Setter */
-    void SetShapeMask(const FSMGridMaskData& InShapeMask)
-    {
-        ShapeMask = InShapeMask;
-    }
+	/** 모양 마스크 Setter */
+	void SetShapeMask(const FSMGridMaskData& InShapeMask)
+	{
+		ShapeMask = InShapeMask;
+	}
 
 public:
-    /** 모양 마스크 데이터 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Grid Shape Fragment")
-    FSMGridMaskData ShapeMask;
+	/** 모양 마스크 데이터 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Grid Shape Fragment")
+	FSMGridMaskData ShapeMask;
 };

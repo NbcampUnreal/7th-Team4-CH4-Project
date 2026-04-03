@@ -25,77 +25,77 @@ class USMItemDefinition;
 USTRUCT(BlueprintType)
 struct SAGOMAGIC_API FSMItemDropPayload
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    /** 기본 생성자 */
-    FSMItemDropPayload()
-        : ItemType(ESMItemType::None)
-        , Rotation(0)
-    {
-    }
+	/** 기본 생성자 */
+	FSMItemDropPayload()
+		: ItemType(ESMItemType::None)
+		  , Rotation(0)
+	{
+	}
 
-    /** 인스턴스 ID Getter */
-    const FGuid& GetInstanceId() const
-    {
-        return InstanceId;
-    }
+	/** 인스턴스 ID Getter */
+	const FGuid& GetInstanceId() const
+	{
+		return InstanceId;
+	}
 
-    /** 아이템 정의 Getter */
-    const TSoftObjectPtr<USMItemDefinition>& GetDefinition() const
-    {
-        return Definition;
-    }
+	/** 아이템 정의 Getter */
+	const TSoftObjectPtr<USMItemDefinition>& GetDefinition() const
+	{
+		return Definition;
+	}
 
-    /** 회전값 Getter */
-    int32 GetRotation() const
-    {
-        return Rotation;
-    }
+	/** 회전값 Getter */
+	int32 GetRotation() const
+	{
+		return Rotation;
+	}
 
-    /** 인스턴스 ID Setter */
-    void SetInstanceId(const FGuid& InInstanceId)
-    {
-        InstanceId = InInstanceId;
-    }
+	/** 인스턴스 ID Setter */
+	void SetInstanceId(const FGuid& InInstanceId)
+	{
+		InstanceId = InInstanceId;
+	}
 
-    /** 아이템 정의 Setter */
-    void SetDefinition(const TSoftObjectPtr<USMItemDefinition>& InDefinition)
-    {
-        Definition = InDefinition;
-    }
+	/** 아이템 정의 Setter */
+	void SetDefinition(const TSoftObjectPtr<USMItemDefinition>& InDefinition)
+	{
+		Definition = InDefinition;
+	}
 
-    /** 회전값 Setter */
-    void SetRotation(const int32 InRotation)
-    {
-        Rotation = InRotation;
-    }
-
-public:
-    /** Payload 유효성 검사 */
-    bool IsValidPayload() const
-    {
-        return InstanceId.IsValid() && !Definition.IsNull();
-    }
+	/** 회전값 Setter */
+	void SetRotation(const int32 InRotation)
+	{
+		Rotation = InRotation;
+	}
 
 public:
-    /** 드랍 대상 아이템 인스턴스 ID */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Drop")
-    FGuid InstanceId;
+	/** Payload 유효성 검사 */
+	bool IsValidPayload() const
+	{
+		return InstanceId.IsValid() && !Definition.IsNull();
+	}
 
-    /** 드랍 대상 아이템 종류 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Drop")
-    ESMItemType ItemType;
+public:
+	/** 드랍 대상 아이템 인스턴스 ID */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Drop")
+	FGuid InstanceId;
 
-    /** 드랍 대상 아이템 정의 에셋 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Drop")
-    TSoftObjectPtr<USMItemDefinition> Definition;
+	/** 드랍 대상 아이템 종류 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Drop")
+	ESMItemType ItemType;
 
-    /** 드랍 당시 회전 상태 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Drop")
-    int32 Rotation;
+	/** 드랍 대상 아이템 정의 에셋 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Drop")
+	TSoftObjectPtr<USMItemDefinition> Definition;
 
-    /** 내부 포함 아이템 인스턴스 ID 목록 */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Drop")
-    TArray<FGuid> NestedItemIds;
+	/** 드랍 당시 회전 상태 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Drop")
+	int32 Rotation;
+
+	/** 내부 포함 아이템 인스턴스 ID 목록 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Drop")
+	TArray<FGuid> NestedItemIds;
 };

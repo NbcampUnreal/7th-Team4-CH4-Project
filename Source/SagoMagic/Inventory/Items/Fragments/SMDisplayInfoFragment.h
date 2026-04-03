@@ -21,61 +21,61 @@
 UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
 class SAGOMAGIC_API USMDisplayInfoFragment : public USMItemFragment
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    /** 기본 생성자 */
-    USMDisplayInfoFragment()
-        : AccentColor(FLinearColor::White)
-    {
-    }
+	/** 기본 생성자 */
+	USMDisplayInfoFragment()
+		: AccentColor(FLinearColor::White)
+	{
+	}
 
-    /** 표시 이름 Getter */
-    const FText& GetDisplayName() const
-    {
-        return DisplayName;
-    }
+	/** 표시 이름 Getter */
+	const FText& GetDisplayName() const
+	{
+		return DisplayName;
+	}
 
-    /** 설명 Getter */
-    const FText& GetDescription() const
-    {
-        return Description;
-    }
+	/** 설명 Getter */
+	const FText& GetDescription() const
+	{
+		return Description;
+	}
 
-    /** 강조 색상 Getter */
-    const FLinearColor& GetAccentColor() const
-    {
-        return AccentColor;
-    }
+	/** 강조 색상 Getter */
+	const FLinearColor& GetAccentColor() const
+	{
+		return AccentColor;
+	}
 
-    /** 표시 이름 Setter */
-    void SetDisplayName(const FText& InDisplayName)
-    {
-        DisplayName = InDisplayName;
-    }
+	/** 표시 이름 Setter */
+	void SetDisplayName(const FText& InDisplayName)
+	{
+		DisplayName = InDisplayName;
+	}
 
-    /** 설명 Setter */
-    void SetDescription(const FText& InDescription)
-    {
-        Description = InDescription;
-    }
+	/** 설명 Setter */
+	void SetDescription(const FText& InDescription)
+	{
+		Description = InDescription;
+	}
 
-    /** 강조 색상 Setter */
-    void SetAccentColor(const FLinearColor& InAccentColor)
-    {
-        AccentColor = InAccentColor;
-    }
+	/** 강조 색상 Setter */
+	void SetAccentColor(const FLinearColor& InAccentColor)
+	{
+		AccentColor = InAccentColor;
+	}
 
 public:
-    /** 표시 이름 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Display Info Fragment")
-    FText DisplayName;
+	/** 표시 이름 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Display Info Fragment")
+	FText DisplayName;
 
-    /** 설명 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Display Info Fragment", meta=(MultiLine=true))
-    FText Description;
+	/** 설명 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Display Info Fragment", meta=(MultiLine=true))
+	FText Description;
 
-    /** 강조 색상 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Display Info Fragment")
-    FLinearColor AccentColor;
+	/** 강조 색상 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Display Info Fragment")
+	FLinearColor AccentColor;
 };

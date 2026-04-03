@@ -23,63 +23,63 @@
 UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
 class SAGOMAGIC_API USMDropRuleFragment : public USMItemFragment
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    /** 기본 생성자 */
-    USMDropRuleFragment()
-        : bCanDrop(true)
-        , bCanDestroy(true)
-        , bDropWithEmbeddedItems(true)
-    {
-    }
+	/** 기본 생성자 */
+	USMDropRuleFragment()
+		: bCanDrop(true)
+		  , bCanDestroy(true)
+		  , bDropWithEmbeddedItems(true)
+	{
+	}
 
-    /** 드랍 가능 여부 Getter */
-    bool CanDrop() const
-    {
-        return bCanDrop;
-    }
+	/** 드랍 가능 여부 Getter */
+	bool CanDrop() const
+	{
+		return bCanDrop;
+	}
 
-    /** 삭제 가능 여부 Getter */
-    bool CanDestroy() const
-    {
-        return bCanDestroy;
-    }
+	/** 삭제 가능 여부 Getter */
+	bool CanDestroy() const
+	{
+		return bCanDestroy;
+	}
 
-    /** 내부 장착물 포함 드랍 여부 Getter */
-    bool CanDropWithEmbeddedItems() const
-    {
-        return bDropWithEmbeddedItems;
-    }
+	/** 내부 장착물 포함 드랍 여부 Getter */
+	bool CanDropWithEmbeddedItems() const
+	{
+		return bDropWithEmbeddedItems;
+	}
 
-    /** 드랍 가능 여부 Setter */
-    void SetCanDrop(const bool bInCanDrop)
-    {
-        bCanDrop = bInCanDrop;
-    }
+	/** 드랍 가능 여부 Setter */
+	void SetCanDrop(const bool bInCanDrop)
+	{
+		bCanDrop = bInCanDrop;
+	}
 
-    /** 삭제 가능 여부 Setter */
-    void SetCanDestroy(const bool bInCanDestroy)
-    {
-        bCanDestroy = bInCanDestroy;
-    }
+	/** 삭제 가능 여부 Setter */
+	void SetCanDestroy(const bool bInCanDestroy)
+	{
+		bCanDestroy = bInCanDestroy;
+	}
 
-    /** 내부 장착물 포함 드랍 여부 Setter */
-    void SetDropWithEmbeddedItems(const bool bInDropWithEmbeddedItems)
-    {
-        bDropWithEmbeddedItems = bInDropWithEmbeddedItems;
-    }
+	/** 내부 장착물 포함 드랍 여부 Setter */
+	void SetDropWithEmbeddedItems(const bool bInDropWithEmbeddedItems)
+	{
+		bDropWithEmbeddedItems = bInDropWithEmbeddedItems;
+	}
 
 public:
-    /** 드랍 가능 여부 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Drop Rule Fragment")
-    bool bCanDrop;
+	/** 드랍 가능 여부 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Drop Rule Fragment")
+	bool bCanDrop;
 
-    /** 삭제 가능 여부 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Drop Rule Fragment")
-    bool bCanDestroy;
+	/** 삭제 가능 여부 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Drop Rule Fragment")
+	bool bCanDestroy;
 
-    /** 내부 장착물 포함 드랍 여부 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Drop Rule Fragment")
-    bool bDropWithEmbeddedItems;
+	/** 내부 장착물 포함 드랍 여부 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Drop Rule Fragment")
+	bool bDropWithEmbeddedItems;
 };

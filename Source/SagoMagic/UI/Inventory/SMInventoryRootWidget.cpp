@@ -6,73 +6,72 @@
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
 USMInventoryRootWidget::USMInventoryRootWidget(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
-    , PanelLayer(nullptr)
-    , InventoryComponent(nullptr)
-    , CurrentPanelWidget(nullptr)
+	: Super(ObjectInitializer)
+	  , PanelLayer(nullptr)
+	  , InventoryComponent(nullptr)
+	  , CurrentPanelWidget(nullptr)
 {
-
 }
 
 void USMInventoryRootWidget::NativeConstruct()
 {
-    Super::NativeConstruct();
+	Super::NativeConstruct();
 }
 
 void USMInventoryRootWidget::InitializeRootWidget(USMInventoryComponent* InInventoryComponent)
 {
-    InventoryComponent = InInventoryComponent;
-    CreateCurrentPanelWidget();
-    RefreshRootWidget();
+	InventoryComponent = InInventoryComponent;
+	CreateCurrentPanelWidget();
+	RefreshRootWidget();
 }
 
 USMPlayerInventoryPanelWidget* USMInventoryRootWidget::CreateCurrentPanelWidget()
 {
-    ClearCurrentPanelWidget();
+	ClearCurrentPanelWidget();
 
-    if (PlayerInventoryPanelWidgetClass == nullptr)
-    {
-        return nullptr;
-    }
+	if (PlayerInventoryPanelWidgetClass == nullptr)
+	{
+		return nullptr;
+	}
 
-    if (InventoryComponent == nullptr)
-    {
-        return nullptr;
-    }
+	if (InventoryComponent == nullptr)
+	{
+		return nullptr;
+	}
 
-    CurrentPanelWidget = CreateWidget<USMPlayerInventoryPanelWidget>(this, PlayerInventoryPanelWidgetClass);
-    if (CurrentPanelWidget == nullptr)
-    {
-        return nullptr;
-    }
+	CurrentPanelWidget = CreateWidget<USMPlayerInventoryPanelWidget>(this, PlayerInventoryPanelWidgetClass);
+	if (CurrentPanelWidget == nullptr)
+	{
+		return nullptr;
+	}
 
-    CurrentPanelWidget->InitializePanelWidget(InventoryComponent);
+	CurrentPanelWidget->InitializePanelWidget(InventoryComponent);
 
-    if (PanelLayer != nullptr)
-    {
-        PanelLayer->AddChild(CurrentPanelWidget);
-    }
+	if (PanelLayer != nullptr)
+	{
+		PanelLayer->AddChild(CurrentPanelWidget);
+	}
 
-    return CurrentPanelWidget;
+	return CurrentPanelWidget;
 }
 
 void USMInventoryRootWidget::ClearCurrentPanelWidget()
 {
-    if (CurrentPanelWidget == nullptr)
-    {
-        return;
-    }
+	if (CurrentPanelWidget == nullptr)
+	{
+		return;
+	}
 
-    CurrentPanelWidget->RemoveFromParent();
-    CurrentPanelWidget = nullptr;
+	CurrentPanelWidget->RemoveFromParent();
+	CurrentPanelWidget = nullptr;
 }
 
 void USMInventoryRootWidget::RefreshRootWidget()
 {
-    if (CurrentPanelWidget != nullptr)
-    {
-        CurrentPanelWidget->RefreshPanel();
-    }
+	if (CurrentPanelWidget != nullptr)
+	{
+		CurrentPanelWidget->RefreshPanel();
+	}
 
-    BP_OnRootWidgetRefreshed();
+	BP_OnRootWidgetRefreshed();
 }

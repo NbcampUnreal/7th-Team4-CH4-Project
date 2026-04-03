@@ -8,11 +8,11 @@
 
 USMItemWidget::USMItemWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, GridX(0)
-	, GridY(0)
-	, DisplayRotation(0)
-	, bDraggable(true)
-	, InventoryComponent(nullptr)
+	  , GridX(0)
+	  , GridY(0)
+	  , DisplayRotation(0)
+	  , bDraggable(true)
+	  , InventoryComponent(nullptr)
 {
 }
 
@@ -31,7 +31,8 @@ FReply USMItemWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const
 	return UWidgetBlueprintLibrary::DetectDragIfPressed(InMouseEvent, this, EKeys::LeftMouseButton).NativeReply;
 }
 
-void USMItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation)
+void USMItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
+                                         UDragDropOperation*& OutOperation)
 {
 	OutOperation = CreateDragDropOperation();
 }

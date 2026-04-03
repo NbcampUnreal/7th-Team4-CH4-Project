@@ -11,13 +11,12 @@
 
 USMPlayerInventoryPanelWidget::USMPlayerInventoryPanelWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, InventoryComponent(nullptr)
-	, MainInventoryGridWidget(nullptr)
-	, SkillInventoryWidget(nullptr)
-	, QuickSlotBarWidget(nullptr)
-	, ContextMenuWidget(nullptr)
+	  , InventoryComponent(nullptr)
+	  , MainInventoryGridWidget(nullptr)
+	  , SkillInventoryWidget(nullptr)
+	  , QuickSlotBarWidget(nullptr)
+	  , ContextMenuWidget(nullptr)
 {
-
 }
 
 void USMPlayerInventoryPanelWidget::NativeConstruct()

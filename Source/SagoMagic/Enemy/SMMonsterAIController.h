@@ -4,6 +4,7 @@
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
+#include "Perception/AIPerceptionTypes.h"
 #include "SMMonsterAIController.generated.h"
 
 UCLASS()
@@ -16,6 +17,12 @@ protected:
     virtual void OnPossess(APawn* InPawn) override;
 
 public:
+    UFUNCTION()
+    void OnTargetDetected(AActor* Actor, FAIStimulus Stimulus);
+
+    // AI Perception 컴포넌트 참조 (보통 생성자에서 생성)
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
+    class UAIPerceptionComponent* PerceptionComp;
 
     UPROPERTY(EditAnywhere, Category = "AI")
     class UBehaviorTree* BTAsset;

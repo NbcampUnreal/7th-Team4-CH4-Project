@@ -6,6 +6,8 @@
 #include "SMEnemyHPBarComponent.generated.h"
 
 
+class UAbilitySystemComponent;
+
 UCLASS()
 class SAGOMAGIC_API USMEnemyHPBarComponent : public UWidgetComponent
 {
@@ -33,5 +35,5 @@ private:
 
     /** 캐싱해둘 ASC 포인터 */
     UPROPERTY()
-    class UAbilitySystemComponent* ASC;
+    TObjectPtr<UAbilitySystemComponent> ASC;
 };

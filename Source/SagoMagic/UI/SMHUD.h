@@ -17,5 +17,5 @@ protected:
 	TSubclassOf<class USMHUDManager> HUDManagerClass;
 	
 	UPROPERTY()
-	class USMHUDManager* HUDManager;
+	TObjectPtr<class USMHUDManager> HUDManager;
 };

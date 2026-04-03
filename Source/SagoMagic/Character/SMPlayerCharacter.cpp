@@ -11,6 +11,8 @@
 #include "Core/SMPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameplayTags/Character/SMCharacterTag.h"
+#include "GameplayTags/Character/SMSkillTag.h"
 
 ASMPlayerCharacter::ASMPlayerCharacter()
 {
@@ -98,6 +100,22 @@ void ASMPlayerCharacter::Move(const FInputActionValue& Value)
 		AddMovementInput(FVector::ForwardVector, MovementVector.X);
 		AddMovementInput(FVector::RightVector, MovementVector.Y);
 	}
+}
+
+void ASMPlayerCharacter::Attack(const FInputActionValue& Value)
+{
+	if (!SMAbilitySystemComponent) return;
+	
+	FGameplayTag AttackTag = SMSkillTag::Ability_Skill_Projectile;
+	SMAbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
+}
+
+void ASMPlayerCharacter::Interact(const FInputActionValue& Value)
+{
+	if (!SMAbilitySystemComponent) return;
+	
+	FGameplayTag InteractTag = SMCharacterTag::Ability_Default_Interact;
+	SMAbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(InteractTag));
 }
 
 void ASMPlayerCharacter::BeginPlay()
@@ -224,6 +242,16 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		if (MoveAction)
 		{
 			EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
+		}
+		
+		if (AttackAction)
+		{
+			EIC->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::Attack);
+		}
+		
+		if (InteractAction)
+		{
+			EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &ThisClass::Interact);
 		}
 	}
 }

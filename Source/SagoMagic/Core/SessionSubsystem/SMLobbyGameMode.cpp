@@ -68,10 +68,8 @@ void ASMLobbyGameMode::TryStartGame()
 	if (PlayerList.IsEmpty() == true) return;
 	if (IsAllReady() == false) return;
 
-	FString URL = FString::Printf(
-		TEXT("/Game/Test/Maps/L_Play?MaxPlayers=%d"),
-		PlayerList.Num());
-
+	FString MaxPlayer = FString::Printf(TEXT("?MaxPlayers=%d"),PlayerList.Num());
+	FString URL = PlayMapRoot + MaxPlayer;
 	GetWorld()->ServerTravel(URL);
 }
 

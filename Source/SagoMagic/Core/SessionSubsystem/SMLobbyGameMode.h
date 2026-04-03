@@ -37,7 +37,10 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<APlayerController> HostController;
-
+	
+	UPROPERTY(EditDefaultsOnly, Category = "PlayMapRoot")
+	FString PlayMapRoot = TEXT("/Game/SagoMagic/Maps/L_Play");
+	
 	//방장을 제외한 모든 플레이어 ready확인
 	bool IsAllReady() const;
 	//방장 이탈시 새로운 호스트 임명

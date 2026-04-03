@@ -19,7 +19,7 @@ public:
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 protected:
     virtual void BeginPlay() override;
-    //virtual void PossessedBy(AController* NewController) override;
+    virtual void PossessedBy(AController* NewController) override;
 public:
     /** 몬스터 ASC 컴포넌트* */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")

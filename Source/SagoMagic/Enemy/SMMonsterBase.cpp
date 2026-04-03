@@ -29,18 +29,18 @@ void ASMMonsterBase::BeginPlay()
 	Super::BeginPlay();
 	
 }
-//void ASMMonsterBase::PossessedBy(AController* NewController)
-//{
-//    Super::PossessedBy(NewController);
-//
-//    // 서버에서 ASC 초기화
-//    if (MonsterAbilitySystemComponent)
-//    {
-//        MonsterAbilitySystemComponent->InitAbilityActorInfo(this, this);
-//    }
-//
-//    // 여기서 초기 스킬(Ability)을 부여하거나 스탯 기본값을 설정
-//}
+void ASMMonsterBase::PossessedBy(AController* NewController)
+{
+    Super::PossessedBy(NewController);
+
+    // 서버에서 ASC 초기화
+    if (MonsterAbilitySystemComponent)
+    {
+        MonsterAbilitySystemComponent->InitAbilityActorInfo(this, this);
+    }
+
+    // 여기서 초기 스킬(Ability)을 부여하거나 스탯 기본값을 설정
+}
 //void ASMMonsterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 //{
 //    Super::GetLifetimeReplicatedProps(OutLifetimeProps);

@@ -1,11 +1,13 @@
 ﻿#include "Inventory/World/SMBaseItemDropActor.h"
 
+#include "AssetDefinitionAssetInfo.h"
 #include "Net/UnrealNetwork.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Pawn.h"
 
 #include "Components/SMInteractionTargetComponent.h"
+#include "Inventory/Components/SMInventoryComponent.h"
 
 #include "Inventory/Items/Definitions/SMItemDefinition.h"
 #include "Inventory/Items/Fragments/SMWorldVisualFragment.h"
@@ -22,7 +24,8 @@ ASMBaseItemDropActor::ASMBaseItemDropActor()
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
 	StaticMeshComponent->SetupAttachment(RootSceneComponent);
 
-	InteractionTargetComponent = CreateDefaultSubobject<USMInteractionTargetComponent>(TEXT("InteractionTargetComponent"));
+	InteractionTargetComponent = CreateDefaultSubobject<USMInteractionTargetComponent>(
+		TEXT("InteractionTargetComponent"));
 
 	if (InteractionTargetComponent != nullptr)
 	{
@@ -50,12 +53,20 @@ void ASMBaseItemDropActor::InitializeFromPayload(const FSMItemDropPayload& InIte
 	ItemDropPayload = InItemDropPayload;
 	bInitialized = HasValidPayload();
 
-	ApplyWorldVisual();
+	if (bInitialized)
+	{
+		ApplyWorldVisual();
+	}
 	RefreshInteractionState();
 }
 
 void ASMBaseItemDropActor::HandleInteract(APawn* InInteractingPawn)
 {
+	if (HasAuthority() == false)
+	{
+		return;
+	}
+
 	if (InInteractingPawn == nullptr)
 	{
 		return;
@@ -66,14 +77,28 @@ void ASMBaseItemDropActor::HandleInteract(APawn* InInteractingPawn)
 		return;
 	}
 
-	/**
-	 * TODO:
-	 * 여기에서 InInteractingPawn 기준으로
-	 * PlayerController / PlayerState / InventoryComponent를 찾아
-	 * AddItemFromDropPayload(ItemDropPayload)를 호출합니다.
-	 *
-	 * 성공 시 이 액터를 Destroy() 처리합니다.
-	 */
+	APlayerState* InteractingPlayerState = InInteractingPawn->GetPlayerState();
+	if (InteractingPlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = InInteractingPawn->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+	
+	const FGuid AddedItemInstanceId = InventoryComponent->AddItemFromDropPayload(ItemDropPayload);
+	if (AddedItemInstanceId.IsValid() == false)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Guid for current item is invalid. can't get item from actor %s"), *InventoryComponent->GetName());
+		return;
+	}
+	
+	UE_LOG(LogTemp, Log, TEXT("Successfully added item from drop payload to inventory. ItemInstanceId: %s"), *AddedItemInstanceId.ToString());
+	Destroy();
+
 }
 
 void ASMBaseItemDropActor::OnRep_ItemDropPayload()
@@ -140,7 +165,8 @@ bool ASMBaseItemDropActor::HasValidPayload() const
 	return ItemDropPayload.IsValidPayload();
 }
 
-const USMWorldVisualFragment* ASMBaseItemDropActor::FindWorldVisualFragment(const USMItemDefinition* InItemDefinition) const
+const USMWorldVisualFragment* ASMBaseItemDropActor::FindWorldVisualFragment(
+	const USMItemDefinition* InItemDefinition) const
 {
 	if (InItemDefinition == nullptr)
 	{

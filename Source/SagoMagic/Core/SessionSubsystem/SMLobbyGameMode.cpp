@@ -3,6 +3,8 @@
 
 #include "SMLobbyGameMode.h"
 
+#include "SMLobbyGameState.h"
+#include "SMPlayerSlotInfo.h"
 #include "Core/SMPlayerState.h"
 
 ASMLobbyGameMode::ASMLobbyGameMode()
@@ -66,9 +68,11 @@ void ASMLobbyGameMode::TryStartGame()
     if (PlayerList.IsEmpty() == true) return;
     if (IsAllReady() == false) return;
 
-    //TODO: GameInstance에 로비정보 저장? --> 회의 이후 결정
+    FString URL = FString::Printf(
+        TEXT("/Game/Maps/L_Play?Listen?MaxPlayers=%d"),
+        PlayerList.Num());
 
-    GetWorld()->ServerTravel(TEXT("/Game/Maps/L_Play?listen"));
+    GetWorld()->ServerTravel(URL);
 
 }
 
@@ -107,12 +111,35 @@ void ASMLobbyGameMode::AssignNewHost()
 
 void ASMLobbyGameMode::UpdateLobbyState()
 {
-    //TODO:GameState 생성후 GameState를 통해 로비 정보 업데이트
+    ASMLobbyGameState* GS = GetLobbyGameState();
+    if (IsValid(GS) == false) return;
+
+    TArray<FSMPlayerSlotInfo> PlayerSlots;
+
+    for (APlayerController* PC : PlayerList)
+    {
+        ASMPlayerState* PS = GetSMPlayerState(PC);
+        if (IsValid(PS) == false) continue;
+
+        FSMPlayerSlotInfo SlotInfo;
+        SlotInfo.PlayerName = PS->GetPlayerName();
+        //TODO:PlayerState작성 이후 추가
+        //SlotInfo.bIsReady = PS->GetIsReady();
+        //SlotInfo.bIsHost = PS->GetIsHost();
+        PlayerSlots.Add(SlotInfo);
+    }
+
+    GS->UpdatePlayerSlots(PlayerSlots);
 }
 
 ASMPlayerState* ASMLobbyGameMode::GetSMPlayerState(APlayerController* PC) const
 {
     if (IsValid(PC) == false) return nullptr;
     return PC->GetPlayerState<ASMPlayerState>();
+}
+
+ASMLobbyGameState* ASMLobbyGameMode::GetLobbyGameState() const
+{
+    return GetGameState<ASMLobbyGameState>();
 }
 

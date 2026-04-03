@@ -6,8 +6,9 @@
 #include "GameFramework/GameModeBase.h"
 #include "SMLobbyGameMode.generated.h"
 
-class USMGameInstance;
+
 class ASMPlayerState;
+class ASMLobbyGameState;
 /**
  *로비 전용 게임모드 입니다.
  *플레이어의 로그인, 레디, 게임시작을 처리합니다.
@@ -45,6 +46,5 @@ protected:
     void UpdateLobbyState();
 
     ASMPlayerState* GetSMPlayerState(APlayerController* PC) const;
-    //TODO:SMLobbyGameState생성 및 연결
-    //ASMLobbyGamesState* GetSMLobbyGameState() const;
+    ASMLobbyGameState* GetLobbyGameState() const;
 };

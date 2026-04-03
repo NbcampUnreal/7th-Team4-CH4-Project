@@ -8,16 +8,6 @@
 
 #include "SMPlayerAttributeSet.generated.h"
 
-// AttributeSet 클래스가 2개 이상일때 방어코드
-// TODO: 추후에 영택님이랑 상의 후 `SagoMagic.h`에 매크로 정의 하는 방향으로 논의
-#ifndef ATTRIBUTE_ACCESSORS
-#define ATTRIBUTE_ACCESSORS(ClassName,PropertyName)\
-GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName,PropertyName)\
-GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName)\
-GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName)\
-GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
-#endif
-
 /**
  * 플레이어의 스탯을 관리하는 AttributeSet
  */

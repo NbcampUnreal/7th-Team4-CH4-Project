@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -19,14 +19,14 @@ public:
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 protected:
     virtual void BeginPlay() override;
-    virtual void PossessedBy(AController* NewController) override;
+    //virtual void PossessedBy(AController* NewController) override;
 public:
     /** 몬스터 ASC 컴포넌트* */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
-    class UAbilitySystemComponent* MonsterAbilitySystemComponent;
+    TObjectPtr<UAbilitySystemComponent> MonsterAbilitySystemComponent;
 
     /** 몬스터.능력치 세트(HP, MaxHP등등)**/
     UPROPERTY()
-    class USMMonsterAttributeSet* MonsterAttributeSet;
+    TObjectPtr<USMMonsterAttributeSet> MonsterAttributeSet;
 };
 

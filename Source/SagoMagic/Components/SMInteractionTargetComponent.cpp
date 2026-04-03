@@ -4,6 +4,7 @@
 #include "Materials/MaterialInterface.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Actor.h"
+#include "Inventory/World/SMBaseItemDropActor.h"
 
 USMInteractionTargetComponent::USMInteractionTargetComponent()
 	: bInteractionEnabled(true)
@@ -86,6 +87,11 @@ void USMInteractionTargetComponent::HandleOwnerInteract(APawn* InInteractingPawn
 		return;
 	}
 
+	if (ASMBaseItemDropActor* DropActor = Cast<ASMBaseItemDropActor>(OwnerActor))
+	{
+		DropActor->HandleInteract(InInteractingPawn);
+	}
+	
 	/**
 	 * TODO:
 	 * 여기에서 GetOwner() 기준 else if 분기로 실제 상호작용을 연결합니다.

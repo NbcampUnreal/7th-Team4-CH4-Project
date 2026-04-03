@@ -14,7 +14,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSMplayerSlotChanged);
  * 로비 게임 스테이트
  */
 UCLASS()
-class SAGOMAGIC_API ASMLobbyGameState : public AGameState
+class SAGOMAGIC_API ASMLobbyGameState : public AGameStateBase
 {
 	GENERATED_BODY()
 

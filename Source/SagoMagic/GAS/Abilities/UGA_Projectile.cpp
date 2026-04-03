@@ -1,8 +1,11 @@
 ﻿#include "UGA_Projectile.h"
+#include "SkillActor/SMASkillProjectile.h"
+
+
 
 UGA_Projectile::UGA_Projectile()
 {
-    ProjectileClass = SMASkillProjectile::StaticClass();
+    ProjectileClass = ASMASkillProjectile::StaticClass();
 }
 
 void UGA_Projectile::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
@@ -23,10 +26,10 @@ void UGA_Projectile::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
     //에디터에서 설정한 클래스 사용
-    ASkillProjectile* Proj = World->SpawnActor<ASkillProjectile>(ProjectileClass, SpawnLocation, CurrentAimDirection.Rotation(), Params);
+    ASMASkillProjectile* Proj = World->SpawnActor<ASMASkillProjectile>(ProjectileClass, SpawnLocation, CurrentAimDirection.Rotation(), Params);
 
     if (Proj)
     {
-        Proj->InitProjectile(BaseDamage, RangeCm, CurrentAimDirection,Avatar, Avatar->GetController(), DamageEffectClass);
+        Proj->InitProjectile(BaseDamage, RangeCm, CurrentAimDirection,Avatar, Avatar->GetController());
     }
 }

@@ -1,10 +1,11 @@
-\# .github/copilot-instructions.md
+# [IMPORTANT] Copilot Code Review Language Rules
 
+When performing a code review, respond only in Korean.
 
+Do not use English for explanations, findings, summaries, or suggestions.
 
-When performing a code review, respond in Korean, this includes not just code review summary but also all of the comments. all of contributors here is korean, so you must respond in korean so everyone can understand it
+Use English only when it is unavoidable for code, identifiers, filenames, API names, commands, logs, or exact error messages.
 
-Keep review comments concise and actionable.
+If a review comment includes English prose, rewrite that prose in Korean.
 
-Prefer concrete suggestions over generic feedback.
-
+Keep comments short, direct, and actionable.

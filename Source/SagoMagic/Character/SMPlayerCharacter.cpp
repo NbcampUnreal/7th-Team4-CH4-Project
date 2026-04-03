@@ -102,7 +102,7 @@ void ASMPlayerCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
-void ASMPlayerCharacter::Attack(const FInputActionValue& Value)
+void ASMPlayerCharacter::Attack()
 {
 	if (!SMAbilitySystemComponent) return;
 	
@@ -110,7 +110,7 @@ void ASMPlayerCharacter::Attack(const FInputActionValue& Value)
 	SMAbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
 }
 
-void ASMPlayerCharacter::Interact(const FInputActionValue& Value)
+void ASMPlayerCharacter::Interact()
 {
 	if (!SMAbilitySystemComponent) return;
 	

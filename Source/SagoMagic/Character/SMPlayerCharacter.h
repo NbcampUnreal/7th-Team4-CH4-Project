@@ -99,7 +99,7 @@ public:
 protected:
 	void Move(const FInputActionValue& Value);
 	
-	void Attack(const FInputActionValue& Value);
+	void Attack();
 	
-	void Interact(const FInputActionValue& Value);
+	void Interact();
 };

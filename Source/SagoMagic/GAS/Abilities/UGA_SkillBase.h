@@ -5,6 +5,7 @@
 #include "Abilities/GameplayAbility.h"
 #include "UGA_SkillBase.generated.h"
 
+class UGameplayEffect;
 
 UCLASS()
 class SAGOMAGIC_API UGA_SkillBase : public UGameplayAbility
@@ -52,6 +53,9 @@ protected:
     /** 쿨타임 0.5초로 설정*/
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SagoMagic|Stats")
     float CooldownSeconds= 0.5f;
+    
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
+    TSubclassOf<UGameplayEffect> DamageEffectClass;
 
     FVector CurrentAimOrigin = FVector::ZeroVector;
     FVector CurrentAimDirection = FVector::ForwardVector;

@@ -36,10 +36,7 @@ protected:
 
     //스킬효과 서버
     virtual void OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo){}
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
-    FGameplayTag SkillTag;
-
+    
     /** 쿨다운중 쿨다운 재발동 차단용 ex) Cooldown.Skill.Projectile */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
     FGameplayTag CooldownTag;
@@ -49,7 +46,7 @@ protected:
     float BaseDamage = 30.f;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SagoMagic|Stats")
-    float RangeCm = 300.f;
+    float RangeCm = 3000.f;
     /** 쿨타임 0.5초로 설정*/
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SagoMagic|Stats")
     float CooldownSeconds= 0.5f;

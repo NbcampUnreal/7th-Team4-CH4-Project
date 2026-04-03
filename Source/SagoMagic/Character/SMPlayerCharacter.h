@@ -7,6 +7,7 @@
 #include "GameFramework/Character.h"
 #include "SMPlayerCharacter.generated.h"
 
+class USMInteractionScannerComponent;
 class USMAbilitySystemComponent;
 class UGameplayAbility;
 class USMPlayerAttributeSet;
@@ -29,6 +30,10 @@ class SAGOMAGIC_API ASMPlayerCharacter : public ACharacter, public IAbilitySyste
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> CameraComp;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USMInteractionScannerComponent> InteractionScannerComp;
+	
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Input")
@@ -65,6 +70,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Attributes")
 	USMPlayerAttributeSet* GetAttributeSet() const;
+	
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	USMInteractionScannerComponent* GetInteractionScanner() const { return InteractionScannerComp; }
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 	

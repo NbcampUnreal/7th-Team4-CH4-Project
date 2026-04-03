@@ -10,7 +10,7 @@
 ASMLobbyGameMode::ASMLobbyGameMode()
 {
 	PlayerStateClass = ASMPlayerState::StaticClass();
-	//GameStateClass = ASMLobbyGameState::StaticClass();
+	GameStateClass = ASMLobbyGameState::StaticClass();
 	bUseSeamlessTravel = true;
 }
 
@@ -25,8 +25,10 @@ void ASMLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 
 	//첫 번째 접속자를 방장으로 지정
 	//bIsHost는 Replicated이므로 클라이언트에 자동 전파
-	//PS->bIsHost = PlayerList.Num() == 1;
-	//PS-> bISReady = false;
+	NewPlayerState->bIsHost = PlayerList.Num() == 1;
+	NewPlayerState->bIsReady = false;
+	FString NewPlayerName = FString::Printf(TEXT("Player %d"),PlayerList.Num());
+	NewPlayerState->SetPlayerName(NewPlayerName);
 
 	if (PlayerList.Num() == 1)
 	{
@@ -56,8 +58,7 @@ void ASMLobbyGameMode::SetPlayerReady(APlayerController* PC, bool bReady)
 {
 	ASMPlayerState* PS = GetSMPlayerState(PC);
 	if (IsValid(PS) == false) return;
-
-	//PS->bIsReady = bReady;
+	PS->bIsReady = bReady;
 
 	UpdateLobbyState();
 }
@@ -68,7 +69,7 @@ void ASMLobbyGameMode::TryStartGame()
 	if (IsAllReady() == false) return;
 
 	FString URL = FString::Printf(
-		TEXT("/Game/Maps/L_Play?Listen?MaxPlayers=%d"),
+		TEXT("/Game/Test/Maps/L_Play?MaxPlayers=%d"),
 		PlayerList.Num());
 
 	GetWorld()->ServerTravel(URL);
@@ -83,9 +84,9 @@ bool ASMLobbyGameMode::IsAllReady() const
 		ASMPlayerState* PS = GetSMPlayerState(PC);
 		if (IsValid(PS) == false) return false;
 
-		//TODO:PlayerState에서 호스트 판별 및 Ready 상태 체크
-		//if(PS->GetIsHost()) continue;
-		//if(PS->GetIsReady()) return false;
+		if (PS->GetIsHost()) continue;
+
+		if (PS->GetIsReady() == false) return false;
 	}
 
 	return true;
@@ -102,8 +103,7 @@ void ASMLobbyGameMode::AssignNewHost()
 	ASMPlayerState* PS = GetSMPlayerState(HostController);
 	if (IsValid(PS) == true)
 	{
-		//TODO: PlayerState에 host 설정
-		//PS->bIsHost = true;
+		PS->bIsHost = true;
 	}
 }
 
@@ -121,9 +121,8 @@ void ASMLobbyGameMode::UpdateLobbyState()
 
 		FSMPlayerSlotInfo SlotInfo;
 		SlotInfo.PlayerName = PS->GetPlayerName();
-		//TODO:PlayerState작성 이후 추가
-		//SlotInfo.bIsReady = PS->GetIsReady();
-		//SlotInfo.bIsHost = PS->GetIsHost();
+		SlotInfo.bIsReady = PS->GetIsReady();
+		SlotInfo.bIsHost = PS->GetIsHost();
 		PlayerSlots.Add(SlotInfo);
 	}
 

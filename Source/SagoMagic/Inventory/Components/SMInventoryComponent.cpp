@@ -49,6 +49,11 @@ FGuid USMInventoryComponent::AddItemFromDefinition(const TSoftObjectPtr<USMItemD
 	return FGuid();
 }
 
+FGuid USMInventoryComponent::AddItemFromDropPayload(const FSMItemDropPayload& InDropPayload)
+{
+	return FGuid();
+}
+
 bool USMInventoryComponent::RemoveItem(const FGuid& InItemInstanceId)
 {
 	/** TODO: 아이템 제거 처리 */

@@ -79,6 +79,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Inventory")
 	FGuid AddItemFromDefinition(const TSoftObjectPtr<USMItemDefinition>& InItemDefinition);
 
+	/** 아이템 드랍 페이로드 기반 아이템 추가 요청	*/
+	UFUNCTION(BlueprintCallable, Category="Inventory")
+	FGuid AddItemFromDropPayload(const FSMItemDropPayload& InDropPayload);
+	
 	/** 아이템 제거 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory")
 	bool RemoveItem(const FGuid& InItemInstanceId);

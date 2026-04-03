@@ -28,11 +28,18 @@ void USMPlayerHPBarWidget::NativeConstruct()
 			
 			UpdateHPText(CachedCurrentHP, CachedMaxHP);
 			
-			if (CachedCurrentHP > 0.0f)
+			if (CachedMaxHP > 0.0f)
 			{
-				TargetPercent = CachedCurrentHP / CachedMaxHP;
-				CurrentPercent = TargetPercent;
-				if (ProgressBar_PlayerHP) ProgressBar_PlayerHP->SetPercent(CurrentPercent);
+				TargetPercent = FMath::Clamp(CachedCurrentHP / CachedMaxHP, 0.0f, 1.0f);
+			}
+			else
+			{
+				TargetPercent = 0.0f;
+			}
+			CurrentPercent = TargetPercent;
+			if (ProgressBar_PlayerHP)
+			{
+				ProgressBar_PlayerHP->SetPercent(CurrentPercent);
 			}
 		}
 	}
@@ -89,6 +96,10 @@ void USMPlayerHPBarWidget::OnHealthChanged(const FOnAttributeChangeData& Data)
 	if (CachedMaxHP > 0.0f)
 	{
 		TargetPercent = FMath::Clamp(CachedCurrentHP / CachedMaxHP, 0.0f, 1.0f);
+	}
+	else
+	{
+		TargetPercent = 0.0f;
 	}
 
 	UpdateHPText(CachedCurrentHP, CachedMaxHP);

@@ -69,8 +69,6 @@ void USMLobbyWidget::OnReadyButtonClicked()
 
 void USMLobbyWidget::OnStartButtonClicked()
 {
-	StartButton->SetIsEnabled(false);
-
 	// Server RPC → LobbyGameMode.TryStartGame() 호출
 	ASMPlayerController* PC = GetSMPlayerController();
 	if (IsValid(PC) == true)

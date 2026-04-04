@@ -101,7 +101,7 @@ public:
 
 	/** 아이템 회전값 직접 설정 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory")
-	bool SetItemRotation(const FGuid& InItemInstanceId, int32 InRotation);
+	bool SetItemRotation(const FGuid& InItemInstanceId, ESMGridRotation InRotation);
 
 	/** 배치 가능 여부 검사 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory")
@@ -206,7 +206,7 @@ protected:
 
 private:
 	/** 점유 셀 계산 */
-	bool BuildOccupiedCells(const FGuid& InItemInstanceId, int32 InGridX, int32 InGridY, int32 InRotation,
+	bool BuildOccupiedCells(const FGuid& InItemInstanceId, int32 InGridX, int32 InGridY, ESMGridRotation InRotation,
 	                        TArray<FIntPoint>& OutOccupiedCells) const;
 
 	/** 컨테이너 충돌 여부 검사 */

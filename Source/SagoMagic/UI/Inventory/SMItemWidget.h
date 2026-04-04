@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Inventory/Core/SMInventoryCoreTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "SMItemWidget.generated.h"
 
@@ -71,7 +72,7 @@ public:
 	}
 
 	/** 현재 표시 회전값 Getter */
-	int32 GetDisplayRotation() const
+	ESMGridRotation GetDisplayRotation() const
 	{
 		return DisplayRotation;
 	}
@@ -113,7 +114,7 @@ public:
 	}
 
 	/** 현재 표시 회전값 Setter */
-	void SetDisplayRotation(const int32 InDisplayRotation)
+	void SetDisplayRotation(const ESMGridRotation InDisplayRotation)
 	{
 		DisplayRotation = InDisplayRotation;
 	}
@@ -138,7 +139,7 @@ public:
 		const FGuid& InOwningContainerId,
 		int32 InGridX,
 		int32 InGridY,
-		int32 InDisplayRotation,
+		ESMGridRotation InDisplayRotation,
 		USMInventoryComponent* InInventoryComponent);
 
 	/** 인벤토리 데이터 기준 갱신 요청 */
@@ -183,7 +184,7 @@ protected:
 
 	/** 현재 표시 회전값 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Item Widget")
-	int32 DisplayRotation;
+	ESMGridRotation DisplayRotation;
 
 	/** 드래그 가능 여부 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Inventory Item Widget")

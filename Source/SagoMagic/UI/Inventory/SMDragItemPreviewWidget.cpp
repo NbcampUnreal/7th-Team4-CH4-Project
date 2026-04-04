@@ -2,12 +2,12 @@
 
 USMDragItemPreviewWidget::USMDragItemPreviewWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	  , PreviewRotation(0)
+	  , PreviewRotation(ESMGridRotation::Rot0)
 	  , bCanPlaceOnCurrentCell(false)
 {
 }
 
-void USMDragItemPreviewWidget::InitializePreview(const FGuid& InItemInstanceId, int32 InPreviewRotation)
+void USMDragItemPreviewWidget::InitializePreview(const FGuid& InItemInstanceId, ESMGridRotation InPreviewRotation)
 {
 	ItemInstanceId = InItemInstanceId;
 	PreviewRotation = InPreviewRotation;
@@ -16,7 +16,7 @@ void USMDragItemPreviewWidget::InitializePreview(const FGuid& InItemInstanceId, 
 	BP_OnPreviewDataChanged();
 }
 
-void USMDragItemPreviewWidget::UpdatePreviewRotation(int32 InPreviewRotation)
+void USMDragItemPreviewWidget::UpdatePreviewRotation(ESMGridRotation InPreviewRotation)
 {
 	PreviewRotation = InPreviewRotation;
 

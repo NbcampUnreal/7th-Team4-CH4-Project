@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Inventory/Core/SMInventoryCoreTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "SMDragItemPreviewWidget.generated.h"
 
@@ -35,7 +36,7 @@ public:
 	}
 
 	/** 현재 회전값 Getter */
-	int32 GetPreviewRotation() const
+	ESMGridRotation GetPreviewRotation() const
 	{
 		return PreviewRotation;
 	}
@@ -53,7 +54,7 @@ public:
 	}
 
 	/** 현재 회전값 Setter */
-	void SetPreviewRotation(const int32 InPreviewRotation)
+	void SetPreviewRotation(const ESMGridRotation InPreviewRotation)
 	{
 		PreviewRotation = InPreviewRotation;
 	}
@@ -67,11 +68,11 @@ public:
 public:
 	/** 미리보기 데이터 초기화 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Drag Preview")
-	void InitializePreview(const FGuid& InItemInstanceId, int32 InPreviewRotation);
+	void InitializePreview(const FGuid& InItemInstanceId, ESMGridRotation InPreviewRotation);
 
 	/** 미리보기 회전값 갱신 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Drag Preview")
-	void UpdatePreviewRotation(int32 InPreviewRotation);
+	void UpdatePreviewRotation(ESMGridRotation InPreviewRotation);
 
 	/** 현재 배치 가능 여부 갱신 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Drag Preview")
@@ -93,7 +94,7 @@ protected:
 
 	/** 현재 미리보기 회전값 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Drag Preview")
-	int32 PreviewRotation;
+	ESMGridRotation PreviewRotation;
 
 	/** 현재 배치 가능 여부 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Drag Preview")

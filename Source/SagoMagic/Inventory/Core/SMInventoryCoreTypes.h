@@ -10,6 +10,7 @@
  * 포함 내용:
  * - 아이템 종류 Enum
  * - 컨테이너 종류 Enum
+ * - 그리드 회전 종류 Enum
  * - 젬 효과 종류 Enum
  * - 비트마스크 기반 그리드 모양 데이터 Struct
  *
@@ -35,6 +36,16 @@ enum class ESMContainerType : uint8
 	SkillInternal UMETA(DisplayName="SkillInternal"),
 	QuickSlot UMETA(DisplayName="QuickSlot"),
 	WorldDrop UMETA(DisplayName="WorldDrop")
+};
+
+/** 그리드 회전 상태 구분 enum */
+UENUM(BlueprintType)
+enum class ESMGridRotation : uint8
+{
+	Rot0 UMETA(DisplayName="Rot0"),
+	Rot90 UMETA(DisplayName="Rot90"),
+	Rot180 UMETA(DisplayName="Rot180"),
+	Rot270 UMETA(DisplayName="Rot270")
 };
 
 /** 젬 효과 종류 구분 enum */

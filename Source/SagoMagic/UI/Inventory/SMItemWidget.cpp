@@ -10,7 +10,7 @@ USMItemWidget::USMItemWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	  , GridX(0)
 	  , GridY(0)
-	  , DisplayRotation(0)
+	  , DisplayRotation(ESMGridRotation::Rot0)
 	  , bDraggable(true)
 	  , InventoryComponent(nullptr)
 {
@@ -42,7 +42,7 @@ void USMItemWidget::InitializeItemWidget(
 	const FGuid& InOwningContainerId,
 	int32 InGridX,
 	int32 InGridY,
-	int32 InDisplayRotation,
+	ESMGridRotation InDisplayRotation,
 	USMInventoryComponent* InInventoryComponent)
 {
 	ItemInstanceId = InItemInstanceId;

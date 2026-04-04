@@ -243,7 +243,7 @@ bool USMInventoryComponent::RotateItem(const FGuid& InItemInstanceId)
 	return false;
 }
 
-bool USMInventoryComponent::SetItemRotation(const FGuid& InItemInstanceId, int32 InRotation)
+bool USMInventoryComponent::SetItemRotation(const FGuid& InItemInstanceId, ESMGridRotation InRotation)
 {
 	/** TODO: 회전값 직접 설정 처리 */
 	return false;
@@ -259,7 +259,7 @@ bool USMInventoryComponent::CanPlaceItem(const FGuid& InItemInstanceId, const FG
 	}
 
 	const FSMItemInstanceData* ItemData = FindItem(InItemInstanceId);
-	int32 RotationToUse = 0;
+	ESMGridRotation RotationToUse = ESMGridRotation::Rot0;
 
 	if (ItemData != nullptr)
 	{
@@ -587,7 +587,7 @@ bool USMInventoryComponent::CanApplyGemToSkillByTags(const USMGemModifierFragmen
 }
 
 bool USMInventoryComponent::BuildOccupiedCells(const FGuid& InItemInstanceId, int32 InGridX, int32 InGridY,
-                                               int32 InRotation, TArray<FIntPoint>& OutOccupiedCells) const
+                                               ESMGridRotation InRotation, TArray<FIntPoint>& OutOccupiedCells) const
 {
 	OutOccupiedCells.Reset();
 
@@ -623,8 +623,6 @@ bool USMInventoryComponent::BuildOccupiedCells(const FGuid& InItemInstanceId, in
 		return false;
 	}
 
-	const int32 NormalizedRotation = ((InRotation % 4) + 4) % 4;
-
 	for (int32 Y = 0; Y < ShapeMask.Height; ++Y)
 	{
 		for (int32 X = 0; X < ShapeMask.Width; ++X)
@@ -643,27 +641,30 @@ bool USMInventoryComponent::BuildOccupiedCells(const FGuid& InItemInstanceId, in
 			int32 RotatedX = X;
 			int32 RotatedY = Y;
 
-			switch (NormalizedRotation)
+			switch (InRotation)
 			{
-			case 0:
+			case ESMGridRotation::Rot0:
 				RotatedX = X;
 				RotatedY = Y;
 				break;
 
-			case 1:
+			case ESMGridRotation::Rot90:
 				RotatedX = ShapeMask.Height - 1 - Y;
 				RotatedY = X;
 				break;
 
-			case 2:
+			case ESMGridRotation::Rot180:
 				RotatedX = ShapeMask.Width - 1 - X;
 				RotatedY = ShapeMask.Height - 1 - Y;
 				break;
 
-			case 3:
+			case ESMGridRotation::Rot270:
 				RotatedX = Y;
 				RotatedY = ShapeMask.Width - 1 - X;
 				break;
+
+			default:
+				return false;
 			}
 
 			OutOccupiedCells.Add(FIntPoint(InGridX + RotatedX, InGridY + RotatedY));
@@ -679,7 +680,7 @@ bool USMInventoryComponent::HasPlacementConflict(const FGuid& InItemInstanceId, 
 	TArray<FIntPoint> TargetCells;
 
 	const FSMItemInstanceData* ItemData = FindItem(InItemInstanceId);
-	int32 RotationToUse = 0;
+	ESMGridRotation RotationToUse = ESMGridRotation::Rot0;
 
 	if (ItemData != nullptr)
 	{

@@ -5,8 +5,8 @@
 USMInventoryDragDropOperation::USMInventoryDragDropOperation()
 	: SourceGridX(0)
 	  , SourceGridY(0)
-	  , StartRotation(0)
-	  , CurrentRotation(0)
+	  , StartRotation(ESMGridRotation::Rot0)
+	  , CurrentRotation(ESMGridRotation::Rot0)
 	  , DragPreviewWidget(nullptr)
 {
 }
@@ -16,7 +16,7 @@ void USMInventoryDragDropOperation::InitializeOperation(
 	const FGuid& InSourceContainerId,
 	int32 InSourceGridX,
 	int32 InSourceGridY,
-	int32 InStartRotation,
+	ESMGridRotation InStartRotation,
 	USMDragItemPreviewWidget* InDragPreviewWidget)
 {
 	ItemInstanceId = InItemInstanceId;
@@ -28,7 +28,7 @@ void USMInventoryDragDropOperation::InitializeOperation(
 	DragPreviewWidget = InDragPreviewWidget;
 }
 
-void USMInventoryDragDropOperation::UpdateCurrentRotation(int32 InCurrentRotation)
+void USMInventoryDragDropOperation::UpdateCurrentRotation(ESMGridRotation InCurrentRotation)
 {
 	CurrentRotation = InCurrentRotation;
 }

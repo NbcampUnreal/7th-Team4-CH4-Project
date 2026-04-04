@@ -136,8 +136,30 @@ void USMInventoryGridWidget::RequestRotateDraggedItem()
 		return;
 	}
 
-	const int32 CurrentRotation = ActiveDragDropOperation->GetCurrentRotation();
-	const int32 NextRotation = (CurrentRotation + 1) % 4;
+	const ESMGridRotation CurrentRotation = ActiveDragDropOperation->GetCurrentRotation();
+	ESMGridRotation NextRotation = ESMGridRotation::Rot0;
+
+	switch (CurrentRotation)
+	{
+	case ESMGridRotation::Rot0:
+		NextRotation = ESMGridRotation::Rot90;
+		break;
+
+	case ESMGridRotation::Rot90:
+		NextRotation = ESMGridRotation::Rot180;
+		break;
+
+	case ESMGridRotation::Rot180:
+		NextRotation = ESMGridRotation::Rot270;
+		break;
+
+	case ESMGridRotation::Rot270:
+		NextRotation = ESMGridRotation::Rot0;
+		break;
+
+	default:
+		return;
+	}
 
 	ActiveDragDropOperation->UpdateCurrentRotation(NextRotation);
 

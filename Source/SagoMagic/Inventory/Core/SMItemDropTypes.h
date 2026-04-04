@@ -31,7 +31,7 @@ public:
 	/** 기본 생성자 */
 	FSMItemDropPayload()
 		: ItemType(ESMItemType::None)
-		  , Rotation(0)
+		  , Rotation(ESMGridRotation::Rot0)
 	{
 	}
 
@@ -48,7 +48,7 @@ public:
 	}
 
 	/** 회전값 Getter */
-	int32 GetRotation() const
+	ESMGridRotation GetRotation() const
 	{
 		return Rotation;
 	}
@@ -66,7 +66,7 @@ public:
 	}
 
 	/** 회전값 Setter */
-	void SetRotation(const int32 InRotation)
+	void SetRotation(const ESMGridRotation InRotation)
 	{
 		Rotation = InRotation;
 	}
@@ -93,7 +93,7 @@ public:
 
 	/** 드랍 당시 회전 상태 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Drop")
-	int32 Rotation;
+	ESMGridRotation Rotation;
 
 	/** 내부 포함 아이템 인스턴스 ID 목록 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Drop")

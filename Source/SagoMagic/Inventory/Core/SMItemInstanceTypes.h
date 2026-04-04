@@ -31,7 +31,7 @@ public:
 		: ItemType(ESMItemType::None)
 		  , GridX(0)
 		  , GridY(0)
-		  , Rotation(0)
+		  , Rotation(ESMGridRotation::Rot0)
 		  , bLocked(false)
 	{
 	}
@@ -73,7 +73,7 @@ public:
 	}
 
 	/** 회전값 Getter */
-	int32 GetRotation() const
+	ESMGridRotation GetRotation() const
 	{
 		return Rotation;
 	}
@@ -121,7 +121,7 @@ public:
 	}
 
 	/** 회전값 Setter */
-	void SetRotation(const int32 InRotation)
+	void SetRotation(const ESMGridRotation InRotation)
 	{
 		Rotation = InRotation;
 	}
@@ -166,7 +166,7 @@ public:
 
 	/** 현재 회전 상태 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Item")
-	int32 Rotation;
+	ESMGridRotation Rotation;
 
 	/** 잠금 여부 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Item")

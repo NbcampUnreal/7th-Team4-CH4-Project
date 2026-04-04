@@ -14,6 +14,8 @@ USMInteractionScannerComponent::USMInteractionScannerComponent()
 	InitSphereRadius(300.0f);
 	// 충돌 채널 세팅(에디터 수정 가능)
 	SetCollisionProfileName(TEXT("Trigger"));
+	
+	bShowDebug = true;
 }
 
 void USMInteractionScannerComponent::BeginPlay()
@@ -33,6 +35,22 @@ void USMInteractionScannerComponent::TickComponent(
 	
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if (!OwnerPawn || !OwnerPawn->IsLocallyControlled()) return;
+	
+	// 디버그용
+	if (bShowDebug)
+	{
+		DrawDebugSphere(
+			GetWorld(),
+			GetComponentLocation(),
+			GetScaledSphereRadius(),
+			16,
+			FColor::Green,
+			false,
+			-1.0f,
+			0,
+			1.5f
+		);
+	}
 
 	// 배열이 비어 있으면 불끄고 종료
 	if (OverlappedTargets.IsEmpty())

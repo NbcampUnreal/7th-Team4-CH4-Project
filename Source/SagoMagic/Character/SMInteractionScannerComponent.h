@@ -45,6 +45,9 @@ protected:
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
+	
+	UPROPERTY(EditAnywhere, Category = "Interaction|Debug")
+	bool bShowDebug;
 
 private:
 	USMInteractionTargetComponent* FindClosestTarget() const;

@@ -5,6 +5,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
+#include "Inventory/Components/SMInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
 
 ASMPlayerState::ASMPlayerState()
@@ -13,6 +14,9 @@ ASMPlayerState::ASMPlayerState()
 	
 	SMAbilitySystemComponent->SetIsReplicated(true);
 	SMAbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Full);
+	
+	SMInventoryComponent = CreateDefaultSubobject<USMInventoryComponent>(TEXT("InventoryComponent"));
+	SMInventoryComponent->SetIsReplicated(true);
 	
 	AttributeSet = CreateDefaultSubobject<USMPlayerAttributeSet>(TEXT("AttributeSet"));
 	

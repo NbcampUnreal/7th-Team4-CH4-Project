@@ -30,10 +30,8 @@ void ASMPlayerController::BeginPlay()
 	if (IsLocalController() == false) return;
 
 	UGameInstance* GI = GetGameInstance();
-	if (IsValid(GI) == true)
-	{
-		SessionSubsystem = GI->GetSubsystem<USMSessionSubsystem>();
-	}
+	if (IsValid(GI) == false) return;
+	SessionSubsystem = GI->GetSubsystem<USMSessionSubsystem>();
 
 	BindSessionDelegates();
 

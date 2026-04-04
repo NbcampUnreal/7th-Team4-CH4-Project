@@ -25,8 +25,12 @@ protected:
 	// 네트워크 이동 기능
 	//================================
 public:
-	// ASMGameMode의 HandleSeamlessTravelPlayer에서 호출
-	void OnArrivedAtGameLevel();
+	
+	/** ASMGameMode의 HandleSeamlessTravelPlayer에서 호출
+	 *  Server에서 Client PC에게 알려줌
+	 */
+	UFUNCTION(Client, Reliable)
+	void ClientRPCArrivedAtGameLevel();
 	
 	/** ServerRPC - USMLobbyWidget에서 호출 */
 	UFUNCTION(Server, Reliable)

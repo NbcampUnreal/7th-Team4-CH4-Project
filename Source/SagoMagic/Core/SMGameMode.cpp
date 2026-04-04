@@ -14,6 +14,7 @@ void ASMGameMode::HandleSeamlessTravelPlayer(AController*& C)
     if (IsValid(PC))
     {
         AllPlayerController.Add(PC);
+        PC->ClientRPCArrivedAtGameLevel();
     }
 }
 

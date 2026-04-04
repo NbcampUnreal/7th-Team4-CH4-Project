@@ -91,6 +91,7 @@ UpgradeLog*.xml
 Content/Test/*
 Content/__ExternalObjects__/Test/*
 Content/__ExternalActors__/Test/*
+Source/SagoMagic/Test/*
 
 #Personal Plugin
 Plugins/KoEnChangePlugin-main

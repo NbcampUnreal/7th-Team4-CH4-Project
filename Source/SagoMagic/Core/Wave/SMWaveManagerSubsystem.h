@@ -16,7 +16,7 @@ struct FActiveSpawnTask
     GENERATED_BODY()
 
     /** 소활할 몬스터 클래스 (TSoftClassPtr 로드 완료 후 저장) */
-    TSubclassOf<APawn> MonsterClass;
+    TSubclassOf<ACharacter> MonsterClass;
 
     /**남은 스폰 수*/
     int32 RemainingCount = 0;
@@ -69,7 +69,7 @@ private:
     ASMMonsterSpawner* GetRandomSpawner() const;
 
     /** 몬스터 1마리 스폰 + 생존 카운트 증가*/
-    void SpawnOne(TSubclassOf<APawn> MonsterClass);
+    void SpawnOne(TSubclassOf<ACharacter> MonsterClass);
 
     /** 모든 몬스터 전멸 + 스폰 완료 시 WaveCleared 호출 */
     void CheckWaveCleared();

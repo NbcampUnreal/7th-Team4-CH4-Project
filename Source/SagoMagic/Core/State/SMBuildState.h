@@ -24,7 +24,7 @@ public:
     virtual EGameState GetStateType() const override { return EGameState::Build; }
 private:
     /** 총 정비 시간 (초) */
-    float Duration = 180.f;
+    float Duration = 10.f;
 
     /** 현재 경과 시간 */
     float Elapsed = 0.f;

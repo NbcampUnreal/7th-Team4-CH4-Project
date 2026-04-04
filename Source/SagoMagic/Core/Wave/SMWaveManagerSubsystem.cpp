@@ -3,6 +3,7 @@
 #include "EngineUtils.h"
 #include "Core/SMGameMode.h"
 #include "Data/SMMonsterData.h"
+#include "GameFramework/Character.h"
 #include "Data/SMWaveData.h"
 
 void USMWaveManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -102,7 +103,7 @@ void USMWaveManagerSubsystem::StartWave(int32 WaveIndex)
             continue;
         }
         //동기로 데이터 처리
-        TSubclassOf<APawn> MonsterClass = MonsterData->MonsterClass.LoadSynchronous();
+        TSubclassOf<ACharacter> MonsterClass = MonsterData->MonsterClass.LoadSynchronous();
         if (!MonsterClass)
         {
             UE_LOG(LogTemp, Warning, TEXT("[WaveManager] MonsterClass 로드 실패"));
@@ -168,12 +169,12 @@ ASMMonsterSpawner* USMWaveManagerSubsystem::GetRandomSpawner() const
     return Spawners[RandomIndex];
 }
 
-void USMWaveManagerSubsystem::SpawnOne(TSubclassOf<APawn> MonsterClass)
+void USMWaveManagerSubsystem::SpawnOne(TSubclassOf<ACharacter> MonsterClass)
 {
     ASMMonsterSpawner* Spawner = GetRandomSpawner();
     if (!Spawner) return;
 
-    APawn* Monster = Spawner->SpawnMonster(MonsterClass);
+    ACharacter* Monster = Spawner->SpawnMonster(MonsterClass);
     if (Monster)
     {
         AliveMonsterCount++;

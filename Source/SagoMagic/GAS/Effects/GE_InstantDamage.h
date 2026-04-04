@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "UGE_SkillDamage.h"
-#include "UGE_InstantDamage.generated.h"
+#include "GE_SkillDamage.h"
+#include "GE_InstantDamage.generated.h"
 
 /**
  *  SkillDamage   플레이어 — 스킬이 피해를 발생시킴

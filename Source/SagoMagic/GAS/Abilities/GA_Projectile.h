@@ -1,8 +1,8 @@
 ﻿#pragma once
 
-#include "UGA_SkillBase.h"
+#include "GA_SkillBase.h"
 #include "SkillActor/SMASkillProjectile.h"
-#include "UGA_Projectile.generated.h"
+#include "GA_Projectile.generated.h"
 
 UCLASS()
 class SAGOMAGIC_API UGA_Projectile : public UGA_SkillBase

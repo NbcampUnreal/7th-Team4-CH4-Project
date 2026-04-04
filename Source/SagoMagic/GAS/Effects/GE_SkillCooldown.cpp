@@ -1,4 +1,4 @@
-﻿#include "UGE_SkillCooldown.h"
+﻿#include "GE_SkillCooldown.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 
 UGE_SkillCooldown::UGE_SkillCooldown()

@@ -36,15 +36,19 @@ void ASMPlayerController::BeginPlay()
 	}
 }
 
-void ASMPlayerController::OnArrivedAtGameLevel()
+void ASMPlayerController::ClientRPCArrivedAtGameLevel_Implementation()
 {
-	if (IsLocalController() == false) return;
-
-	FInputModeGameOnly InputMode;
+	//입력 모드 전환 (기존 OnArrivedAtGameLevel 로직)
+	FInputModeGameAndUI InputMode;
 	SetInputMode(InputMode);
-	SetShowMouseCursor(false);
-
-	//TODO: L_Play전용 HUD 생성시 여기서 생성
+	SetShowMouseCursor(true);
+	
+	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
+	if (!PS) return;
+	
+	UE_LOG(LogTemp, Log, TEXT("[GameLevel] 플레이어 도착 - 이름:%s / Host:%d"),
+		*PS->GetPlayerName(), PS->GetIsHost());
+	//TODO 현 : 게임 HUD 생성, 캐릭터 선택 등 여기서 처리
 }
 
 void ASMPlayerController::ServerRPCSetReady_Implementation(bool bReady)

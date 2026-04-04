@@ -16,6 +16,7 @@ UGA_Interact::UGA_Interact()
 
 	ActivationBlockedTags.AddTag(SMCharacterTag::State_Attacking);
 
+	// 서버에서만 실행하도록 함
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerOnly;
 }
 

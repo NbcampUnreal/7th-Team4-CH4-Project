@@ -33,6 +33,7 @@ void USMInteractionScannerComponent::TickComponent(
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	
+	// Tick이지만 Local에서만 실행시켜 서버 과부하 줄이기
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if (!OwnerPawn || !OwnerPawn->IsLocallyControlled()) return;
 	
@@ -93,11 +94,13 @@ void USMInteractionScannerComponent::OnScannerBeginOverlap(
 	bool bFromSeep,
 	const FHitResult& SweepResult)
 {
+	// Local에서만 실행
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if (!OwnerPawn || !OwnerPawn->IsLocallyControlled()) return;
 	
 	if (!OtherActor || OtherActor == GetOwner()) return;
 	
+	// 오버랩되면 배열에 추가
 	USMInteractionTargetComponent* TargetComp = OtherActor->FindComponentByClass<USMInteractionTargetComponent>();
 	if (TargetComp)
 	{
@@ -111,11 +114,13 @@ void USMInteractionScannerComponent::OnScannerEndOverlap(
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
+	// Local에서만 실행
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if (!OwnerPawn || !OwnerPawn->IsLocallyControlled()) return;
 	
 	if (!OtherActor) return;
 	
+	// 오버랩나가면 배열에서 제거
 	USMInteractionTargetComponent* TargetComp = OtherActor->FindComponentByClass<USMInteractionTargetComponent>();
 	if (TargetComp)
 	{

@@ -1,20 +1,20 @@
-﻿// SMMainWidget.h
+﻿// SMTitleWidget.h
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "SMMainWidget.generated.h"
+#include "SMTitleWidget.generated.h"
 
-class ASMPlayerController;
+class ASMTitlePlayerController;
 class USMSessionSubsystem;
 class UEditableTextBox;
 class UButton;
 /**
- * 테스트용 메인 UI입니다.
+ * 테스트용 타이틀 UI입니다.
  */
 UCLASS()
-class SAGOMAGIC_API USMMainWidget : public UUserWidget
+class SAGOMAGIC_API USMTitleWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
@@ -44,5 +44,5 @@ private:
 
 	void TearDown();
 
-	ASMPlayerController* GetSMPlayerController() const;
+	ASMTitlePlayerController* GetSMTitlePlayerController() const;
 };

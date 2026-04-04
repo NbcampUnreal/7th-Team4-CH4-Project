@@ -7,6 +7,8 @@
 #include "Inventory/Core/SMInventoryMessageTypes.h"
 
 #include "Inventory/Items/Definitions/SMItemDefinition.h"
+#include "Inventory/Items/Definitions/SMSkillItemDefinition.h"
+#include "Inventory/Items/Definitions/SMGemItemDefinition.h"
 
 #include "Inventory/Items/Fragments/SMGridShapeFragment.h"
 #include "Inventory/Items/Fragments/SMGemModifierFragment.h"
@@ -53,8 +55,50 @@ void USMInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 
 FGuid USMInventoryComponent::AddItemFromDefinition(const TSoftObjectPtr<USMItemDefinition>& InItemDefinition)
 {
-	/** TODO: 아이템 생성 및 배치 처리 */
-	return FGuid();
+	if (GetOwner() == nullptr)
+	{
+		return FGuid();
+	}
+
+	if (GetOwner()->HasAuthority() == false)
+	{
+		return FGuid();
+	}
+
+	if (InItemDefinition.IsNull())
+	{
+		return FGuid();
+	}
+
+	const USMItemDefinition* ItemDefinition = InItemDefinition.LoadSynchronous();
+	if (ItemDefinition == nullptr)
+	{
+		return FGuid();
+	}
+
+	ESMItemType ResolvedItemType = ESMItemType::None;
+
+	if (ItemDefinition->IsA<USMSkillItemDefinition>())
+	{
+		ResolvedItemType = ESMItemType::Skill;
+	}
+	else if (ItemDefinition->IsA<USMGemItemDefinition>())
+	{
+		ResolvedItemType = ESMItemType::Gem;
+	}
+	else
+	{
+		return FGuid();
+	}
+
+	FSMItemDropPayload DropPayload;
+	DropPayload.SetInstanceId(FGuid::NewGuid());
+	DropPayload.ItemType = ResolvedItemType;
+	DropPayload.SetDefinition(InItemDefinition);
+	DropPayload.SetRotation(ESMGridRotation::Rot0);
+	DropPayload.SetLocked(false);
+
+	return AddItemFromDropPayload(DropPayload);
 }
 
 FGuid USMInventoryComponent::AddItemFromDropPayload(const FSMItemDropPayload& InDropPayload)
@@ -474,27 +518,207 @@ bool USMInventoryComponent::FindAvailablePosition(const FGuid& InItemInstanceId,
 bool USMInventoryComponent::AttachGemToSkill(const FGuid& InGemInstanceId, const FGuid& InTargetSkillInstanceId,
                                              int32 InGridX, int32 InGridY)
 {
-	/** TODO: 장착 가능 여부 검사 */
-	/** TODO: 장착 처리 */
-	/** TODO: 스킬 요약 재계산 */
-	return false;
+	if (GetOwner() == nullptr)
+	{
+		return false;
+	}
+
+	if (GetOwner()->HasAuthority() == false)
+	{
+		return false;
+	}
+
+	FSMItemInstanceData* EditableGemItem = FindEditableItem(InGemInstanceId);
+	if (EditableGemItem == nullptr)
+	{
+		return false;
+	}
+
+	if (EditableGemItem->ItemType != ESMItemType::Gem)
+	{
+		return false;
+	}
+
+	FSMSkillItemInstanceData* EditableTargetSkill = FindEditableSkill(InTargetSkillInstanceId);
+	if (EditableTargetSkill == nullptr)
+	{
+		return false;
+	}
+
+	const USMItemDefinition* GemDefinition = ResolveItemDefinition(*EditableGemItem);
+	if (GemDefinition == nullptr)
+	{
+		return false;
+	}
+
+	const USMItemDefinition* TargetSkillDefinition = ResolveItemDefinition(EditableTargetSkill->BaseItem);
+	if (TargetSkillDefinition == nullptr)
+	{
+		return false;
+	}
+
+	const USMGemModifierFragment* GemModifierFragment = GemDefinition->FindFragmentByClass<USMGemModifierFragment>();
+	if (GemModifierFragment == nullptr)
+	{
+		return false;
+	}
+
+	const USMInternalInventoryFragment* TargetInternalInventoryFragment =
+		TargetSkillDefinition->FindFragmentByClass<USMInternalInventoryFragment>();
+	if (TargetInternalInventoryFragment == nullptr)
+	{
+		return false;
+	}
+
+	if (TargetInternalInventoryFragment->IsGemAllowed() == false)
+	{
+		return false;
+	}
+
+	if (CanApplyGemToSkillByTags(GemModifierFragment, TargetSkillDefinition) == false)
+	{
+		return false;
+	}
+
+	return MoveItem(
+		InGemInstanceId,
+		EditableTargetSkill->InternalContainerId,
+		InGridX,
+		InGridY,
+		EditableGemItem->Rotation);
 }
 
 bool USMInventoryComponent::AttachSkillToSkill(const FGuid& InMaterialSkillInstanceId,
                                                const FGuid& InTargetSkillInstanceId, int32 InGridX, int32 InGridY)
 {
-	/** TODO: 동일 이름 / 빈 스킬 여부 검사 */
-	/** TODO: 장착 처리 */
-	/** TODO: 스킬 요약 재계산 */
-	return false;
+	if (GetOwner() == nullptr)
+	{
+		return false;
+	}
+
+	if (GetOwner()->HasAuthority() == false)
+	{
+		return false;
+	}
+
+	if (InMaterialSkillInstanceId == InTargetSkillInstanceId)
+	{
+		return false;
+	}
+
+	FSMSkillItemInstanceData* EditableMaterialSkill = FindEditableSkill(InMaterialSkillInstanceId);
+	FSMSkillItemInstanceData* EditableTargetSkill = FindEditableSkill(InTargetSkillInstanceId);
+
+	if (EditableMaterialSkill == nullptr || EditableTargetSkill == nullptr)
+	{
+		return false;
+	}
+
+	const USMItemDefinition* TargetSkillDefinition = ResolveItemDefinition(EditableTargetSkill->BaseItem);
+	if (TargetSkillDefinition == nullptr)
+	{
+		return false;
+	}
+
+	const USMInternalInventoryFragment* TargetInternalInventoryFragment =
+		TargetSkillDefinition->FindFragmentByClass<USMInternalInventoryFragment>();
+	if (TargetInternalInventoryFragment == nullptr)
+	{
+		return false;
+	}
+
+	if (TargetInternalInventoryFragment->IsSameNamedEmptySkillAllowed() == false)
+	{
+		return false;
+	}
+
+	if (IsSameNamedSkill(InMaterialSkillInstanceId, InTargetSkillInstanceId) == false)
+	{
+		return false;
+	}
+
+	if (IsSkillActuallyEmpty(InMaterialSkillInstanceId) == false)
+	{
+		return false;
+	}
+
+	return MoveItem(
+		InMaterialSkillInstanceId,
+		EditableTargetSkill->InternalContainerId,
+		InGridX,
+		InGridY,
+		EditableMaterialSkill->BaseItem.Rotation);
 }
 
 bool USMInventoryComponent::DetachEmbeddedItem(const FGuid& InEmbeddedItemInstanceId)
 {
-	/** TODO: 부모 스킬 탐색 */
-	/** TODO: 해제 처리 */
-	/** TODO: 스킬 요약 재계산 */
-	return false;
+	if (GetOwner() == nullptr)
+	{
+		return false;
+	}
+
+	if (GetOwner()->HasAuthority() == false)
+	{
+		return false;
+	}
+
+	FGuid CurrentParentContainerId;
+	ESMGridRotation CurrentRotation = ESMGridRotation::Rot0;
+
+	if (const FSMItemInstanceData* ItemData = FindItem(InEmbeddedItemInstanceId))
+	{
+		CurrentParentContainerId = ItemData->ParentContainerId;
+		CurrentRotation = ItemData->Rotation;
+	}
+	else if (const FSMSkillItemInstanceData* SkillData = FindSkill(InEmbeddedItemInstanceId))
+	{
+		CurrentParentContainerId = SkillData->BaseItem.ParentContainerId;
+		CurrentRotation = SkillData->BaseItem.Rotation;
+	}
+	else
+	{
+		return false;
+	}
+
+	const FSMGridContainerState* CurrentParentContainer = FindContainer(CurrentParentContainerId);
+	if (CurrentParentContainer == nullptr)
+	{
+		return false;
+	}
+
+	if (CurrentParentContainer->ContainerType != ESMContainerType::SkillInternal)
+	{
+		return false;
+	}
+
+	FSMSkillItemInstanceData* ParentSkill = nullptr;
+	for (FSMSkillItemInstanceData& SkillEntry : SkillEntries)
+	{
+		if (SkillEntry.InternalContainerId == CurrentParentContainerId)
+		{
+			ParentSkill = &SkillEntry;
+			break;
+		}
+	}
+
+	if (ParentSkill == nullptr)
+	{
+		return false;
+	}
+
+	int32 FoundGridX = 0;
+	int32 FoundGridY = 0;
+	if (FindAvailablePosition(InEmbeddedItemInstanceId, MainInventory.ContainerId, FoundGridX, FoundGridY) == false)
+	{
+		return false;
+	}
+
+	return MoveItem(
+		InEmbeddedItemInstanceId,
+		MainInventory.ContainerId,
+		FoundGridX,
+		FoundGridY,
+		CurrentRotation);
 }
 
 bool USMInventoryComponent::EquipSkillToQuickSlot(const FGuid& InSkillInstanceId, int32 InSlotIndex)
@@ -718,8 +942,32 @@ bool USMInventoryComponent::CreateSkillInternalContainer(const FGuid& InSkillIns
 bool USMInventoryComponent::CanApplyGemToSkillByTags(const USMGemModifierFragment* InGemModifierFragment,
                                                      const USMItemDefinition* InTargetSkillDefinition) const
 {
-	/** TODO: RequiredTargetTags / BlockedTargetTags 검사 */
-	return false;
+	if (InGemModifierFragment == nullptr || InTargetSkillDefinition == nullptr)
+	{
+		return false;
+	}
+
+	const FGameplayTagContainer& RequiredTargetTags = InGemModifierFragment->RequiredTargetTags;
+	const FGameplayTagContainer& BlockedTargetTags = InGemModifierFragment->BlockedTargetTags;
+
+	if (RequiredTargetTags.IsEmpty() && BlockedTargetTags.IsEmpty())
+	{
+		return true;
+	}
+
+	const FGameplayTagContainer& TargetSkillTags = InTargetSkillDefinition->GetItemTags();
+
+	if (RequiredTargetTags.IsEmpty() == false && TargetSkillTags.HasAll(RequiredTargetTags) == false)
+	{
+		return false;
+	}
+
+	if (BlockedTargetTags.IsEmpty() == false && TargetSkillTags.HasAny(BlockedTargetTags))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 bool USMInventoryComponent::BuildOccupiedCells(const FGuid& InItemInstanceId, int32 InGridX, int32 InGridY,
@@ -879,14 +1127,40 @@ bool USMInventoryComponent::HasPlacementConflict(const FGuid& InItemInstanceId, 
 
 bool USMInventoryComponent::IsSameNamedSkill(const FGuid& InAItemInstanceId, const FGuid& InBItemInstanceId) const
 {
-	/** TODO: 정의 에셋 내부 이름 비교 */
-	return false;
+	const FSMSkillItemInstanceData* SkillA = FindSkill(InAItemInstanceId);
+	const FSMSkillItemInstanceData* SkillB = FindSkill(InBItemInstanceId);
+
+	if (SkillA == nullptr || SkillB == nullptr)
+	{
+		return false;
+	}
+
+	const USMItemDefinition* SkillADefinition = ResolveItemDefinition(SkillA->BaseItem);
+	const USMItemDefinition* SkillBDefinition = ResolveItemDefinition(SkillB->BaseItem);
+
+	if (SkillADefinition == nullptr || SkillBDefinition == nullptr)
+	{
+		return false;
+	}
+
+	if (SkillADefinition->GetInternalName().IsNone() == false &&
+		SkillBDefinition->GetInternalName().IsNone() == false)
+	{
+		return SkillADefinition->GetInternalName() == SkillBDefinition->GetInternalName();
+	}
+
+	return SkillA->BaseItem.Definition == SkillB->BaseItem.Definition;
 }
 
 bool USMInventoryComponent::IsSkillActuallyEmpty(const FGuid& InSkillInstanceId) const
 {
 	const FSMSkillItemInstanceData* SkillData = FindSkill(InSkillInstanceId);
 	if (SkillData == nullptr)
+	{
+		return false;
+	}
+
+	if (SkillData->EmbeddedItemIds.Num() > 0)
 	{
 		return false;
 	}

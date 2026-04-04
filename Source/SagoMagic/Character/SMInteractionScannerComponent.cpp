@@ -4,6 +4,7 @@
 #include "SMInteractionScannerComponent.h"
 
 #include "Components/SMInteractionTargetComponent.h"
+#include "DrawDebugHelpers.h"
 
 
 USMInteractionScannerComponent::USMInteractionScannerComponent()

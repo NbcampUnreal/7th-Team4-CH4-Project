@@ -57,7 +57,7 @@ void USMInteractionScannerComponent::TickComponent(
 	// 배열이 비어 있으면 불끄고 종료
 	if (OverlappedTargets.IsEmpty())
 	{
-		if (CurrentFocusedTarget)
+		if (IsValid(CurrentFocusedTarget))
 		{
 			CurrentFocusedTarget->SetFocusedLocally(false);
 			CurrentFocusedTarget = nullptr;
@@ -69,7 +69,7 @@ void USMInteractionScannerComponent::TickComponent(
 	USMInteractionTargetComponent* ClosestTarget = FindClosestTarget();
 	
 	// 1등이 바뀔때 변경 로직
-	if (ClosestTarget != CurrentFocusedTarget)
+	if (IsValid(CurrentFocusedTarget) && ClosestTarget != CurrentFocusedTarget)
 	{
 		// 전 1등 불끄기
 		if (CurrentFocusedTarget)
@@ -139,7 +139,11 @@ USMInteractionTargetComponent* USMInteractionScannerComponent::FindClosestTarget
 	{
 		if (!IsValid(Target)) continue;
 		
-		float DistSquared = FVector::DistSquared(MyLocation, Target->GetOwner()->GetActorLocation());
+		AActor* TargetOwner = Target->GetOwner();
+		
+		if (!IsValid(TargetOwner)) continue;
+		
+		float DistSquared = FVector::DistSquared(MyLocation, TargetOwner->GetActorLocation());
 		
 		if (DistSquared < MinDistanceSquared)
 		{

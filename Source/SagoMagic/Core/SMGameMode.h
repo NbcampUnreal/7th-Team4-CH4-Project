@@ -5,9 +5,17 @@
 #include "SMGameMode.generated.h"
 
 class ASMPlayerController;
+class USMStateMachine;
+
+//TODO List
+// L_Play에서 GameMode 세팅
+// PlayerSTate에 있는 이름값
+// Player1, Player2 찍히는지 확인
+// bUseSeamlessTravel = true;
+// void ASMGameMode::HandleSeamlessTravelPlayer(AController*& C)
 
 /**
- * Wave 진행 총괄, 서버 권위
+ * 서버 전용 - 플레이어 관리 + StateMachine 소유
 */
 UCLASS()
 class SAGOMAGIC_API ASMGameMode : public AGameMode
@@ -15,12 +23,27 @@ class SAGOMAGIC_API ASMGameMode : public AGameMode
     GENERATED_BODY()
 public:
     ASMGameMode();
-
-    virtual void OnPostLogin(AController* NewPlayer) override;
+    /** 씸리스 트래블로 입장한 플레이어를 ALlPlayerController에 등록 */
+    virtual void HandleSeamlessTravelPlayer(AController*& C) override;
+    /** 퇴장한 플레이어를 AllPlayerController에서 제거 */
     virtual void Logout(AController* Exiting) override;
+
+    /** 게임 시작 진입점 */
+    virtual void BeginPlay() override;
+    /** 매 프레임 StateMachine에 Tick 위임  */
+    virtual void Tick(float DeltaSeconds) override;
+
+    FSimpleDelegate OnWaveCleared;
+public:
+    UPROPERTY(EditDefaultsOnly, Category = "Wave")
+    TObjectPtr<UDataTable> WaveDataTable;
 
 protected:
     /** 로그인 한 플레이어 Controller 모음 */
     UPROPERTY()
     TArray<TObjectPtr<ASMPlayerController>> AllPlayerController;
+private:
+    /** 게임 플로우를 담당하는 FSM - 서버에만 존재 */
+    UPROPERTY()
+    TObjectPtr<USMStateMachine> StateMachine;
 };

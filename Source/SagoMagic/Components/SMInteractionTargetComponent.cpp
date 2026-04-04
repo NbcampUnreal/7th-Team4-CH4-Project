@@ -4,7 +4,6 @@
 #include "Materials/MaterialInterface.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/Actor.h"
-#include "Test/InteractionTestActor.h"
 
 USMInteractionTargetComponent::USMInteractionTargetComponent()
 	: bInteractionEnabled(true)
@@ -105,12 +104,6 @@ void USMInteractionTargetComponent::HandleOwnerInteract(APawn* InInteractingPawn
 	 *     Building->HandleInteract(InInteractingPawn);
 	 * }
 	 */
-	
-	// TestActor용 테스트 코드
-	if (AInteractionTestActor* TestActor = Cast<AInteractionTestActor>(OwnerActor))
-	{
-		TestActor->TestInteract(InInteractingPawn);
-	}
 }
 
 void USMInteractionTargetComponent::ApplyHighlightState()

@@ -69,7 +69,7 @@ void USMInteractionScannerComponent::TickComponent(
 	USMInteractionTargetComponent* ClosestTarget = FindClosestTarget();
 	
 	// 1등이 바뀔때 변경 로직
-	if (IsValid(CurrentFocusedTarget) && ClosestTarget != CurrentFocusedTarget)
+	if (ClosestTarget != CurrentFocusedTarget)
 	{
 		// 전 1등 불끄기
 		if (CurrentFocusedTarget)

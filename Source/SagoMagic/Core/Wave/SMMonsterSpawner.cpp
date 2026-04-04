@@ -2,7 +2,7 @@
 
 #include "Components/BoxComponent.h"
 #include "EntitySystem/MovieSceneEntitySystemRunner.h"
-#include "GameFramework/Character.h"
+#include "Enemy/SMMonsterBase.h"
 
 ASMMonsterSpawner::ASMMonsterSpawner()
 {
@@ -34,7 +34,7 @@ FVector ASMMonsterSpawner::GetRandomPointInVolume() const
     );
 }
 
-ACharacter* ASMMonsterSpawner::SpawnMonster(TSubclassOf<ACharacter> MonsterClass)
+ASMMonsterBase* ASMMonsterSpawner::SpawnMonster(TSubclassOf<ASMMonsterBase> MonsterClass)
 {
     if (!MonsterClass) return nullptr;
 
@@ -42,7 +42,7 @@ ACharacter* ASMMonsterSpawner::SpawnMonster(TSubclassOf<ACharacter> MonsterClass
     Params.SpawnCollisionHandlingOverride =
         ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-    ACharacter* Monster = GetWorld()->SpawnActor<ACharacter>(
+    ASMMonsterBase* Monster = GetWorld()->SpawnActor<ASMMonsterBase>(
         MonsterClass,
         GetActorLocation(),
         GetActorRotation(),

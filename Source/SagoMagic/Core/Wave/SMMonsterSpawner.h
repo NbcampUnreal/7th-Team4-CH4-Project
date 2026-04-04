@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "GameFramework/Character.h"
+#include "Enemy/SMMonsterBase.h"
 #include "SMMonsterSpawner.generated.h"
 
 class UBoxComponent;
@@ -31,5 +31,5 @@ public:
     /**
      *지정 클래스의 몬스터를 자신의 위치에 스폰
      */
-    ACharacter* SpawnMonster(TSubclassOf<ACharacter> MonsterClass);
+    ASMMonsterBase* SpawnMonster(TSubclassOf<ASMMonsterBase> MonsterClass);
 };

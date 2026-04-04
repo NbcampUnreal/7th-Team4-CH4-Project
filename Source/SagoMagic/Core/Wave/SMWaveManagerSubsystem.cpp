@@ -103,7 +103,7 @@ void USMWaveManagerSubsystem::StartWave(int32 WaveIndex)
             continue;
         }
         //동기로 데이터 처리
-        TSubclassOf<ACharacter> MonsterClass = MonsterData->MonsterClass.LoadSynchronous();
+        TSubclassOf<ASMMonsterBase> MonsterClass = MonsterData->MonsterClass.LoadSynchronous();
         if (!MonsterClass)
         {
             UE_LOG(LogTemp, Warning, TEXT("[WaveManager] MonsterClass 로드 실패"));
@@ -169,7 +169,7 @@ ASMMonsterSpawner* USMWaveManagerSubsystem::GetRandomSpawner() const
     return Spawners[RandomIndex];
 }
 
-void USMWaveManagerSubsystem::SpawnOne(TSubclassOf<ACharacter> MonsterClass)
+void USMWaveManagerSubsystem::SpawnOne(TSubclassOf<ASMMonsterBase> MonsterClass)
 {
     ASMMonsterSpawner* Spawner = GetRandomSpawner();
     if (!Spawner) return;

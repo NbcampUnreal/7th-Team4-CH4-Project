@@ -92,6 +92,7 @@ void ASMPlayerCharacter::OnConstruction(const FTransform& Transform)
 	if (SpringArmComp)
 	{
 		SpringArmComp->SetRelativeRotation(FRotator(-CameraAngle, 0.0f, 0.0f));
+		SpringArmComp->TargetArmLength = CameraLength;
 	}
 }
 

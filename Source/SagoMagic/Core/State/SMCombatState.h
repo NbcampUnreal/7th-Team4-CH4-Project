@@ -28,7 +28,7 @@ private:
     /** 웨이브 클리어 시 호출 - 마지막 웨이브면 Result, 아니면 Build */
     void OnWaveCleared();
 private:
-    /** 총 정비 시간 (초) */
+    /** 총 전투 시간 (초) */
     float Duration = 180.f;
 
     /** 현재 경과 시간 */

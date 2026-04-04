@@ -37,8 +37,9 @@ void USMCombatState::Enter()
                 UE_LOG(LogTemp, Warning, TEXT("[CombatState] WaveIndex %d 범위 초과 - 기본값 %.1f초 사용"),
                     WaveIndex, Duration);
             }
+            WM->StartWave(WaveIndex);
         }
-        WM->StartWave(WaveIndex);
+        
     }
 }
 

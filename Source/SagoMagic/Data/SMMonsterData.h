@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "Enemy/SMMonsterBase.h"
 #include "SMMonsterData.generated.h"
 
 
@@ -32,5 +33,5 @@ struct FSMMonsterData : public FTableRowBase
     int32 DropGold = 20;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster|Asset")
-    TSoftClassPtr<APawn> MonsterClass;
+    TSoftClassPtr<ASMMonsterBase> MonsterClass;
 };

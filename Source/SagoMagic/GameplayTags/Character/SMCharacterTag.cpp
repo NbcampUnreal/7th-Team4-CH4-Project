@@ -12,6 +12,7 @@ namespace SMCharacterTag
 	/** 캐릭터의 상태 */
 	UE_DEFINE_GAMEPLAY_TAG(State_Combat, TEXT("State.Combat"))
 	UE_DEFINE_GAMEPLAY_TAG(State_Construct, TEXT("State.Construct"))
+	UE_DEFINE_GAMEPLAY_TAG(State_Attacking, TEXT("State.Attacking"))
 	
 	/** 디폴트 어빌리티 */
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Default_Interact, TEXT("Ability.Default.Interact"))

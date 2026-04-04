@@ -1,10 +1,15 @@
 ﻿#include "Inventory/World/SMBaseItemDropActor.h"
 
 #include "AssetDefinitionAssetInfo.h"
+#include "AssetTypeCategories.h"
+#include "MaterialStatsCommon.h"
 #include "Net/UnrealNetwork.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerState.h"
+#include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
 
 #include "Components/SMInteractionTargetComponent.h"
 #include "Inventory/Components/SMInventoryComponent.h"
@@ -83,7 +88,7 @@ void ASMBaseItemDropActor::HandleInteract(APawn* InInteractingPawn)
 		return;
 	}
 
-	USMInventoryComponent* InventoryComponent = InInteractingPawn->FindComponentByClass<USMInventoryComponent>();
+	USMInventoryComponent* InventoryComponent = InteractingPlayerState->FindComponentByClass<USMInventoryComponent>();
 	if (InventoryComponent == nullptr)
 	{
 		return;
@@ -142,12 +147,27 @@ void ASMBaseItemDropActor::ApplyWorldVisual()
 		return;
 	}
 
-	/**
-	 * TODO:
-	 * WorldVisualFragment에서
-	 * WorldMesh / OverrideMaterial / WorldScale을 읽어
-	 * StaticMeshComponent에 적용합니다.
-	 */
+	if (WorldVisualFragment->GetWorldMesh().IsNull() == false)
+	{
+		if (UStaticMesh* WorldMesh = WorldVisualFragment->GetWorldMesh().LoadSynchronous())
+		{
+			StaticMeshComponent->SetStaticMesh(WorldMesh);
+		}
+	}
+	
+	StaticMeshComponent->SetWorldScale3D(WorldVisualFragment->GetWorldScale());
+	
+	if (InteractionTargetComponent != nullptr)
+	{
+		UMaterialInterface* HighlightMaterial = nullptr;
+		
+		if (WorldVisualFragment->GetOverrideMaterial().IsNull() == false)
+		{
+			HighlightMaterial = WorldVisualFragment->GetOverrideMaterial().LoadSynchronous();
+		}
+		
+		InteractionTargetComponent->SetHighlightOverlayMaterial(HighlightMaterial);
+	}
 }
 
 void ASMBaseItemDropActor::RefreshInteractionState()

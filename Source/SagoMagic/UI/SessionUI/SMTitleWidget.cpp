@@ -1,14 +1,13 @@
-﻿// SMMainWidget.cpp
+﻿// SMTitleWidget.cpp
 
 
-#include "SMMainWidget.h"
-
-#include "Character/SMPlayerController.h"
+#include "SMTitleWidget.h"
+#include "Character/SMTitlePlayerController.h"
 #include "Components/Button.h"
 #include "Components/EditableTextBox.h"
 #include "Core/SessionSubsystem/SMSessionSubsystem.h"
 
-void USMMainWidget::MenuSetup()
+void USMTitleWidget::MenuSetup()
 {
 	UGameInstance* GI = GetGameInstance();
 	if (IsValid(GI) == true)
@@ -23,11 +22,11 @@ void USMMainWidget::MenuSetup()
 
 	if (IsValid(IPInputBox) == true)
 	{
-		IPInputBox->SetText(FText::FromString(TEXT("127.0.0.1:7777")));
+		IPInputBox->SetText(FText::FromString(TEXT("127.0.0.1:17777")));
 	}
 }
 
-bool USMMainWidget::Initialize()
+bool USMTitleWidget::Initialize()
 {
 	if (Super::Initialize() == false) return false;
 
@@ -40,17 +39,15 @@ bool USMMainWidget::Initialize()
 	return true;
 }
 
-void USMMainWidget::NativeDestruct()
+void USMTitleWidget::NativeDestruct()
 {
 	TearDown();
 	Super::NativeDestruct();
 }
 
-void USMMainWidget::OnHostButtonClicked()
+void USMTitleWidget::OnHostButtonClicked()
 {
-	HostButton->SetIsEnabled(false);
-
-	FString ServerAddress = TEXT("127.0.0.1:7777");
+	FString ServerAddress = TEXT("127.0.0.1:17777");
 	if (IsValid(IPInputBox) == true)
 	{
 		FString InputText = IPInputBox->GetText().ToString();
@@ -60,7 +57,7 @@ void USMMainWidget::OnHostButtonClicked()
 		}
 	}
 
-	ASMPlayerController* PC = GetSMPlayerController();
+	ASMTitlePlayerController* PC = GetSMTitlePlayerController();
 	if (PC)
 	{
 		PC->SetPendingServerAddress(ServerAddress);
@@ -72,7 +69,7 @@ void USMMainWidget::OnHostButtonClicked()
 	}
 }
 
-void USMMainWidget::OnCreateSessionComplete(bool bWasSuccessful)
+void USMTitleWidget::OnCreateSessionComplete(bool bWasSuccessful)
 {
 	if (bWasSuccessful == false)
 	{
@@ -80,7 +77,7 @@ void USMMainWidget::OnCreateSessionComplete(bool bWasSuccessful)
 	}
 }
 
-void USMMainWidget::TearDown()
+void USMTitleWidget::TearDown()
 {
 	if (SessionSubsystem)
 	{
@@ -89,7 +86,7 @@ void USMMainWidget::TearDown()
 	}
 }
 
-ASMPlayerController* USMMainWidget::GetSMPlayerController() const
+ASMTitlePlayerController* USMTitleWidget::GetSMTitlePlayerController() const
 {
-	return Cast<ASMPlayerController>(GetOwningPlayer());
+	return Cast<ASMTitlePlayerController>(GetOwningPlayer());
 }

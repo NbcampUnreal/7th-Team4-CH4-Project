@@ -30,6 +30,9 @@ void USMInteractionScannerComponent::TickComponent(
 	FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	
+	APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (!OwnerPawn || !OwnerPawn->IsLocallyControlled()) return;
 
 	// 배열이 비어 있으면 불끄고 종료
 	if (OverlappedTargets.IsEmpty())
@@ -72,6 +75,9 @@ void USMInteractionScannerComponent::OnScannerBeginOverlap(
 	bool bFromSeep,
 	const FHitResult& SweepResult)
 {
+	APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (!OwnerPawn || !OwnerPawn->IsLocallyControlled()) return;
+	
 	if (!OtherActor || OtherActor == GetOwner()) return;
 	
 	USMInteractionTargetComponent* TargetComp = OtherActor->FindComponentByClass<USMInteractionTargetComponent>();
@@ -87,6 +93,9 @@ void USMInteractionScannerComponent::OnScannerEndOverlap(
 	UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex)
 {
+	APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (!OwnerPawn || !OwnerPawn->IsLocallyControlled()) return;
+	
 	if (!OtherActor) return;
 	
 	USMInteractionTargetComponent* TargetComp = OtherActor->FindComponentByClass<USMInteractionTargetComponent>();

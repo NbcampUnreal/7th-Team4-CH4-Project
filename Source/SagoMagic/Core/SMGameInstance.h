@@ -13,5 +13,5 @@
 UCLASS()
 class SAGOMAGIC_API USMGameInstance : public UGameInstance
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 };

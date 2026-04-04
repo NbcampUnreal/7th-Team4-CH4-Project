@@ -6,6 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "SMInteractionScannerComponent.h"
 #include "SMPlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "Core/SMPlayerState.h"
@@ -44,6 +45,9 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
+	
+	InteractionScannerComp = CreateDefaultSubobject<USMInteractionScannerComponent>(TEXT("InteractionScanner"));
+	InteractionScannerComp->SetupAttachment(RootComponent);
 }
 
 UAbilitySystemComponent* ASMPlayerCharacter::GetAbilitySystemComponent() const
@@ -88,6 +92,7 @@ void ASMPlayerCharacter::OnConstruction(const FTransform& Transform)
 	if (SpringArmComp)
 	{
 		SpringArmComp->SetRelativeRotation(FRotator(-CameraAngle, 0.0f, 0.0f));
+		SpringArmComp->TargetArmLength = CameraLength;
 	}
 }
 

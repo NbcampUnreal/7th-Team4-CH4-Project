@@ -280,26 +280,116 @@ bool USMInventoryComponent::DropItem(const FGuid& InItemInstanceId, const FTrans
 }
 
 bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX,
-                                     int32 InGridY)
+                                     int32 InGridY, ESMGridRotation InRotation)
 {
-	/** TODO: 배치 가능 여부 검사 및 이동 처리 */
-	return false;
-}
+	if (GetOwner() == nullptr)
+	{
+		return false;
+	}
 
-bool USMInventoryComponent::RotateItem(const FGuid& InItemInstanceId)
-{
-	/** TODO: 현재 회전값 기준 회전 처리 */
-	return false;
-}
+	if (GetOwner()->HasAuthority() == false)
+	{
+		return false;
+	}
 
-bool USMInventoryComponent::SetItemRotation(const FGuid& InItemInstanceId, ESMGridRotation InRotation)
-{
-	/** TODO: 회전값 직접 설정 처리 */
-	return false;
+	FSMGridContainerState* TargetContainer = FindEditableContainer(InTargetContainerId);
+	if (TargetContainer == nullptr)
+	{
+		return false;
+	}
+
+	FSMItemInstanceData* EditableItem = FindEditableItem(InItemInstanceId);
+	FSMSkillItemInstanceData* EditableSkill = FindEditableSkill(InItemInstanceId);
+
+	const bool bIsNormalItem = EditableItem != nullptr;
+	const bool bIsSkillItem = EditableSkill != nullptr;
+
+	if (bIsNormalItem == false && bIsSkillItem == false)
+	{
+		return false;
+	}
+
+	const FGuid PreviousContainerId = bIsNormalItem
+		                                  ? EditableItem->ParentContainerId
+		                                  : EditableSkill->BaseItem.ParentContainerId;
+
+	const int32 PreviousGridX = bIsNormalItem
+		                            ? EditableItem->GridX
+		                            : EditableSkill->BaseItem.GridX;
+
+	const int32 PreviousGridY = bIsNormalItem
+		                            ? EditableItem->GridY
+		                            : EditableSkill->BaseItem.GridY;
+
+	const ESMGridRotation PreviousRotation = bIsNormalItem
+		                                         ? EditableItem->Rotation
+		                                         : EditableSkill->BaseItem.Rotation;
+
+	if (PreviousContainerId == InTargetContainerId &&
+		PreviousGridX == InGridX &&
+		PreviousGridY == InGridY &&
+		PreviousRotation == InRotation)
+	{
+		return true;
+	}
+
+	if (CanPlaceItem(InItemInstanceId, InTargetContainerId, InGridX, InGridY, InRotation) == false)
+	{
+		return false;
+	}
+
+	FSMGridContainerState* PreviousContainer = FindEditableContainer(PreviousContainerId);
+	if (PreviousContainer != nullptr)
+	{
+		PreviousContainer->ContainedItemIds.Remove(InItemInstanceId);
+	}
+
+	for (FSMSkillItemInstanceData& SkillEntry : SkillEntries)
+	{
+		if (SkillEntry.InternalContainerId == PreviousContainerId)
+		{
+			SkillEntry.EmbeddedItemIds.Remove(InItemInstanceId);
+			break;
+		}
+	}
+
+	if (bIsNormalItem)
+	{
+		EditableItem->ParentContainerId = InTargetContainerId;
+		EditableItem->GridX = InGridX;
+		EditableItem->GridY = InGridY;
+		EditableItem->Rotation = InRotation;
+	}
+	else
+	{
+		EditableSkill->BaseItem.ParentContainerId = InTargetContainerId;
+		EditableSkill->BaseItem.GridX = InGridX;
+		EditableSkill->BaseItem.GridY = InGridY;
+		EditableSkill->BaseItem.Rotation = InRotation;
+	}
+
+	TargetContainer->ContainedItemIds.AddUnique(InItemInstanceId);
+
+	for (FSMSkillItemInstanceData& SkillEntry : SkillEntries)
+	{
+		if (SkillEntry.InternalContainerId == InTargetContainerId)
+		{
+			SkillEntry.EmbeddedItemIds.AddUnique(InItemInstanceId);
+			break;
+		}
+	}
+
+	if (PreviousContainerId != InTargetContainerId)
+	{
+		PublishInventoryUpdatedMessage(PreviousContainerId);
+	}
+
+	PublishInventoryUpdatedMessage(InTargetContainerId);
+	return true;
 }
 
 bool USMInventoryComponent::CanPlaceItem(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX,
-                                         int32 InGridY) const
+                                         int32 InGridY, ESMGridRotation InRotation) const
 {
 	const FSMGridContainerState* TargetContainer = FindContainer(InTargetContainerId);
 	if (TargetContainer == nullptr)
@@ -307,26 +397,8 @@ bool USMInventoryComponent::CanPlaceItem(const FGuid& InItemInstanceId, const FG
 		return false;
 	}
 
-	const FSMItemInstanceData* ItemData = FindItem(InItemInstanceId);
-	ESMGridRotation RotationToUse = ESMGridRotation::Rot0;
-
-	if (ItemData != nullptr)
-	{
-		RotationToUse = ItemData->Rotation;
-	}
-	else
-	{
-		const FSMSkillItemInstanceData* SkillData = FindSkill(InItemInstanceId);
-		if (SkillData == nullptr)
-		{
-			return false;
-		}
-
-		RotationToUse = SkillData->BaseItem.Rotation;
-	}
-
 	TArray<FIntPoint> OccupiedCells;
-	if (BuildOccupiedCells(InItemInstanceId, InGridX, InGridY, RotationToUse, OccupiedCells) == false)
+	if (BuildOccupiedCells(InItemInstanceId, InGridX, InGridY, InRotation, OccupiedCells) == false)
 	{
 		return false;
 	}
@@ -351,7 +423,7 @@ bool USMInventoryComponent::CanPlaceItem(const FGuid& InItemInstanceId, const FG
 		}
 	}
 
-	if (HasPlacementConflict(InItemInstanceId, InTargetContainerId, InGridX, InGridY))
+	if (HasPlacementConflict(InItemInstanceId, InTargetContainerId, InGridX, InGridY, InRotation))
 	{
 		return false;
 	}
@@ -368,11 +440,26 @@ bool USMInventoryComponent::FindAvailablePosition(const FGuid& InItemInstanceId,
 		return false;
 	}
 
+	ESMGridRotation RotationToUse = ESMGridRotation::Rot0;
+
+	if (const FSMItemInstanceData* ItemData = FindItem(InItemInstanceId))
+	{
+		RotationToUse = ItemData->Rotation;
+	}
+	else if (const FSMSkillItemInstanceData* SkillData = FindSkill(InItemInstanceId))
+	{
+		RotationToUse = SkillData->BaseItem.Rotation;
+	}
+	else
+	{
+		return false;
+	}
+
 	for (int32 Y = 0; Y < TargetContainer->ValidMask.Height; ++Y)
 	{
 		for (int32 X = 0; X < TargetContainer->ValidMask.Width; ++X)
 		{
-			if (CanPlaceItem(InItemInstanceId, InTargetContainerId, X, Y))
+			if (CanPlaceItem(InItemInstanceId, InTargetContainerId, X, Y, RotationToUse))
 			{
 				OutGridX = X;
 				OutGridY = Y;
@@ -724,29 +811,10 @@ bool USMInventoryComponent::BuildOccupiedCells(const FGuid& InItemInstanceId, in
 }
 
 bool USMInventoryComponent::HasPlacementConflict(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId,
-                                                 int32 InGridX, int32 InGridY) const
+                                                 int32 InGridX, int32 InGridY, ESMGridRotation InRotation) const
 {
 	TArray<FIntPoint> TargetCells;
-
-	const FSMItemInstanceData* ItemData = FindItem(InItemInstanceId);
-	ESMGridRotation RotationToUse = ESMGridRotation::Rot0;
-
-	if (ItemData != nullptr)
-	{
-		RotationToUse = ItemData->Rotation;
-	}
-	else
-	{
-		const FSMSkillItemInstanceData* SkillData = FindSkill(InItemInstanceId);
-		if (SkillData == nullptr)
-		{
-			return true;
-		}
-
-		RotationToUse = SkillData->BaseItem.Rotation;
-	}
-
-	if (BuildOccupiedCells(InItemInstanceId, InGridX, InGridY, RotationToUse, TargetCells) == false)
+	if (BuildOccupiedCells(InItemInstanceId, InGridX, InGridY, InRotation, TargetCells) == false)
 	{
 		return true;
 	}
@@ -1085,7 +1153,8 @@ FGuid USMInventoryComponent::AddNestedSnapshotToContainer(const FSMNestedItemDro
 			NewSkillEntry.BaseItem.InstanceId,
 			InTargetContainerId,
 			InSnapshot.GetGridX(),
-			InSnapshot.GetGridY()) == false)
+			InSnapshot.GetGridY(),
+			InSnapshot.GetRotation()) == false)
 		{
 			SkillEntries.RemoveAll(
 				[&](const FSMSkillItemInstanceData& Entry)
@@ -1148,7 +1217,8 @@ FGuid USMInventoryComponent::AddNestedSnapshotToContainer(const FSMNestedItemDro
 		NewItemEntry.InstanceId,
 		InTargetContainerId,
 		InSnapshot.GetGridX(),
-		InSnapshot.GetGridY()) == false)
+		InSnapshot.GetGridY(),
+		InSnapshot.GetRotation()) == false)
 	{
 		ItemEntries.RemoveAll(
 			[&](const FSMItemInstanceData& Entry)

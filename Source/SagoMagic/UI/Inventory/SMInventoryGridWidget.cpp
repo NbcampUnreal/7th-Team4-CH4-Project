@@ -62,7 +62,8 @@ bool USMInventoryGridWidget::NativeOnDragOver(
 			InventoryOperation->GetItemInstanceId(),
 			ContainerId,
 			GridX,
-			GridY);
+			GridY,
+			InventoryOperation->GetCurrentRotation());
 	}
 
 	UpdateDraggedPreviewState(InOperation, bCanPlace);
@@ -92,15 +93,12 @@ bool USMInventoryGridWidget::NativeOnDrop(
 		return false;
 	}
 
-	InventoryComponent->SetItemRotation(
-		InventoryOperation->GetItemInstanceId(),
-		InventoryOperation->GetCurrentRotation());
-
 	const bool bMoveSucceeded = InventoryComponent->MoveItem(
 		InventoryOperation->GetItemInstanceId(),
 		ContainerId,
 		GridX,
-		GridY);
+		GridY,
+		InventoryOperation->GetCurrentRotation());
 
 	ActiveDragDropOperation = nullptr;
 
@@ -158,13 +156,13 @@ void USMInventoryGridWidget::RequestRotateDraggedItem()
 		break;
 
 	default:
-		return;
+		NextRotation = ESMGridRotation::Rot0;
+		break;
 	}
 
 	ActiveDragDropOperation->UpdateCurrentRotation(NextRotation);
 
-	USMDragItemPreviewWidget* PreviewWidget = ActiveDragDropOperation->GetDragPreviewWidget();
-	if (PreviewWidget != nullptr)
+	if (USMDragItemPreviewWidget* PreviewWidget = ActiveDragDropOperation->GetDragPreviewWidget())
 	{
 		PreviewWidget->UpdatePreviewRotation(NextRotation);
 	}
@@ -175,7 +173,8 @@ void USMInventoryGridWidget::RequestRotateDraggedItem()
 			ActiveDragDropOperation->GetItemInstanceId(),
 			ContainerId,
 			HoveredGridX,
-			HoveredGridY);
+			HoveredGridY,
+			NextRotation);
 
 		UpdateDraggedPreviewState(ActiveDragDropOperation, bCanPlace);
 	}

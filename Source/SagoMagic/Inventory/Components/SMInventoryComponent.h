@@ -12,7 +12,6 @@ class USMItemDefinition;
 class USMGemModifierFragment;
 class ASMBaseItemDropActor;
 
-
 /**
  * 인벤토리 시스템 핵심 로직 컴포넌트 정의 파일
  *
@@ -22,7 +21,7 @@ class ASMBaseItemDropActor;
  * - 일반 아이템 엔트리 배열
  * - 스킬 아이템 엔트리 배열
  * - 스킬 내부 컨테이너 배열
- * - 이동, 회전, 장착, 해제, 드랍, 요약 계산 함수
+ * - 이동, 장착, 해제, 드랍, 요약 계산 함수
  * - Gameplay Message Subsystem 기반 UI 갱신 함수
  *
  * 역할:
@@ -92,22 +91,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Inventory")
 	bool DropItem(const FGuid& InItemInstanceId, const FTransform& InDropTransform);
 
-	/** 아이템 이동 요청 */
+	/** 아이템 이동 요청
+	 *  드래그 중 결정된 회전값까지 함께 확정합니다.
+	 */
 	UFUNCTION(BlueprintCallable, Category="Inventory")
-	bool MoveItem(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX, int32 InGridY);
+	bool MoveItem(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX, int32 InGridY,
+	              ESMGridRotation InRotation);
 
-	/** 아이템 회전 요청 */
+	/** 배치 가능 여부 검사 요청
+	 *  드래그 중 임시 회전값을 받아 검사합니다.
+	 */
 	UFUNCTION(BlueprintCallable, Category="Inventory")
-	bool RotateItem(const FGuid& InItemInstanceId);
-
-	/** 아이템 회전값 직접 설정 요청 */
-	UFUNCTION(BlueprintCallable, Category="Inventory")
-	bool SetItemRotation(const FGuid& InItemInstanceId, ESMGridRotation InRotation);
-
-	/** 배치 가능 여부 검사 요청 */
-	UFUNCTION(BlueprintCallable, Category="Inventory")
-	bool CanPlaceItem(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX,
-	                  int32 InGridY) const;
+	bool CanPlaceItem(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX, int32 InGridY,
+	                  ESMGridRotation InRotation) const;
 
 	/** 빈 위치 탐색 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory")
@@ -212,7 +208,7 @@ private:
 
 	/** 컨테이너 충돌 여부 검사 */
 	bool HasPlacementConflict(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX,
-	                          int32 InGridY) const;
+	                          int32 InGridY, ESMGridRotation InRotation) const;
 
 	/** 동일 이름 스킬 여부 검사 */
 	bool IsSameNamedSkill(const FGuid& InAItemInstanceId, const FGuid& InBItemInstanceId) const;

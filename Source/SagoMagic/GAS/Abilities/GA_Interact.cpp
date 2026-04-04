@@ -7,7 +7,6 @@
 #include "Character/SMPlayerCharacter.h"
 #include "Components/SMInteractionTargetComponent.h"
 #include "GameplayTags/Character/SMCharacterTag.h"
-#include "GameplayTags/Character/SMSkillTag.h"
 
 UGA_Interact::UGA_Interact()
 {
@@ -42,7 +41,7 @@ void UGA_Interact::ActivateAbility(
 		return;
 	}
 	
-	USMInteractionTargetComponent* BestTarget = Scanner->GetClosestTarget();
+	USMInteractionTargetComponent* BestTarget = Scanner->FindClosestTarget();
 	
 	if (IsValid(BestTarget))
 	{

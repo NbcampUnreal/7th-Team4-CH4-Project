@@ -97,7 +97,10 @@ void USMInteractionScannerComponent::OnScannerBeginOverlap(
 {
 	// Local에서만 실행
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
-	if (!OwnerPawn || !OwnerPawn->IsLocallyControlled()) return;
+	if (!OwnerPawn) return;
+	
+	// GA_Interact에서 FindClosestTarget()를 호출해야 되므로 배열에는 추가
+	if (!OwnerPawn->IsLocallyControlled() && !OwnerPawn->HasAuthority()) return;
 	
 	if (!OtherActor || OtherActor == GetOwner()) return;
 	
@@ -117,7 +120,10 @@ void USMInteractionScannerComponent::OnScannerEndOverlap(
 {
 	// Local에서만 실행
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
-	if (!OwnerPawn || !OwnerPawn->IsLocallyControlled()) return;
+	if (!OwnerPawn) return;
+	
+	// 서버에서도 배열의 최신정보가 필요하므로 오버랩에서 빠져나가면 제거
+	if (!OwnerPawn->IsLocallyControlled() && !OwnerPawn->HasAuthority()) return;
 	
 	if (!OtherActor) return;
 	

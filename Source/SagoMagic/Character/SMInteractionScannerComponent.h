@@ -46,12 +46,13 @@ protected:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
 	
+public:
+	USMInteractionTargetComponent* FindClosestTarget() const;
+	
 	UPROPERTY(EditAnywhere, Category = "Interaction|Debug")
 	bool bShowDebug;
 
 private:
-	USMInteractionTargetComponent* FindClosestTarget() const;
-	
 	/** 댕글링 포인터를 막기 위한 리플렉션 */
 	UPROPERTY()
 	TArray<TObjectPtr<USMInteractionTargetComponent>> OverlappedTargets;

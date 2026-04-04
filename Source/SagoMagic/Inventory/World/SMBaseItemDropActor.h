@@ -97,7 +97,7 @@ protected:
 	/** 월드 비주얼 적용 */
 	void ApplyWorldVisual();
 
-	/** 상호작용 타겟 상태 갱신 */
+	/** 상호작용 가능 상태 갱신 */
 	void RefreshInteractionState();
 
 	/** Payload 유효성 검사 */

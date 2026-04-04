@@ -2,6 +2,7 @@
 
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/GameplayMessageSubsystem.h"
+#include "Engine/World.h"
 
 #include "Inventory/Core/SMInventoryMessageTypes.h"
 
@@ -17,7 +18,6 @@
 #include "GameplayTags/Message/SMMessageTag.h"
 
 #include "Inventory/World/SMBaseItemDropActor.h"
-
 
 USMInventoryComponent::USMInventoryComponent()
 {
@@ -94,35 +94,38 @@ FGuid USMInventoryComponent::AddItemFromDropPayload(const FSMItemDropPayload& In
 			return FGuid();
 		}
 
-		/** 새로운 스킬 엔트리 생성 */
 		FSMSkillItemInstanceData NewSkillEntry;
-		NewSkillEntry.BaseItem.InstanceId = InDropPayload.InstanceId;
+		NewSkillEntry.BaseItem.InstanceId = InDropPayload.GetInstanceId();
 		NewSkillEntry.BaseItem.ItemType = ESMItemType::Skill;
 		NewSkillEntry.BaseItem.Definition = InDropPayload.GetDefinition();
 		NewSkillEntry.BaseItem.ParentContainerId = MainInventory.ContainerId;
 		NewSkillEntry.BaseItem.GridX = 0;
 		NewSkillEntry.BaseItem.GridY = 0;
 		NewSkillEntry.BaseItem.Rotation = InDropPayload.GetRotation();
-		NewSkillEntry.BaseItem.bLocked = false;
+		NewSkillEntry.BaseItem.bLocked = InDropPayload.IsLocked();
 
-		/** 내부 컨테이너 복원 */
 		FGuid InternalContainerId;
 		if (CreateSkillInternalContainer(
-			NewSkillEntry.BaseItem.InstanceId, InternalInventoryFragment->GetInternalMask(),
+			NewSkillEntry.BaseItem.InstanceId,
+			InternalInventoryFragment->GetInternalMask(),
 			InternalContainerId) == false)
 		{
 			return FGuid();
 		}
 
 		NewSkillEntry.InternalContainerId = InternalContainerId;
+		NewSkillEntry.EmbeddedItemIds.Reset();
+
 		SkillEntries.Add(NewSkillEntry);
 
 		int32 FoundGridX = 0;
 		int32 FoundGridY = 0;
 
-		/** 빈 위치 검색 */
 		if (FindAvailablePosition(
-			NewSkillEntry.BaseItem.InstanceId, MainInventory.ContainerId, FoundGridX, FoundGridY) == false)
+			NewSkillEntry.BaseItem.InstanceId,
+			MainInventory.ContainerId,
+			FoundGridX,
+			FoundGridY) == false)
 		{
 			SkillEntries.RemoveAll(
 				[&](const FSMSkillItemInstanceData& Entry)
@@ -160,31 +163,39 @@ FGuid USMInventoryComponent::AddItemFromDropPayload(const FSMItemDropPayload& In
 		EditableSkill->BaseItem.GridX = FoundGridX;
 		EditableSkill->BaseItem.GridY = FoundGridY;
 
-		/** 메인 인벤토리에 아이템 추가 처리 후 메세지 발송*/
 		MainInventory.ContainedItemIds.Add(EditableSkill->BaseItem.InstanceId);
+
+		if (RestoreNestedPayloads(InDropPayload, EditableSkill->BaseItem.InstanceId) == false)
+		{
+			RemoveItemInternal(EditableSkill->BaseItem.InstanceId, false);
+			return FGuid();
+		}
+
 		PublishInventoryUpdatedMessage(MainInventory.ContainerId);
+		PublishInventoryUpdatedMessage(EditableSkill->InternalContainerId);
 		return EditableSkill->BaseItem.InstanceId;
 	}
 
-	/** 새로운 아이템 엔트리 생성 */
 	FSMItemInstanceData NewItemEntry;
-	NewItemEntry.InstanceId = InDropPayload.InstanceId;
+	NewItemEntry.InstanceId = InDropPayload.GetInstanceId();
 	NewItemEntry.ItemType = InDropPayload.ItemType;
 	NewItemEntry.Definition = InDropPayload.GetDefinition();
 	NewItemEntry.ParentContainerId = MainInventory.ContainerId;
 	NewItemEntry.GridX = 0;
 	NewItemEntry.GridY = 0;
 	NewItemEntry.Rotation = InDropPayload.GetRotation();
-	NewItemEntry.bLocked = false;
+	NewItemEntry.bLocked = InDropPayload.IsLocked();
 
 	ItemEntries.Add(NewItemEntry);
 
 	int32 FoundGridX = 0;
 	int32 FoundGridY = 0;
 
-	/** 빈 위치 검색 */
 	if (FindAvailablePosition(
-		NewItemEntry.InstanceId, MainInventory.ContainerId, FoundGridX, FoundGridY) == false)
+		NewItemEntry.InstanceId,
+		MainInventory.ContainerId,
+		FoundGridX,
+		FoundGridY) == false)
 	{
 		ItemEntries.RemoveAll(
 			[&](const FSMItemInstanceData& Entry)
@@ -217,17 +228,55 @@ FGuid USMInventoryComponent::AddItemFromDropPayload(const FSMItemDropPayload& In
 
 bool USMInventoryComponent::RemoveItem(const FGuid& InItemInstanceId)
 {
-	/** TODO: 아이템 제거 처리 */
-	return false;
+	if (GetOwner() == nullptr)
+	{
+		return false;
+	}
+
+	if (GetOwner()->HasAuthority() == false)
+	{
+		return false;
+	}
+
+	return RemoveItemInternal(InItemInstanceId, true);
 }
 
-bool USMInventoryComponent::DropItem(const FGuid& InItemInstanceId)
+bool USMInventoryComponent::DropItem(const FGuid& InItemInstanceId, const FTransform& InDropTransform)
 {
-	/** TODO: 드랍 가능 여부 검사 */
-	/** TODO: Payload 생성 */
-	/** TODO: 월드 드랍 액터 생성 */
-	/** TODO: 인벤토리 제거 처리 */
-	return false;
+	if (GetOwner() == nullptr)
+	{
+		return false;
+	}
+
+	if (GetOwner()->HasAuthority() == false)
+	{
+		return false;
+	}
+
+	if (CanDropItemInternal(InItemInstanceId) == false)
+	{
+		return false;
+	}
+
+	FSMItemDropPayload DropPayload;
+	if (BuildDropPayload(InItemInstanceId, DropPayload) == false)
+	{
+		return false;
+	}
+
+	ASMBaseItemDropActor* SpawnedDropActor = SpawnDropActorFromPayload(DropPayload, InDropTransform);
+	if (SpawnedDropActor == nullptr)
+	{
+		return false;
+	}
+
+	if (RemoveItemInternal(InItemInstanceId, true) == false)
+	{
+		SpawnedDropActor->Destroy();
+		return false;
+	}
+
+	return true;
 }
 
 bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX,
@@ -768,26 +817,146 @@ bool USMInventoryComponent::IsSameNamedSkill(const FGuid& InAItemInstanceId, con
 
 bool USMInventoryComponent::IsSkillActuallyEmpty(const FGuid& InSkillInstanceId) const
 {
-	/** TODO: EmbeddedItemIds 기반 비어 있음 검사 */
-	return false;
+	const FSMSkillItemInstanceData* SkillData = FindSkill(InSkillInstanceId);
+	if (SkillData == nullptr)
+	{
+		return false;
+	}
+
+	const FSMGridContainerState* InternalContainer = FindContainer(SkillData->InternalContainerId);
+	if (InternalContainer == nullptr)
+	{
+		return false;
+	}
+
+	return InternalContainer->ContainedItemIds.Num() == 0;
 }
 
 bool USMInventoryComponent::CanDropItemInternal(const FGuid& InItemInstanceId) const
 {
-	/** TODO: DropRule 검사 */
-	return false;
+	const FSMItemInstanceData* ItemData = FindItem(InItemInstanceId);
+	const FSMItemInstanceData* BaseItemData = ItemData;
+
+	if (BaseItemData == nullptr)
+	{
+		const FSMSkillItemInstanceData* SkillData = FindSkill(InItemInstanceId);
+		if (SkillData == nullptr)
+		{
+			return false;
+		}
+
+		BaseItemData = &SkillData->BaseItem;
+	}
+
+	if (BaseItemData->bLocked)
+	{
+		return false;
+	}
+
+	const USMItemDefinition* ItemDefinition = ResolveItemDefinition(*BaseItemData);
+	if (ItemDefinition == nullptr)
+	{
+		return false;
+	}
+
+	const USMDropRuleFragment* DropRuleFragment = ItemDefinition->FindFragmentByClass<USMDropRuleFragment>();
+	if (DropRuleFragment != nullptr && DropRuleFragment->CanDrop() == false)
+	{
+		return false;
+	}
+
+	const FSMSkillItemInstanceData* SkillData = FindSkill(InItemInstanceId);
+	if (SkillData != nullptr && IsSkillActuallyEmpty(InItemInstanceId) == false)
+	{
+		if (DropRuleFragment != nullptr && DropRuleFragment->CanDropWithEmbeddedItems() == false)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 bool USMInventoryComponent::BuildDropPayload(const FGuid& InItemInstanceId, FSMItemDropPayload& OutPayload) const
 {
-	/** TODO: 드랍 복원 데이터 구성 */
-	return false;
+	OutPayload = FSMItemDropPayload();
+
+	const FSMItemInstanceData* ItemData = FindItem(InItemInstanceId);
+	if (ItemData != nullptr)
+	{
+		OutPayload.SetInstanceId(ItemData->InstanceId);
+		OutPayload.ItemType = ItemData->ItemType;
+		OutPayload.SetDefinition(ItemData->Definition);
+		OutPayload.SetRotation(ItemData->Rotation);
+		OutPayload.SetLocked(ItemData->bLocked);
+		OutPayload.SetNestedItemSnapshots(TArray<FSMNestedItemDropSnapshot>());
+		return OutPayload.IsValidPayload();
+	}
+
+	const FSMSkillItemInstanceData* SkillData = FindSkill(InItemInstanceId);
+	if (SkillData == nullptr)
+	{
+		return false;
+	}
+
+	OutPayload.SetInstanceId(SkillData->BaseItem.InstanceId);
+	OutPayload.ItemType = SkillData->BaseItem.ItemType;
+	OutPayload.SetDefinition(SkillData->BaseItem.Definition);
+	OutPayload.SetRotation(SkillData->BaseItem.Rotation);
+	OutPayload.SetLocked(SkillData->BaseItem.bLocked);
+
+	TArray<FSMNestedItemDropSnapshot> NestedSnapshots;
+	CollectNestedDropSnapshots(SkillData->BaseItem.InstanceId, NestedSnapshots);
+	OutPayload.SetNestedItemSnapshots(NestedSnapshots);
+
+	return OutPayload.IsValidPayload();
 }
 
-bool USMInventoryComponent::SpawnDropActorFromPayload(const FSMItemDropPayload& InPayload)
+ASMBaseItemDropActor* USMInventoryComponent::SpawnDropActorFromPayload(const FSMItemDropPayload& InPayload,
+                                                                       const FTransform& InSpawnTransform)
 {
-	/** TODO: DropActorClass 기반 액터 생성 */
-	return false;
+	if (GetOwner() == nullptr)
+	{
+		return nullptr;
+	}
+
+	if (GetOwner()->HasAuthority() == false)
+	{
+		return nullptr;
+	}
+
+	if (InPayload.IsValidPayload() == false)
+	{
+		return nullptr;
+	}
+
+	if (DefaultDropActorClass == nullptr)
+	{
+		return nullptr;
+	}
+
+	UWorld* World = GetWorld();
+	if (World == nullptr)
+	{
+		return nullptr;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = GetOwner();
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	ASMBaseItemDropActor* SpawnedDropActor = World->SpawnActor<ASMBaseItemDropActor>(
+		DefaultDropActorClass,
+		InSpawnTransform,
+		SpawnParams);
+
+	if (SpawnedDropActor == nullptr)
+	{
+		return nullptr;
+	}
+
+	SpawnedDropActor->InitializeFromPayload(InPayload);
+	return SpawnedDropActor;
 }
 
 bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const
@@ -815,4 +984,341 @@ void USMInventoryComponent::PublishSkillSummaryUpdatedMessage(const FGuid& InSki
 void USMInventoryComponent::PublishQuickSlotUpdatedMessage(int32 InSlotIndex) const
 {
 	/** TODO: Gameplay Message Subsystem 브로드캐스트 */
+}
+
+void USMInventoryComponent::CollectNestedDropSnapshots(const FGuid& InParentSkillInstanceId,
+                                                       TArray<FSMNestedItemDropSnapshot>& OutSnapshots) const
+{
+	const FSMSkillItemInstanceData* ParentSkillData = FindSkill(InParentSkillInstanceId);
+	if (ParentSkillData == nullptr)
+	{
+		return;
+	}
+
+	const FSMGridContainerState* InternalContainer = FindContainer(ParentSkillData->InternalContainerId);
+	if (InternalContainer == nullptr)
+	{
+		return;
+	}
+
+	for (const FGuid& ChildItemInstanceId : InternalContainer->ContainedItemIds)
+	{
+		const FSMItemInstanceData* ChildItemData = FindItem(ChildItemInstanceId);
+		if (ChildItemData != nullptr)
+		{
+			FSMNestedItemDropSnapshot Snapshot;
+			Snapshot.SetInstanceId(ChildItemData->InstanceId);
+			Snapshot.SetParentSkillInstanceId(InParentSkillInstanceId);
+			Snapshot.ItemType = ChildItemData->ItemType;
+			Snapshot.SetDefinition(ChildItemData->Definition);
+			Snapshot.SetGridX(ChildItemData->GridX);
+			Snapshot.SetGridY(ChildItemData->GridY);
+			Snapshot.SetRotation(ChildItemData->Rotation);
+			Snapshot.SetLocked(ChildItemData->bLocked);
+
+			OutSnapshots.Add(Snapshot);
+			continue;
+		}
+
+		const FSMSkillItemInstanceData* ChildSkillData = FindSkill(ChildItemInstanceId);
+		if (ChildSkillData != nullptr)
+		{
+			FSMNestedItemDropSnapshot Snapshot;
+			Snapshot.SetInstanceId(ChildSkillData->BaseItem.InstanceId);
+			Snapshot.SetParentSkillInstanceId(InParentSkillInstanceId);
+			Snapshot.ItemType = ChildSkillData->BaseItem.ItemType;
+			Snapshot.SetDefinition(ChildSkillData->BaseItem.Definition);
+			Snapshot.SetGridX(ChildSkillData->BaseItem.GridX);
+			Snapshot.SetGridY(ChildSkillData->BaseItem.GridY);
+			Snapshot.SetRotation(ChildSkillData->BaseItem.Rotation);
+			Snapshot.SetLocked(ChildSkillData->BaseItem.bLocked);
+
+			OutSnapshots.Add(Snapshot);
+			CollectNestedDropSnapshots(ChildSkillData->BaseItem.InstanceId, OutSnapshots);
+		}
+	}
+}
+
+FGuid USMInventoryComponent::AddNestedSnapshotToContainer(const FSMNestedItemDropSnapshot& InSnapshot,
+                                                          const FGuid& InTargetContainerId)
+{
+	const USMItemDefinition* ItemDefinition = InSnapshot.GetDefinition().LoadSynchronous();
+	if (ItemDefinition == nullptr)
+	{
+		return FGuid();
+	}
+
+	if (InSnapshot.ItemType == ESMItemType::Skill)
+	{
+		const USMInternalInventoryFragment* InternalInventoryFragment =
+			ItemDefinition->FindFragmentByClass<USMInternalInventoryFragment>();
+		if (InternalInventoryFragment == nullptr)
+		{
+			return FGuid();
+		}
+
+		FSMSkillItemInstanceData NewSkillEntry;
+		NewSkillEntry.BaseItem.InstanceId = InSnapshot.GetInstanceId();
+		NewSkillEntry.BaseItem.ItemType = ESMItemType::Skill;
+		NewSkillEntry.BaseItem.Definition = InSnapshot.GetDefinition();
+		NewSkillEntry.BaseItem.ParentContainerId = InTargetContainerId;
+		NewSkillEntry.BaseItem.GridX = InSnapshot.GetGridX();
+		NewSkillEntry.BaseItem.GridY = InSnapshot.GetGridY();
+		NewSkillEntry.BaseItem.Rotation = InSnapshot.GetRotation();
+		NewSkillEntry.BaseItem.bLocked = InSnapshot.IsLocked();
+
+		FGuid InternalContainerId;
+		if (CreateSkillInternalContainer(
+			NewSkillEntry.BaseItem.InstanceId,
+			InternalInventoryFragment->GetInternalMask(),
+			InternalContainerId) == false)
+		{
+			return FGuid();
+		}
+
+		NewSkillEntry.InternalContainerId = InternalContainerId;
+		NewSkillEntry.EmbeddedItemIds.Reset();
+
+		SkillEntries.Add(NewSkillEntry);
+
+		if (CanPlaceItem(
+			NewSkillEntry.BaseItem.InstanceId,
+			InTargetContainerId,
+			InSnapshot.GetGridX(),
+			InSnapshot.GetGridY()) == false)
+		{
+			SkillEntries.RemoveAll(
+				[&](const FSMSkillItemInstanceData& Entry)
+				{
+					return Entry.BaseItem.InstanceId == NewSkillEntry.BaseItem.InstanceId;
+				});
+
+			SkillInternalContainers.RemoveAll(
+				[&](const FSMGridContainerState& ContainerState)
+				{
+					return ContainerState.ContainerId == InternalContainerId;
+				});
+
+			return FGuid();
+		}
+
+		FSMSkillItemInstanceData* EditableSkill = FindEditableSkill(NewSkillEntry.BaseItem.InstanceId);
+		if (EditableSkill == nullptr)
+		{
+			SkillEntries.RemoveAll(
+				[&](const FSMSkillItemInstanceData& Entry)
+				{
+					return Entry.BaseItem.InstanceId == NewSkillEntry.BaseItem.InstanceId;
+				});
+
+			SkillInternalContainers.RemoveAll(
+				[&](const FSMGridContainerState& ContainerState)
+				{
+					return ContainerState.ContainerId == InternalContainerId;
+				});
+
+			return FGuid();
+		}
+
+		EditableSkill->BaseItem.GridX = InSnapshot.GetGridX();
+		EditableSkill->BaseItem.GridY = InSnapshot.GetGridY();
+
+		if (FSMGridContainerState* TargetContainer = FindEditableContainer(InTargetContainerId))
+		{
+			TargetContainer->ContainedItemIds.Add(EditableSkill->BaseItem.InstanceId);
+		}
+
+		PublishInventoryUpdatedMessage(InTargetContainerId);
+		return EditableSkill->BaseItem.InstanceId;
+	}
+
+	FSMItemInstanceData NewItemEntry;
+	NewItemEntry.InstanceId = InSnapshot.GetInstanceId();
+	NewItemEntry.ItemType = InSnapshot.ItemType;
+	NewItemEntry.Definition = InSnapshot.GetDefinition();
+	NewItemEntry.ParentContainerId = InTargetContainerId;
+	NewItemEntry.GridX = InSnapshot.GetGridX();
+	NewItemEntry.GridY = InSnapshot.GetGridY();
+	NewItemEntry.Rotation = InSnapshot.GetRotation();
+	NewItemEntry.bLocked = InSnapshot.IsLocked();
+
+	ItemEntries.Add(NewItemEntry);
+
+	if (CanPlaceItem(
+		NewItemEntry.InstanceId,
+		InTargetContainerId,
+		InSnapshot.GetGridX(),
+		InSnapshot.GetGridY()) == false)
+	{
+		ItemEntries.RemoveAll(
+			[&](const FSMItemInstanceData& Entry)
+			{
+				return Entry.InstanceId == NewItemEntry.InstanceId;
+			});
+
+		return FGuid();
+	}
+
+	FSMItemInstanceData* EditableItem = FindEditableItem(NewItemEntry.InstanceId);
+	if (EditableItem == nullptr)
+	{
+		ItemEntries.RemoveAll(
+			[&](const FSMItemInstanceData& Entry)
+			{
+				return Entry.InstanceId == NewItemEntry.InstanceId;
+			});
+
+		return FGuid();
+	}
+
+	EditableItem->GridX = InSnapshot.GetGridX();
+	EditableItem->GridY = InSnapshot.GetGridY();
+
+	if (FSMGridContainerState* TargetContainer = FindEditableContainer(InTargetContainerId))
+	{
+		TargetContainer->ContainedItemIds.Add(EditableItem->InstanceId);
+	}
+
+	PublishInventoryUpdatedMessage(InTargetContainerId);
+	return EditableItem->InstanceId;
+}
+
+bool USMInventoryComponent::RestoreNestedPayloads(const FSMItemDropPayload& InDropPayload,
+                                                  const FGuid& InParentSkillInstanceId)
+{
+	FSMSkillItemInstanceData* ParentSkillData = FindEditableSkill(InParentSkillInstanceId);
+	if (ParentSkillData == nullptr)
+	{
+		return false;
+	}
+
+	for (const FSMNestedItemDropSnapshot& Snapshot : InDropPayload.GetNestedItemSnapshots())
+	{
+		if (Snapshot.GetParentSkillInstanceId() != InParentSkillInstanceId)
+		{
+			continue;
+		}
+
+		const FGuid AddedItemInstanceId = AddNestedSnapshotToContainer(Snapshot, ParentSkillData->InternalContainerId);
+		if (AddedItemInstanceId.IsValid() == false)
+		{
+			return false;
+		}
+
+		ParentSkillData->EmbeddedItemIds.AddUnique(AddedItemInstanceId);
+
+		if (Snapshot.ItemType == ESMItemType::Skill)
+		{
+			if (RestoreNestedPayloads(InDropPayload, Snapshot.GetInstanceId()) == false)
+			{
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool USMInventoryComponent::RemoveItemInternal(const FGuid& InItemInstanceId, bool bPublishInventoryMessage)
+{
+	FSMItemInstanceData* EditableItem = FindEditableItem(InItemInstanceId);
+	if (EditableItem != nullptr)
+	{
+		const FGuid ParentContainerId = EditableItem->ParentContainerId;
+
+		if (FSMGridContainerState* ParentContainer = FindEditableContainer(ParentContainerId))
+		{
+			ParentContainer->ContainedItemIds.Remove(InItemInstanceId);
+		}
+
+		for (FSMSkillItemInstanceData& SkillEntry : SkillEntries)
+		{
+			if (SkillEntry.InternalContainerId == ParentContainerId)
+			{
+				SkillEntry.EmbeddedItemIds.Remove(InItemInstanceId);
+				break;
+			}
+		}
+
+		ItemEntries.RemoveAll(
+			[&](const FSMItemInstanceData& Entry)
+			{
+				return Entry.InstanceId == InItemInstanceId;
+			});
+
+		if (bPublishInventoryMessage)
+		{
+			PublishInventoryUpdatedMessage(ParentContainerId);
+		}
+
+		return true;
+	}
+
+	FSMSkillItemInstanceData* EditableSkill = FindEditableSkill(InItemInstanceId);
+	if (EditableSkill != nullptr)
+	{
+		const FGuid ParentContainerId = EditableSkill->BaseItem.ParentContainerId;
+		const FGuid InternalContainerId = EditableSkill->InternalContainerId;
+
+		TArray<FGuid> ChildItemIds;
+		if (const FSMGridContainerState* InternalContainer = FindContainer(InternalContainerId))
+		{
+			ChildItemIds = InternalContainer->ContainedItemIds;
+		}
+
+		for (const FGuid& ChildItemInstanceId : ChildItemIds)
+		{
+			if (RemoveItemInternal(ChildItemInstanceId, false) == false)
+			{
+				return false;
+			}
+		}
+
+		if (FSMGridContainerState* ParentContainer = FindEditableContainer(ParentContainerId))
+		{
+			ParentContainer->ContainedItemIds.Remove(InItemInstanceId);
+		}
+
+		for (FSMSkillItemInstanceData& SkillEntry : SkillEntries)
+		{
+			if (SkillEntry.InternalContainerId == ParentContainerId)
+			{
+				SkillEntry.EmbeddedItemIds.Remove(InItemInstanceId);
+				break;
+			}
+		}
+
+		if (QuickSlots.Slot1SkillId == InItemInstanceId)
+		{
+			QuickSlots.Slot1SkillId = FGuid();
+			PublishQuickSlotUpdatedMessage(0);
+		}
+
+		if (QuickSlots.Slot2SkillId == InItemInstanceId)
+		{
+			QuickSlots.Slot2SkillId = FGuid();
+			PublishQuickSlotUpdatedMessage(1);
+		}
+
+		SkillEntries.RemoveAll(
+			[&](const FSMSkillItemInstanceData& Entry)
+			{
+				return Entry.BaseItem.InstanceId == InItemInstanceId;
+			});
+
+		SkillInternalContainers.RemoveAll(
+			[&](const FSMGridContainerState& ContainerState)
+			{
+				return ContainerState.ContainerId == InternalContainerId;
+			});
+
+		if (bPublishInventoryMessage)
+		{
+			PublishInventoryUpdatedMessage(ParentContainerId);
+		}
+
+		return true;
+	}
+
+	return false;
 }

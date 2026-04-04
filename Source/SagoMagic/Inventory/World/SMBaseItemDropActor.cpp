@@ -1,8 +1,5 @@
 ﻿#include "Inventory/World/SMBaseItemDropActor.h"
 
-#include "AssetDefinitionAssetInfo.h"
-#include "AssetTypeCategories.h"
-#include "MaterialStatsCommon.h"
 #include "Net/UnrealNetwork.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -62,6 +59,7 @@ void ASMBaseItemDropActor::InitializeFromPayload(const FSMItemDropPayload& InIte
 	{
 		ApplyWorldVisual();
 	}
+
 	RefreshInteractionState();
 }
 
@@ -93,17 +91,18 @@ void ASMBaseItemDropActor::HandleInteract(APawn* InInteractingPawn)
 	{
 		return;
 	}
-	
+
 	const FGuid AddedItemInstanceId = InventoryComponent->AddItemFromDropPayload(ItemDropPayload);
 	if (AddedItemInstanceId.IsValid() == false)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Guid for current item is invalid. can't get item from actor %s"), *InventoryComponent->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("Guid for current item is invalid. can't get item from actor %s"),
+		       *InventoryComponent->GetName());
 		return;
 	}
-	
-	UE_LOG(LogTemp, Log, TEXT("Successfully added item from drop payload to inventory. ItemInstanceId: %s"), *AddedItemInstanceId.ToString());
-	Destroy();
 
+	UE_LOG(LogTemp, Log, TEXT("Successfully added item from drop payload to inventory. ItemInstanceId: %s"),
+	       *AddedItemInstanceId.ToString());
+	Destroy();
 }
 
 void ASMBaseItemDropActor::OnRep_ItemDropPayload()
@@ -120,12 +119,12 @@ void ASMBaseItemDropActor::OnRep_ItemDropPayload()
 
 const USMItemDefinition* ASMBaseItemDropActor::ResolveItemDefinition() const
 {
-	if (ItemDropPayload.Definition.IsNull())
+	if (ItemDropPayload.GetDefinition().IsNull())
 	{
 		return nullptr;
 	}
 
-	return ItemDropPayload.Definition.LoadSynchronous();
+	return ItemDropPayload.GetDefinition().LoadSynchronous();
 }
 
 void ASMBaseItemDropActor::ApplyWorldVisual()
@@ -154,19 +153,19 @@ void ASMBaseItemDropActor::ApplyWorldVisual()
 			StaticMeshComponent->SetStaticMesh(WorldMesh);
 		}
 	}
-	
+
 	StaticMeshComponent->SetWorldScale3D(WorldVisualFragment->GetWorldScale());
-	
+
 	if (InteractionTargetComponent != nullptr)
 	{
-		UMaterialInterface* HighlightMaterial = nullptr;
-		
+		UMaterialInterface* HighlightOverlayMaterial = nullptr;
+
 		if (WorldVisualFragment->GetOverrideMaterial().IsNull() == false)
 		{
-			HighlightMaterial = WorldVisualFragment->GetOverrideMaterial().LoadSynchronous();
+			HighlightOverlayMaterial = WorldVisualFragment->GetOverrideMaterial().LoadSynchronous();
 		}
-		
-		InteractionTargetComponent->SetHighlightOverlayMaterial(HighlightMaterial);
+
+		InteractionTargetComponent->SetHighlightOverlayMaterial(HighlightOverlayMaterial);
 	}
 }
 

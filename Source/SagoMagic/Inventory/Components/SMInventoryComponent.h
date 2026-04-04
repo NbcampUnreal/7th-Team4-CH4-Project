@@ -12,6 +12,7 @@ class USMItemDefinition;
 class USMGemModifierFragment;
 class ASMBaseItemDropActor;
 
+
 /**
  * 인벤토리 시스템 핵심 로직 컴포넌트 정의 파일
  *
@@ -79,17 +80,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Inventory")
 	FGuid AddItemFromDefinition(const TSoftObjectPtr<USMItemDefinition>& InItemDefinition);
 
-	/** 아이템 드랍 페이로드 기반 아이템 추가 요청	*/
+	/** 아이템 드랍 페이로드 기반 아이템 추가 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory")
 	FGuid AddItemFromDropPayload(const FSMItemDropPayload& InDropPayload);
-	
+
 	/** 아이템 제거 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory")
 	bool RemoveItem(const FGuid& InItemInstanceId);
 
 	/** 아이템 월드 드랍 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory")
-	bool DropItem(const FGuid& InItemInstanceId);
+	bool DropItem(const FGuid& InItemInstanceId, const FTransform& InDropTransform);
 
 	/** 아이템 이동 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory")
@@ -226,7 +227,8 @@ private:
 	bool BuildDropPayload(const FGuid& InItemInstanceId, FSMItemDropPayload& OutPayload) const;
 
 	/** 월드 드랍 액터 생성 */
-	bool SpawnDropActorFromPayload(const FSMItemDropPayload& InPayload);
+	ASMBaseItemDropActor* SpawnDropActorFromPayload(const FSMItemDropPayload& InPayload,
+	                                                const FTransform& InSpawnTransform);
 
 	/** 스킬 요약 계산 */
 	bool BuildSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const;
@@ -242,6 +244,20 @@ private:
 
 	/** 퀵슬롯 갱신 메시지 발행 */
 	void PublishQuickSlotUpdatedMessage(int32 InSlotIndex) const;
+
+	/** 루트 스킬 기준 내부 드랍 스냅샷 수집 */
+	void CollectNestedDropSnapshots(const FGuid& InParentSkillInstanceId,
+	                                TArray<FSMNestedItemDropSnapshot>& OutSnapshots) const;
+
+	/** 내부 드랍 스냅샷 1개를 특정 컨테이너에 복원 */
+	FGuid AddNestedSnapshotToContainer(const FSMNestedItemDropSnapshot& InSnapshot,
+	                                   const FGuid& InTargetContainerId);
+
+	/** 특정 부모 스킬 아래의 내부 드랍 스냅샷들을 재귀 복원 */
+	bool RestoreNestedPayloads(const FSMItemDropPayload& InDropPayload, const FGuid& InParentSkillInstanceId);
+
+	/** 실제 아이템 제거 내부 함수 */
+	bool RemoveItemInternal(const FGuid& InItemInstanceId, bool bPublishInventoryMessage);
 
 public:
 	/** 기본 메인 인벤토리 마스크 설정값 */

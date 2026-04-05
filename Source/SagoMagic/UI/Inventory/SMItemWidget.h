@@ -43,6 +43,12 @@ public:
 	/** 마우스 버튼 입력 처리 오버라이드 */
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
+	/** 마우스 진입 처리 오버라이드 */
+	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+
+	/** 마우스 이탈 처리 오버라이드 */
+	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
+
 	/** 드래그 시작 처리 오버라이드 */
 	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
 	                                  UDragDropOperation*& OutOperation) override;
@@ -81,6 +87,12 @@ public:
 	bool IsDraggable() const
 	{
 		return bDraggable;
+	}
+
+	/** 드래그 미리보기 위젯 클래스 Getter */
+	TSubclassOf<USMDragItemPreviewWidget> GetDragPreviewWidgetClass() const
+	{
+		return DragPreviewWidgetClass;
 	}
 
 	/** 인벤토리 컴포넌트 Getter */

@@ -50,7 +50,9 @@ void USMInventoryContextMenuWidget::RequestDropItem()
 
 	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 	{
+		OwningPanel->CloseContextMenu();
 		OwningPanel->RefreshPanel();
+		return;
 	}
 
 	BP_OnContextMenuUpdated();
@@ -66,6 +68,7 @@ void USMInventoryContextMenuWidget::RequestOpenSkillInventory()
 	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 	{
 		OwningPanel->OpenSkillInventory(ItemInstanceId);
+		OwningPanel->CloseContextMenu();
 	}
 }
 
@@ -88,7 +91,9 @@ void USMInventoryContextMenuWidget::RequestDeleteItem()
 
 	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 	{
+		OwningPanel->CloseContextMenu();
 		OwningPanel->RefreshPanel();
+		return;
 	}
 
 	BP_OnContextMenuUpdated();
@@ -108,6 +113,10 @@ void USMInventoryContextMenuWidget::RequestDetachEmbeddedItem()
 
 	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 	{
+		OwningPanel->CloseContextMenu();
 		OwningPanel->RefreshPanel();
+		return;
 	}
+
+	BP_OnContextMenuUpdated();
 }

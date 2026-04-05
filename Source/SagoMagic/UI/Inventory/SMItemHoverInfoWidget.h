@@ -98,6 +98,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Item Hover Info Widget")
 	void ShowItemInfo(const FGuid& InItemInstanceId, FVector2D InScreenPosition);
 
+	/** 표시 위치 갱신 요청 */
+	UFUNCTION(BlueprintCallable, Category="Item Hover Info Widget")
+	void UpdateScreenPosition(FVector2D InScreenPosition);
+
 	/** 아이템 정보 숨김 요청 */
 	UFUNCTION(BlueprintCallable, Category="Item Hover Info Widget")
 	void HideItemInfo();

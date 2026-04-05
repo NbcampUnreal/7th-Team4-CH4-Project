@@ -1,8 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "SMInventoryCellWidget.generated.h"
+
+class UDragDropOperation;
 
 
 /**
@@ -14,9 +16,10 @@
  * - 마우스 호버 여부
  * - 배치 가능 강조 여부
  * - 배치 불가 강조 여부
+ * - 현재 셀 점유 아이템 인스턴스 ID
  *
  * 역할:
- * - 인벤토리 격자의 한 칸 표시와 상태 표현 담당
+ * - 인벤토리 격자의 한 칸 표시와 입력 처리 담당
  */
 
 /** 인벤토리 셀 위젯 */
@@ -28,6 +31,22 @@ class SAGOMAGIC_API USMInventoryCellWidget : public UUserWidget
 public:
 	/** 기본 생성자 */
 	USMInventoryCellWidget(const FObjectInitializer& ObjectInitializer);
+
+	/** 마우스 진입 처리 오버라이드 */
+	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+
+	/** 마우스 이동 처리 오버라이드 */
+	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+
+	/** 마우스 이탈 처리 오버라이드 */
+	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
+
+	/** 마우스 버튼 입력 처리 오버라이드 */
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+
+	/** 드래그 시작 처리 오버라이드 */
+	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
+	                                  UDragDropOperation*& OutOperation) override;
 
 	/** Grid X Getter */
 	int32 GetGridX() const
@@ -63,6 +82,18 @@ public:
 	bool IsBlockedHighlighted() const
 	{
 		return bBlockedHighlighted;
+	}
+
+	/** 점유 아이템 인스턴스 ID Getter */
+	const FGuid& GetOwnerItemInstanceId() const
+	{
+		return OwnerItemInstanceId;
+	}
+
+	/** 점유 여부 Getter */
+	bool IsOccupiedCell() const
+	{
+		return OwnerItemInstanceId.IsValid();
 	}
 
 	/** Grid X Setter */
@@ -101,6 +132,12 @@ public:
 		bBlockedHighlighted = bInBlockedHighlighted;
 	}
 
+	/** 점유 아이템 인스턴스 ID Setter */
+	void SetOwnerItemInstanceId(const FGuid& InOwnerItemInstanceId)
+	{
+		OwnerItemInstanceId = InOwnerItemInstanceId;
+	}
+
 public:
 	/** 셀 초기화 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Cell Widget")
@@ -117,6 +154,10 @@ public:
 	/** 셀 강조 상태 초기화 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Cell Widget")
 	void ClearHighlightState();
+
+	/** 점유 아이템 갱신 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory Cell Widget")
+	void UpdateOccupiedItem(const FGuid& InOwnerItemInstanceId);
 
 protected:
 	/** 셀 상태 갱신 블루프린트 이벤트 */
@@ -148,6 +189,10 @@ protected:
 	/** 배치 불가 강조 여부 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Cell Widget")
 	bool bBlockedHighlighted;
+
+	/** 현재 셀 점유 아이템 인스턴스 ID */
+	UPROPERTY(BlueprintReadOnly, Category="Inventory Cell Widget")
+	FGuid OwnerItemInstanceId;
 
 private:
 };

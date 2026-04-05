@@ -31,6 +31,17 @@ void USMItemHoverInfoWidget::ShowItemInfo(const FGuid& InItemInstanceId, FVector
 	BP_OnHoverInfoUpdated();
 }
 
+void USMItemHoverInfoWidget::UpdateScreenPosition(FVector2D InScreenPosition)
+{
+	if (bIsShowingItemInfo == false)
+	{
+		return;
+	}
+
+	ScreenPosition = InScreenPosition;
+	BP_OnHoverInfoUpdated();
+}
+
 void USMItemHoverInfoWidget::HideItemInfo()
 {
 	ItemInstanceId.Invalidate();

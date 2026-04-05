@@ -201,6 +201,57 @@ void USMInventoryGridWidget::ClearHoveredCellState()
 	UpdateCellStates();
 }
 
+USMInventoryDragDropOperation* USMInventoryGridWidget::CreateDragDropOperationForItem(const FGuid& InItemInstanceId)
+{
+	if (InventoryComponent == nullptr || InItemInstanceId.IsValid() == false)
+	{
+		return nullptr;
+	}
+
+	FSMItemInstanceData BaseItemData;
+	if (GetBaseItemData(InItemInstanceId, BaseItemData) == false)
+	{
+		return nullptr;
+	}
+
+	if (BaseItemData.bLocked)
+	{
+		return nullptr;
+	}
+
+	USMInventoryDragDropOperation* NewOperation = NewObject<USMInventoryDragDropOperation>(this);
+	if (NewOperation == nullptr)
+	{
+		return nullptr;
+	}
+
+	USMDragItemPreviewWidget* PreviewWidget = nullptr;
+	if (ItemWidgetClass != nullptr)
+	{
+		const USMItemWidget* ItemWidgetCDO = ItemWidgetClass->GetDefaultObject<USMItemWidget>();
+		if (ItemWidgetCDO != nullptr && ItemWidgetCDO->GetDragPreviewWidgetClass() != nullptr)
+		{
+			PreviewWidget = CreateWidget<USMDragItemPreviewWidget>(this, ItemWidgetCDO->GetDragPreviewWidgetClass());
+			if (PreviewWidget != nullptr)
+			{
+				PreviewWidget->InitializePreview(BaseItemData.InstanceId, BaseItemData.Rotation);
+			}
+		}
+	}
+
+	NewOperation->InitializeOperation(
+		BaseItemData.InstanceId,
+		BaseItemData.ParentContainerId,
+		BaseItemData.GridX,
+		BaseItemData.GridY,
+		BaseItemData.Rotation,
+		PreviewWidget);
+
+	NewOperation->DefaultDragVisual = PreviewWidget;
+	ActiveDragDropOperation = NewOperation;
+	return NewOperation;
+}
+
 bool USMInventoryGridWidget::CalculateDropGridPosition(
 	const FGeometry& InGeometry,
 	const FDragDropEvent& InDragDropEvent,
@@ -340,9 +391,11 @@ void USMInventoryGridWidget::RebuildItemWidgets()
 			ItemData.GridY,
 			ItemData.Rotation,
 			InventoryComponent);
+		NewItemWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
 
 		ItemLayerPanel->AddChild(NewItemWidget);
 		ApplyItemWidgetLayout(NewItemWidget, ItemData.GridX, ItemData.GridY);
+		ApplyItemOwnershipToCells(ItemData);
 	}
 
 	for (const FSMSkillItemInstanceData& SkillData : InventoryComponent->GetSkillEntries())
@@ -365,9 +418,11 @@ void USMInventoryGridWidget::RebuildItemWidgets()
 			SkillData.BaseItem.GridY,
 			SkillData.BaseItem.Rotation,
 			InventoryComponent);
+		NewItemWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
 
 		ItemLayerPanel->AddChild(NewItemWidget);
 		ApplyItemWidgetLayout(NewItemWidget, SkillData.BaseItem.GridX, SkillData.BaseItem.GridY);
+		ApplyItemOwnershipToCells(SkillData.BaseItem);
 	}
 }
 
@@ -558,6 +613,120 @@ void USMInventoryGridWidget::SetHoveredCell(int32 InGridX, int32 InGridY)
 	HoveredGridX = InGridX;
 	HoveredGridY = InGridY;
 	UpdateCellStates();
+}
+
+bool USMInventoryGridWidget::GetBaseItemData(const FGuid& InItemInstanceId, FSMItemInstanceData& OutBaseItemData) const
+{
+	FSMItemInstanceData ItemData;
+	if (InventoryComponent != nullptr && InventoryComponent->GetItemData(InItemInstanceId, ItemData))
+	{
+		OutBaseItemData = ItemData;
+		return true;
+	}
+
+	FSMSkillItemInstanceData SkillData;
+	if (InventoryComponent != nullptr && InventoryComponent->GetSkillData(InItemInstanceId, SkillData))
+	{
+		OutBaseItemData = SkillData.BaseItem;
+		return true;
+	}
+
+	return false;
+}
+
+bool USMInventoryGridWidget::BuildOccupiedCellsFromItemData(const FSMItemInstanceData& InBaseItemData,
+                                                            TArray<FIntPoint>& OutOccupiedCells) const
+{
+	OutOccupiedCells.Reset();
+
+	if (InventoryComponent == nullptr || InBaseItemData.InstanceId.IsValid() == false)
+	{
+		return false;
+	}
+
+	const USMItemDefinition* ItemDefinition = InventoryComponent->ResolveItemDefinition(InBaseItemData);
+	if (ItemDefinition == nullptr)
+	{
+		OutOccupiedCells.Add(FIntPoint(InBaseItemData.GridX, InBaseItemData.GridY));
+		return true;
+	}
+
+	const USMGridShapeFragment* GridShapeFragment = ItemDefinition->FindFragmentByClass<USMGridShapeFragment>();
+	if (GridShapeFragment == nullptr)
+	{
+		OutOccupiedCells.Add(FIntPoint(InBaseItemData.GridX, InBaseItemData.GridY));
+		return true;
+	}
+
+	const FSMGridMaskData& ShapeMask = GridShapeFragment->GetShapeMask();
+	if (ShapeMask.IsValidMaskData() == false)
+	{
+		OutOccupiedCells.Add(FIntPoint(InBaseItemData.GridX, InBaseItemData.GridY));
+		return true;
+	}
+
+	for (int32 Y = 0; Y < ShapeMask.Height; ++Y)
+	{
+		for (int32 X = 0; X < ShapeMask.Width; ++X)
+		{
+			const int32 MaskIndex = (Y * ShapeMask.Width) + X;
+			if (ShapeMask.BitMask.IsValidIndex(MaskIndex) == false || ShapeMask.BitMask[MaskIndex] != TEXT('1'))
+			{
+				continue;
+			}
+
+			int32 RotatedX = X;
+			int32 RotatedY = Y;
+
+			switch (InBaseItemData.Rotation)
+			{
+			case ESMGridRotation::Rot0:
+				break;
+
+			case ESMGridRotation::Rot90:
+				RotatedX = ShapeMask.Height - 1 - Y;
+				RotatedY = X;
+				break;
+
+			case ESMGridRotation::Rot180:
+				RotatedX = ShapeMask.Width - 1 - X;
+				RotatedY = ShapeMask.Height - 1 - Y;
+				break;
+
+			case ESMGridRotation::Rot270:
+				RotatedX = Y;
+				RotatedY = ShapeMask.Width - 1 - X;
+				break;
+
+			default:
+				continue;
+			}
+
+			OutOccupiedCells.Add(FIntPoint(InBaseItemData.GridX + RotatedX, InBaseItemData.GridY + RotatedY));
+		}
+	}
+
+	return true;
+}
+
+void USMInventoryGridWidget::ApplyItemOwnershipToCells(const FSMItemInstanceData& InBaseItemData)
+{
+	TArray<FIntPoint> OccupiedCells;
+	if (BuildOccupiedCellsFromItemData(InBaseItemData, OccupiedCells) == false)
+	{
+		return;
+	}
+
+	for (const FIntPoint& OccupiedCell : OccupiedCells)
+	{
+		USMInventoryCellWidget* CellWidget = FindCellWidget(OccupiedCell.X, OccupiedCell.Y);
+		if (CellWidget == nullptr)
+		{
+			continue;
+		}
+
+		CellWidget->UpdateOccupiedItem(InBaseItemData.InstanceId);
+	}
 }
 
 void USMInventoryGridWidget::RefreshContainerSize()

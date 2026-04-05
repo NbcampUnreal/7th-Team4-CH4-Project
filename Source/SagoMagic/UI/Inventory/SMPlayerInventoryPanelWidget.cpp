@@ -8,6 +8,7 @@
 #include "UI/Inventory/SMSkillInventoryWidget.h"
 #include "UI/Inventory/SMQuickSlotBarWidget.h"
 #include "UI/Inventory/SMInventoryContextMenuWidget.h"
+#include "UI/Inventory/SMItemHoverInfoWidget.h"
 
 USMPlayerInventoryPanelWidget::USMPlayerInventoryPanelWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -16,6 +17,8 @@ USMPlayerInventoryPanelWidget::USMPlayerInventoryPanelWidget(const FObjectInitia
 	  , SkillInventoryWidget(nullptr)
 	  , QuickSlotBarWidget(nullptr)
 	  , ContextMenuWidget(nullptr)
+	  , ItemHoverInfoWidget(nullptr)
+	  , ContextMenuScreenPosition(FVector2D::ZeroVector)
 {
 }
 
@@ -33,6 +36,25 @@ void USMPlayerInventoryPanelWidget::InitializePanelWidget(USMInventoryComponent*
 
 void USMPlayerInventoryPanelWidget::RefreshPanel()
 {
+	if (HoveredItemInstanceId.IsValid() && (InventoryComponent == nullptr || InventoryComponent->HasItem(HoveredItemInstanceId) == false))
+	{
+		HideHoveredItemInfo();
+	}
+	else if (ItemHoverInfoWidget != nullptr && HoveredItemInstanceId.IsValid())
+	{
+		ItemHoverInfoWidget->RefreshItemInfo();
+	}
+
+	if (ContextMenuWidget != nullptr)
+	{
+		const FGuid& ContextMenuItemInstanceId = ContextMenuWidget->GetItemInstanceId();
+		if (ContextMenuItemInstanceId.IsValid() &&
+			(InventoryComponent == nullptr || InventoryComponent->HasItem(ContextMenuItemInstanceId) == false))
+		{
+			CloseContextMenu();
+		}
+	}
+
 	ApplySelectedSkillState();
 	RefreshMainInventoryWidget();
 	RefreshSkillInventoryWidget();
@@ -112,6 +134,97 @@ bool USMPlayerInventoryPanelWidget::RequestRotateCurrentDraggedItem()
 	return false;
 }
 
+void USMPlayerInventoryPanelWidget::SetHoveredItem(const FGuid& InItemInstanceId)
+{
+	if (HoveredItemInstanceId == InItemInstanceId)
+	{
+		return;
+	}
+
+	HoveredItemInstanceId = InItemInstanceId;
+	BP_OnHoveredItemChanged();
+}
+
+void USMPlayerInventoryPanelWidget::ClearHoveredItem()
+{
+	if (HoveredItemInstanceId.IsValid() == false)
+	{
+		return;
+	}
+
+	HoveredItemInstanceId.Invalidate();
+	BP_OnHoveredItemChanged();
+}
+
+void USMPlayerInventoryPanelWidget::OpenContextMenuForItem(const FGuid& InItemInstanceId, FVector2D InScreenPosition)
+{
+	if (ContextMenuWidget == nullptr)
+	{
+		return;
+	}
+
+	ContextMenuScreenPosition = InScreenPosition;
+	ContextMenuWidget->InitializeContextMenu(InItemInstanceId, InventoryComponent);
+	BP_OnContextMenuStateChanged();
+}
+
+void USMPlayerInventoryPanelWidget::CloseContextMenu()
+{
+	ContextMenuScreenPosition = FVector2D::ZeroVector;
+
+	if (ContextMenuWidget != nullptr)
+	{
+		ContextMenuWidget->InitializeContextMenu(FGuid(), InventoryComponent);
+	}
+
+	BP_OnContextMenuStateChanged();
+}
+
+void USMPlayerInventoryPanelWidget::ShowHoveredItemInfo(const FGuid& InItemInstanceId, FVector2D InScreenPosition)
+{
+	if (InItemInstanceId.IsValid() == false)
+	{
+		HideHoveredItemInfo();
+		return;
+	}
+
+	const bool bHoveredItemChanged = HoveredItemInstanceId != InItemInstanceId;
+	HoveredItemInstanceId = InItemInstanceId;
+
+	if (ItemHoverInfoWidget != nullptr)
+	{
+		if (ItemHoverInfoWidget->GetItemInstanceId() == InItemInstanceId && ItemHoverInfoWidget->IsShowingItemInfo())
+		{
+			ItemHoverInfoWidget->UpdateScreenPosition(InScreenPosition);
+		}
+		else
+		{
+			ItemHoverInfoWidget->ShowItemInfo(InItemInstanceId, InScreenPosition);
+		}
+	}
+
+	if (bHoveredItemChanged)
+	{
+		BP_OnHoveredItemChanged();
+	}
+}
+
+void USMPlayerInventoryPanelWidget::HideHoveredItemInfo()
+{
+	const bool bWasHovered = HoveredItemInstanceId.IsValid();
+	HoveredItemInstanceId.Invalidate();
+
+	if (ItemHoverInfoWidget != nullptr)
+	{
+		ItemHoverInfoWidget->HideItemInfo();
+	}
+
+	if (bWasHovered)
+	{
+		BP_OnHoveredItemChanged();
+	}
+}
+
 void USMPlayerInventoryPanelWidget::InitializeChildWidgets()
 {
 	FGuid MainInventoryContainerId;
@@ -136,6 +249,13 @@ void USMPlayerInventoryPanelWidget::InitializeChildWidgets()
 		ContextMenuWidget->SetItemInstanceId(FGuid());
 	}
 
+	if (ItemHoverInfoWidget != nullptr)
+	{
+		ItemHoverInfoWidget->InitializeHoverInfoWidget(InventoryComponent);
+	}
+
+	HideHoveredItemInfo();
+	CloseContextMenu();
 	ApplySelectedSkillState();
 }
 

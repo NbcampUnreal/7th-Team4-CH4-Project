@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Inventory/Core/SMItemInstanceTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "SMInventoryGridWidget.generated.h"
 
@@ -114,6 +115,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Inventory Grid Widget")
 	void ClearHoveredCellState();
 
+	/** 특정 아이템 기준 드래그 드롭 오퍼레이션 생성 */
+	USMInventoryDragDropOperation* CreateDragDropOperationForItem(const FGuid& InItemInstanceId);
+
 protected:
 	/** 드래그 중 목표 Grid 좌표 계산 */
 	bool CalculateDropGridPosition(
@@ -148,6 +152,15 @@ protected:
 
 	/** 현재 호버 셀 설정 */
 	void SetHoveredCell(int32 InGridX, int32 InGridY);
+
+	/** 아이템 인스턴스 기준 공통 베이스 데이터 조회 */
+	bool GetBaseItemData(const FGuid& InItemInstanceId, FSMItemInstanceData& OutBaseItemData) const;
+
+	/** 베이스 아이템 데이터 기준 점유 셀 계산 */
+	bool BuildOccupiedCellsFromItemData(const FSMItemInstanceData& InBaseItemData, TArray<FIntPoint>& OutOccupiedCells) const;
+
+	/** 베이스 아이템 데이터 기준 셀 점유 정보 반영 */
+	void ApplyItemOwnershipToCells(const FSMItemInstanceData& InBaseItemData);
 
 	/** 컨테이너 크기 갱신 */
 	void RefreshContainerSize();

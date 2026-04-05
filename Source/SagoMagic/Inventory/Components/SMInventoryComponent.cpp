@@ -894,7 +894,29 @@ bool USMInventoryComponent::GetContainerData(const FGuid& InContainerId, FSMGrid
 
 void USMInventoryComponent::OnRep_InventoryStateChanged()
 {
-	/** TODO: UI 갱신용 메시지 발행 */
+	if (MainInventory.ContainerId.IsValid())
+	{
+		PublishInventoryUpdatedMessage(MainInventory.ContainerId);
+	}
+
+	for (const FSMGridContainerState& InternalContainer : SkillInternalContainers)
+	{
+		if (InternalContainer.ContainerId.IsValid())
+		{
+			PublishInventoryUpdatedMessage(InternalContainer.ContainerId);
+		}
+	}
+
+	for (const FSMSkillItemInstanceData& SkillEntry : SkillEntries)
+	{
+		if (SkillEntry.BaseItem.InstanceId.IsValid())
+		{
+			PublishSkillSummaryUpdatedMessage(SkillEntry.BaseItem.InstanceId);
+		}
+	}
+
+	PublishQuickSlotUpdatedMessage(0);
+	PublishQuickSlotUpdatedMessage(1);
 }
 
 bool USMInventoryComponent::HasItem(const FGuid& InItemInstanceId) const
@@ -1419,17 +1441,50 @@ bool USMInventoryComponent::IsValidQuickSlotIndex(int32 InSlotIndex) const
 
 void USMInventoryComponent::PublishInventoryUpdatedMessage(const FGuid& InContainerId) const
 {
-	/** TODO: Gameplay Message Subsystem 브로드캐스트 */
+	APlayerState* OwningPlayerState = Cast<APlayerState>(GetOwner());
+	if (OwningPlayerState == nullptr)
+	{
+		return;
+	}
+
+	FSMInventoryUpdatedMessage Message;
+	Message.SetOwningPlayerState(OwningPlayerState);
+	Message.SetContainerId(InContainerId);
+
+	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
+	MessageSubsystem.BroadcastMessage(SMMessageTag::Inventory_Updated, Message);
 }
 
 void USMInventoryComponent::PublishSkillSummaryUpdatedMessage(const FGuid& InSkillInstanceId) const
 {
-	/** TODO: Gameplay Message Subsystem 브로드캐스트 */
+	APlayerState* OwningPlayerState = Cast<APlayerState>(GetOwner());
+	if (OwningPlayerState == nullptr)
+	{
+		return;
+	}
+
+	FSMSkillSummaryUpdatedMessage Message;
+	Message.SetOwningPlayerState(OwningPlayerState);
+	Message.SetSkillInstanceId(InSkillInstanceId);
+
+	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
+	MessageSubsystem.BroadcastMessage(SMMessageTag::Inventory_SkillSummaryUpdated, Message);
 }
 
 void USMInventoryComponent::PublishQuickSlotUpdatedMessage(int32 InSlotIndex) const
 {
-	/** TODO: Gameplay Message Subsystem 브로드캐스트 */
+	APlayerState* OwningPlayerState = Cast<APlayerState>(GetOwner());
+	if (OwningPlayerState == nullptr)
+	{
+		return;
+	}
+
+	FSMQuickSlotUpdatedMessage Message;
+	Message.SetOwningPlayerState(OwningPlayerState);
+	Message.SetSlotIndex(InSlotIndex);
+
+	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
+	MessageSubsystem.BroadcastMessage(SMMessageTag::Inventory_QuickSlotUpdated, Message);
 }
 
 void USMInventoryComponent::CollectNestedDropSnapshots(const FGuid& InParentSkillInstanceId,

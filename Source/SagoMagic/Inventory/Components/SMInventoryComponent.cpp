@@ -2,6 +2,7 @@
 
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/GameplayMessageSubsystem.h"
+#include "GameFramework/PlayerState.h"
 #include "Engine/World.h"
 
 #include "Inventory/Core/SMInventoryMessageTypes.h"
@@ -353,6 +354,10 @@ bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid&
 		return false;
 	}
 
+	const ESMItemType MovingItemType = bIsNormalItem
+		                                   ? EditableItem->ItemType
+		                                   : EditableSkill->BaseItem.ItemType;
+
 	const FGuid PreviousContainerId = bIsNormalItem
 		                                  ? EditableItem->ParentContainerId
 		                                  : EditableSkill->BaseItem.ParentContainerId;
@@ -377,15 +382,114 @@ bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid&
 		return true;
 	}
 
+	const FSMGridContainerState* PreviousContainer = FindContainer(PreviousContainerId);
+	if (PreviousContainer == nullptr)
+	{
+		return false;
+	}
+
+	if (TargetContainer->ContainerType == ESMContainerType::SkillInternal)
+	{
+		const FSMSkillItemInstanceData* TargetOwningSkill = nullptr;
+		for (const FSMSkillItemInstanceData& SkillEntry : SkillEntries)
+		{
+			if (SkillEntry.InternalContainerId == InTargetContainerId)
+			{
+				TargetOwningSkill = &SkillEntry;
+				break;
+			}
+		}
+
+		if (TargetOwningSkill == nullptr)
+		{
+			return false;
+		}
+
+		if (TargetOwningSkill->BaseItem.InstanceId == InItemInstanceId)
+		{
+			return false;
+		}
+
+		const USMItemDefinition* TargetSkillDefinition = ResolveItemDefinition(TargetOwningSkill->BaseItem);
+		if (TargetSkillDefinition == nullptr)
+		{
+			return false;
+		}
+
+		const USMInternalInventoryFragment* TargetInternalInventoryFragment =
+			TargetSkillDefinition->FindFragmentByClass<USMInternalInventoryFragment>();
+		if (TargetInternalInventoryFragment == nullptr)
+		{
+			return false;
+		}
+
+		if (MovingItemType == ESMItemType::Gem)
+		{
+			if (bIsNormalItem == false)
+			{
+				return false;
+			}
+
+			const USMItemDefinition* GemDefinition = ResolveItemDefinition(*EditableItem);
+			if (GemDefinition == nullptr)
+			{
+				return false;
+			}
+
+			const USMGemModifierFragment* GemModifierFragment =
+				GemDefinition->FindFragmentByClass<USMGemModifierFragment>();
+			if (GemModifierFragment == nullptr)
+			{
+				return false;
+			}
+
+			if (TargetInternalInventoryFragment->IsGemAllowed() == false)
+			{
+				return false;
+			}
+
+			if (CanApplyGemToSkillByTags(GemModifierFragment, TargetSkillDefinition) == false)
+			{
+				return false;
+			}
+		}
+		else if (MovingItemType == ESMItemType::Skill)
+		{
+			if (bIsSkillItem == false)
+			{
+				return false;
+			}
+
+			if (TargetInternalInventoryFragment->IsSameNamedEmptySkillAllowed() == false)
+			{
+				return false;
+			}
+
+			if (IsSameNamedSkill(InItemInstanceId, TargetOwningSkill->BaseItem.InstanceId) == false)
+			{
+				return false;
+			}
+
+			if (IsSkillActuallyEmpty(InItemInstanceId) == false)
+			{
+				return false;
+			}
+		}
+		else
+		{
+			return false;
+		}
+	}
+
 	if (CanPlaceItem(InItemInstanceId, InTargetContainerId, InGridX, InGridY, InRotation) == false)
 	{
 		return false;
 	}
 
-	FSMGridContainerState* PreviousContainer = FindEditableContainer(PreviousContainerId);
-	if (PreviousContainer != nullptr)
+	FSMGridContainerState* PreviousEditableContainer = FindEditableContainer(PreviousContainerId);
+	if (PreviousEditableContainer != nullptr)
 	{
-		PreviousContainer->ContainedItemIds.Remove(InItemInstanceId);
+		PreviousEditableContainer->ContainedItemIds.Remove(InItemInstanceId);
 	}
 
 	for (FSMSkillItemInstanceData& SkillEntry : SkillEntries)

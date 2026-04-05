@@ -110,6 +110,31 @@ void USMItemWidget::UpdateDisplayFromInventory()
 {
 	if (InventoryComponent == nullptr)
 	{
+		bDraggable = false;
 		return;
 	}
+
+	FSMItemInstanceData ItemData;
+	if (InventoryComponent->GetItemData(ItemInstanceId, ItemData))
+	{
+		OwningContainerId = ItemData.ParentContainerId;
+		GridX = ItemData.GridX;
+		GridY = ItemData.GridY;
+		DisplayRotation = ItemData.Rotation;
+		bDraggable = ItemData.bLocked == false;
+		return;
+	}
+
+	FSMSkillItemInstanceData SkillData;
+	if (InventoryComponent->GetSkillData(ItemInstanceId, SkillData))
+	{
+		OwningContainerId = SkillData.BaseItem.ParentContainerId;
+		GridX = SkillData.BaseItem.GridX;
+		GridY = SkillData.BaseItem.GridY;
+		DisplayRotation = SkillData.BaseItem.Rotation;
+		bDraggable = SkillData.BaseItem.bLocked == false;
+		return;
+	}
+
+	bDraggable = false;
 }

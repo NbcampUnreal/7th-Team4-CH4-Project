@@ -1,10 +1,14 @@
 ﻿#include "UI/Inventory/SMInventoryContextMenuWidget.h"
 
 #include "Inventory/Components/SMInventoryComponent.h"
+#include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
 USMInventoryContextMenuWidget::USMInventoryContextMenuWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	  , InventoryComponent(nullptr)
+	  , bCanOpenSkillInventory(false)
+	  , bCanDropItem(false)
+	  , bCanDeleteItem(false)
 {
 }
 
@@ -13,18 +17,81 @@ void USMInventoryContextMenuWidget::InitializeContextMenu(const FGuid& InItemIns
 {
 	ItemInstanceId = InItemInstanceId;
 	InventoryComponent = InInventoryComponent;
+	bCanOpenSkillInventory = false;
+	bCanDropItem = false;
+	bCanDeleteItem = false;
+
+	if (InventoryComponent != nullptr && ItemInstanceId.IsValid())
+	{
+		bCanOpenSkillInventory = InventoryComponent->FindSkill(ItemInstanceId) != nullptr;
+		bCanDropItem = true;
+		bCanDeleteItem = true;
+	}
 
 	BP_OnContextMenuUpdated();
 }
 
 void USMInventoryContextMenuWidget::RequestDropItem()
 {
-	if (InventoryComponent == nullptr)
+	if (InventoryComponent == nullptr || bCanDropItem == false)
 	{
 		return;
 	}
 
-	InventoryComponent->DropItem(ItemInstanceId, FTransform::Identity);
+	if (InventoryComponent->DropItem(ItemInstanceId, FTransform::Identity) == false)
+	{
+		return;
+	}
+
+	ItemInstanceId.Invalidate();
+	bCanOpenSkillInventory = false;
+	bCanDropItem = false;
+	bCanDeleteItem = false;
+
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		OwningPanel->RefreshPanel();
+	}
+
+	BP_OnContextMenuUpdated();
+}
+
+void USMInventoryContextMenuWidget::RequestOpenSkillInventory()
+{
+	if (InventoryComponent == nullptr || bCanOpenSkillInventory == false)
+	{
+		return;
+	}
+
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		OwningPanel->OpenSkillInventory(ItemInstanceId);
+	}
+}
+
+void USMInventoryContextMenuWidget::RequestDeleteItem()
+{
+	if (InventoryComponent == nullptr || bCanDeleteItem == false)
+	{
+		return;
+	}
+
+	if (InventoryComponent->RemoveItem(ItemInstanceId) == false)
+	{
+		return;
+	}
+
+	ItemInstanceId.Invalidate();
+	bCanOpenSkillInventory = false;
+	bCanDropItem = false;
+	bCanDeleteItem = false;
+
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		OwningPanel->RefreshPanel();
+	}
+
+	BP_OnContextMenuUpdated();
 }
 
 void USMInventoryContextMenuWidget::RequestDetachEmbeddedItem()
@@ -34,5 +101,13 @@ void USMInventoryContextMenuWidget::RequestDetachEmbeddedItem()
 		return;
 	}
 
-	InventoryComponent->DetachEmbeddedItem(ItemInstanceId);
+	if (InventoryComponent->DetachEmbeddedItem(ItemInstanceId) == false)
+	{
+		return;
+	}
+
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		OwningPanel->RefreshPanel();
+	}
 }

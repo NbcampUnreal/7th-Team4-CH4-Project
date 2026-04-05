@@ -80,6 +80,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
 	void ClearSelectedSkill();
 
+	/** 스킬 인벤토리 열기 요청 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	void OpenSkillInventory(const FGuid& InSkillInstanceId);
+
+	/** 스킬 인벤토리 닫기 요청 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	void CloseSkillInventory();
+
 	/** 메인 인벤토리 위젯 새로고침 요청 */
 	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
 	void RefreshMainInventoryWidget();
@@ -91,6 +99,10 @@ public:
 	/** 퀵슬롯 바 위젯 새로고침 요청 */
 	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
 	void RefreshQuickSlotBarWidget();
+
+	/** 현재 드래그 중인 아이템 회전 요청 전달 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	bool RequestRotateCurrentDraggedItem();
 
 protected:
 	/** 내부 위젯 초기화 */

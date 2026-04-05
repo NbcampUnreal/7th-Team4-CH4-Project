@@ -33,6 +33,7 @@ void USMPlayerInventoryPanelWidget::InitializePanelWidget(USMInventoryComponent*
 
 void USMPlayerInventoryPanelWidget::RefreshPanel()
 {
+	ApplySelectedSkillState();
 	RefreshMainInventoryWidget();
 	RefreshSkillInventoryWidget();
 	RefreshQuickSlotBarWidget();
@@ -42,13 +43,23 @@ void USMPlayerInventoryPanelWidget::RefreshPanel()
 
 void USMPlayerInventoryPanelWidget::SelectSkill(const FGuid& InSkillInstanceId)
 {
+	OpenSkillInventory(InSkillInstanceId);
+}
+
+void USMPlayerInventoryPanelWidget::ClearSelectedSkill()
+{
+	CloseSkillInventory();
+}
+
+void USMPlayerInventoryPanelWidget::OpenSkillInventory(const FGuid& InSkillInstanceId)
+{
 	SelectedSkillInstanceId = InSkillInstanceId;
 	ApplySelectedSkillState();
 	RefreshSkillInventoryWidget();
 	BP_OnPanelRefreshed();
 }
 
-void USMPlayerInventoryPanelWidget::ClearSelectedSkill()
+void USMPlayerInventoryPanelWidget::CloseSkillInventory()
 {
 	SelectedSkillInstanceId.Invalidate();
 	ApplySelectedSkillState();
@@ -68,41 +79,61 @@ void USMPlayerInventoryPanelWidget::RefreshMainInventoryWidget()
 
 void USMPlayerInventoryPanelWidget::RefreshSkillInventoryWidget()
 {
-	if (SkillInventoryWidget == nullptr)
-	{
-		return;
-	}
+	ApplySelectedSkillState();
 
-	SkillInventoryWidget->RefreshGrid();
+	if (SkillInventoryWidget != nullptr)
+	{
+		SkillInventoryWidget->RefreshGrid();
+	}
 }
 
 void USMPlayerInventoryPanelWidget::RefreshQuickSlotBarWidget()
 {
-	if (QuickSlotBarWidget == nullptr)
+	if (QuickSlotBarWidget != nullptr)
 	{
-		return;
+		QuickSlotBarWidget->RefreshQuickSlotBar();
+	}
+}
+
+bool USMPlayerInventoryPanelWidget::RequestRotateCurrentDraggedItem()
+{
+	if (MainInventoryGridWidget != nullptr && MainInventoryGridWidget->GetActiveDragDropOperation() != nullptr)
+	{
+		MainInventoryGridWidget->RequestRotateDraggedItem();
+		return true;
 	}
 
-	QuickSlotBarWidget->RefreshQuickSlotBar();
+	if (SkillInventoryWidget != nullptr && SkillInventoryWidget->GetActiveDragDropOperation() != nullptr)
+	{
+		SkillInventoryWidget->RequestRotateDraggedItem();
+		return true;
+	}
+
+	return false;
 }
 
 void USMPlayerInventoryPanelWidget::InitializeChildWidgets()
 {
-	if (InventoryComponent == nullptr)
+	FGuid MainInventoryContainerId;
+	if (InventoryComponent != nullptr)
 	{
-		return;
+		MainInventoryContainerId = InventoryComponent->GetMainInventory().ContainerId;
 	}
 
 	if (MainInventoryGridWidget != nullptr)
 	{
-		MainInventoryGridWidget->InitializeGridWidget(
-			InventoryComponent->GetMainInventory().ContainerId,
-			InventoryComponent);
+		MainInventoryGridWidget->InitializeGridWidget(MainInventoryContainerId, InventoryComponent);
 	}
 
 	if (QuickSlotBarWidget != nullptr)
 	{
 		QuickSlotBarWidget->InitializeQuickSlotBarWidget(InventoryComponent);
+	}
+
+	if (ContextMenuWidget != nullptr)
+	{
+		ContextMenuWidget->SetInventoryComponent(InventoryComponent);
+		ContextMenuWidget->SetItemInstanceId(FGuid());
 	}
 
 	ApplySelectedSkillState();

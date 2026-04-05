@@ -37,7 +37,7 @@ void ASMMonsterBase::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
 
-    UE_LOG(LogTemp, Warning, TEXT("[Monster] PossessedBy - DefaultAbilities 수: %d"), DefaultAbilities.Num());
+    //UE_LOG(LogTemp, Warning, TEXT("[Monster] PossessedBy - DefaultAbilities 수: %d"), DefaultAbilities.Num());
 
     if (MonsterAbilitySystemComponent)
     {
@@ -71,22 +71,28 @@ void ASMMonsterBase::GiveDefaultAbilities()
             FGameplayAbilitySpec Spec(AbilityClass, 1);
             MonsterAbilitySystemComponent->GiveAbility(Spec);
 
-            UE_LOG(LogTemp, Warning, TEXT("[Monster] %s / ASC:%p / 어빌리티 부여: %s"),
+           /* UE_LOG(LogTemp, Warning, TEXT("[Monster] %s / ASC:%p / 어빌리티 부여: %s"),
                 *GetName(),
                 MonsterAbilitySystemComponent.Get(),
-                *AbilityClass->GetName());
+                *AbilityClass->GetName());*/
         }
     }
 
-    UE_LOG(LogTemp, Warning, TEXT("[Monster] %s / ASC:%p / 실제 부여된 수: %d"),
+   /* UE_LOG(LogTemp, Warning, TEXT("[Monster] %s / ASC:%p / 실제 부여된 수: %d"),
         *GetName(),
         MonsterAbilitySystemComponent.Get(),
-        MonsterAbilitySystemComponent->GetActivatableAbilities().Num());
+        MonsterAbilitySystemComponent->GetActivatableAbilities().Num());*/
 }
 
 
 void ASMMonsterBase::HandleDeath()
 {
+    if (MonsterAttributeSet)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[MonsterHP] %s / HP: %.1f"),
+            *GetName(),
+            MonsterAttributeSet->GetHealth());
+    }
     // 이미 죽었거나 유효하지 않으면 무시
     if (!IsValid(this) || !HasAuthority())
     {

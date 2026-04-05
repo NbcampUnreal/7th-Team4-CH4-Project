@@ -57,7 +57,7 @@ void ASMMonsterAIController::StartAttackTimer()
         true
     );
 
-    UE_LOG(LogTemp, Warning, TEXT("[AI] 공격 타이머 시작. 쿨다운: %.1f초"), AttackCooldown);
+    //UE_LOG(LogTemp, Warning, TEXT("[AI] 공격 타이머 시작. 쿨다운: %.1f초"), AttackCooldown);
 }
 
 void ASMMonsterAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
@@ -73,10 +73,10 @@ void ASMMonsterAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulu
 
 void ASMMonsterAIController::CheckAttackRange()
 {
-    UE_LOG(LogTemp, Warning, TEXT("[AI] NetMode:%d Role:%d LocalRole:%d"),
+   /* UE_LOG(LogTemp, Warning, TEXT("[AI] NetMode:%d Role:%d LocalRole:%d"),
         (int32)GetNetMode(),
         (int32)GetPawn()->GetRemoteRole(),
-        (int32)GetPawn()->GetLocalRole());
+        (int32)GetPawn()->GetLocalRole());*/
 
     APawn* MyPawn = GetPawn();
     if (!MyPawn) return;
@@ -89,16 +89,16 @@ void ASMMonsterAIController::CheckAttackRange()
 
     if (!ASC)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[AI] Pawn:%s / ASC 없음"), *MyPawn->GetName());
+        //UE_LOG(LogTemp, Warning, TEXT("[AI] Pawn:%s / ASC 없음"), *MyPawn->GetName());
         return;
     }
 
     const TArray<FGameplayAbilitySpec>& AllSpecs = ASC->GetActivatableAbilities();
 
-    UE_LOG(LogTemp, Warning, TEXT("[AI] Pawn:%s / ASC:%p / 부여된 어빌리티 수: %d"),
+    /*UE_LOG(LogTemp, Warning, TEXT("[AI] Pawn:%s / ASC:%p / 부여된 어빌리티 수: %d"),
         *MyPawn->GetName(),
         ASC,
-        AllSpecs.Num());
+        AllSpecs.Num());*/
 
     if (AllSpecs.Num() == 0)
     {

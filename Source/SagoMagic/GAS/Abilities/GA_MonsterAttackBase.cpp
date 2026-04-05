@@ -87,13 +87,13 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
 
                             HPAfterVal = TargetASC->GetNumericAttribute(HealthAttr);
 
-                            UE_LOG(LogTemp, Warning,
+                           /* UE_LOG(LogTemp, Warning,
                                 TEXT("[Attack] %s -> %s | 데미지: %.0f | 플레이어 HP: %.0f -> %.0f"),
                                 *SourceActor->GetName(),
                                 *HitResult.GetActor()->GetName(),
                                 DamageAmount,
                                 HPBeforeVal,
-                                HPAfterVal);
+                                HPAfterVal);*/
                             goto ApplyDone; // 중첩 루프 탈출
                         }
                     }

@@ -24,61 +24,61 @@ class UMaterialInterface;
 UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
 class SAGOMAGIC_API USMWorldVisualFragment : public USMItemFragment
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    /** 기본 생성자 */
-    USMWorldVisualFragment()
-        : WorldScale(FVector(1.0f, 1.0f, 1.0f))
-    {
-    }
+	/** 기본 생성자 */
+	USMWorldVisualFragment()
+		: WorldScale(FVector(1.0f, 1.0f, 1.0f))
+	{
+	}
 
-    /** 월드 메시 Getter */
-    const TSoftObjectPtr<UStaticMesh>& GetWorldMesh() const
-    {
-        return WorldMesh;
-    }
+	/** 월드 메시 Getter */
+	const TSoftObjectPtr<UStaticMesh>& GetWorldMesh() const
+	{
+		return WorldMesh;
+	}
 
-    /** 오버라이드 머티리얼 Getter */
-    const TSoftObjectPtr<UMaterialInterface>& GetOverrideMaterial() const
-    {
-        return OverrideMaterial;
-    }
+	/** 오버라이드 머티리얼 Getter */
+	const TSoftObjectPtr<UMaterialInterface>& GetOverrideMaterial() const
+	{
+		return OverrideMaterial;
+	}
 
-    /** 월드 스케일 Getter */
-    const FVector& GetWorldScale() const
-    {
-        return WorldScale;
-    }
+	/** 월드 스케일 Getter */
+	const FVector& GetWorldScale() const
+	{
+		return WorldScale;
+	}
 
-    /** 월드 메시 Setter */
-    void SetWorldMesh(const TSoftObjectPtr<UStaticMesh>& InWorldMesh)
-    {
-        WorldMesh = InWorldMesh;
-    }
+	/** 월드 메시 Setter */
+	void SetWorldMesh(const TSoftObjectPtr<UStaticMesh>& InWorldMesh)
+	{
+		WorldMesh = InWorldMesh;
+	}
 
-    /** 오버라이드 머티리얼 Setter */
-    void SetOverrideMaterial(const TSoftObjectPtr<UMaterialInterface>& InOverrideMaterial)
-    {
-        OverrideMaterial = InOverrideMaterial;
-    }
+	/** 오버라이드 머티리얼 Setter */
+	void SetOverrideMaterial(const TSoftObjectPtr<UMaterialInterface>& InOverrideMaterial)
+	{
+		OverrideMaterial = InOverrideMaterial;
+	}
 
-    /** 월드 스케일 Setter */
-    void SetWorldScale(const FVector& InWorldScale)
-    {
-        WorldScale = InWorldScale;
-    }
+	/** 월드 스케일 Setter */
+	void SetWorldScale(const FVector& InWorldScale)
+	{
+		WorldScale = InWorldScale;
+	}
 
 public:
-    /** 월드 드랍 메시 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="World Visual Fragment")
-    TSoftObjectPtr<UStaticMesh> WorldMesh;
+	/** 월드 드랍 메시 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="World Visual Fragment")
+	TSoftObjectPtr<UStaticMesh> WorldMesh;
 
-    /** 오버라이드 머티리얼(불필요할 경우 삭제) */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="World Visual Fragment")
-    TSoftObjectPtr<UMaterialInterface> OverrideMaterial;
+	/** 오버라이드 머티리얼(불필요할 경우 삭제) */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="World Visual Fragment")
+	TSoftObjectPtr<UMaterialInterface> OverrideMaterial;
 
-    /** 월드 스케일 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="World Visual Fragment")
-    FVector WorldScale;
+	/** 월드 스케일 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="World Visual Fragment")
+	FVector WorldScale;
 };

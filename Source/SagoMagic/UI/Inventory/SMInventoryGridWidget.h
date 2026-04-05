@@ -48,10 +48,12 @@ public:
 	virtual void NativeConstruct() override;
 
 	/** 드래그 진입 처리 오버라이드 */
-	virtual bool NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	virtual bool NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
+	                              UDragDropOperation* InOperation) override;
 
 	/** 드롭 처리 오버라이드 */
-	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
+	                          UDragDropOperation* InOperation) override;
 
 	/** 컨테이너 ID Getter */
 	const FGuid& GetContainerId() const

@@ -21,7 +21,7 @@ class ASMBaseItemDropActor;
  * - 일반 아이템 엔트리 배열
  * - 스킬 아이템 엔트리 배열
  * - 스킬 내부 컨테이너 배열
- * - 이동, 회전, 장착, 해제, 드랍, 요약 계산 함수
+ * - 이동, 장착, 해제, 드랍, 요약 계산 함수
  * - Gameplay Message Subsystem 기반 UI 갱신 함수
  *
  * 역할:
@@ -32,232 +32,261 @@ class ASMBaseItemDropActor;
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SAGOMAGIC_API USMInventoryComponent : public UActorComponent
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    /** 기본 생성자 */
-    USMInventoryComponent();
+	/** 기본 생성자 */
+	USMInventoryComponent();
 
-    /** BeginPlay 오버라이드 */
-    virtual void BeginPlay() override;
+	/** BeginPlay 오버라이드 */
+	virtual void BeginPlay() override;
 
-    /** 리플리케이션 프로퍼티 등록 오버라이드 */
-    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	/** 리플리케이션 프로퍼티 등록 오버라이드 */
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-    /** 메인 인벤토리 상태 Getter */
-    const FSMGridContainerState& GetMainInventory() const
-    {
-        return MainInventory;
-    }
+	/** 메인 인벤토리 상태 Getter */
+	const FSMGridContainerState& GetMainInventory() const
+	{
+		return MainInventory;
+	}
 
-    /** 퀵슬롯 상태 Getter */
-    const FSMQuickSlotSetState& GetQuickSlots() const
-    {
-        return QuickSlots;
-    }
+	/** 퀵슬롯 상태 Getter */
+	const FSMQuickSlotSetState& GetQuickSlots() const
+	{
+		return QuickSlots;
+	}
 
-    /** 일반 아이템 엔트리 배열 Getter */
-    const TArray<FSMItemInstanceData>& GetItemEntries() const
-    {
-        return ItemEntries;
-    }
+	/** 일반 아이템 엔트리 배열 Getter */
+	const TArray<FSMItemInstanceData>& GetItemEntries() const
+	{
+		return ItemEntries;
+	}
 
-    /** 스킬 아이템 엔트리 배열 Getter */
-    const TArray<FSMSkillItemInstanceData>& GetSkillEntries() const
-    {
-        return SkillEntries;
-    }
+	/** 스킬 아이템 엔트리 배열 Getter */
+	const TArray<FSMSkillItemInstanceData>& GetSkillEntries() const
+	{
+		return SkillEntries;
+	}
 
-    /** 스킬 내부 컨테이너 배열 Getter */
-    const TArray<FSMGridContainerState>& GetSkillInternalContainers() const
-    {
-        return SkillInternalContainers;
-    }
+	/** 스킬 내부 컨테이너 배열 Getter */
+	const TArray<FSMGridContainerState>& GetSkillInternalContainers() const
+	{
+		return SkillInternalContainers;
+	}
 
 public:
-    /** 아이템 정의 기반 아이템 추가 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory")
-    FGuid AddItemFromDefinition(const TSoftObjectPtr<USMItemDefinition>& InItemDefinition);
+	/** 아이템 정의 기반 아이템 추가 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory")
+	FGuid AddItemFromDefinition(const TSoftObjectPtr<USMItemDefinition>& InItemDefinition);
 
-    /** 아이템 제거 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory")
-    bool RemoveItem(const FGuid& InItemInstanceId);
+	/** 아이템 드랍 페이로드 기반 아이템 추가 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory")
+	FGuid AddItemFromDropPayload(const FSMItemDropPayload& InDropPayload);
 
-    /** 아이템 월드 드랍 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory")
-    bool DropItem(const FGuid& InItemInstanceId);
+	/** 아이템 제거 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory")
+	bool RemoveItem(const FGuid& InItemInstanceId);
 
-    /** 아이템 이동 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory")
-    bool MoveItem(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX, int32 InGridY);
+	/** 아이템 월드 드랍 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory")
+	bool DropItem(const FGuid& InItemInstanceId, const FTransform& InDropTransform);
 
-    /** 아이템 회전 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory")
-    bool RotateItem(const FGuid& InItemInstanceId);
+	/** 아이템 이동 요청
+	 *  드래그 중 결정된 회전값까지 함께 확정합니다.
+	 */
+	UFUNCTION(BlueprintCallable, Category="Inventory")
+	bool MoveItem(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX, int32 InGridY,
+	              ESMGridRotation InRotation);
 
-    /** 아이템 회전값 직접 설정 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory")
-    bool SetItemRotation(const FGuid& InItemInstanceId, int32 InRotation);
+	/** 배치 가능 여부 검사 요청
+	 *  드래그 중 임시 회전값을 받아 검사합니다.
+	 */
+	UFUNCTION(BlueprintCallable, Category="Inventory")
+	bool CanPlaceItem(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX, int32 InGridY,
+	                  ESMGridRotation InRotation) const;
 
-    /** 배치 가능 여부 검사 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory")
-    bool CanPlaceItem(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX, int32 InGridY) const;
+	/** 빈 위치 탐색 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory")
+	bool FindAvailablePosition(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32& OutGridX,
+	                           int32& OutGridY) const;
 
-    /** 빈 위치 탐색 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory")
-    bool FindAvailablePosition(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32& OutGridX, int32& OutGridY) const;
+	/** 젬 장착 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|Skill")
+	bool AttachGemToSkill(const FGuid& InGemInstanceId, const FGuid& InTargetSkillInstanceId, int32 InGridX,
+	                      int32 InGridY);
 
-    /** 젬 장착 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory|Skill")
-    bool AttachGemToSkill(const FGuid& InGemInstanceId, const FGuid& InTargetSkillInstanceId, int32 InGridX, int32 InGridY);
+	/** 동일 이름 스킬 장착 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|Skill")
+	bool AttachSkillToSkill(const FGuid& InMaterialSkillInstanceId, const FGuid& InTargetSkillInstanceId, int32 InGridX,
+	                        int32 InGridY);
 
-    /** 동일 이름 스킬 장착 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory|Skill")
-    bool AttachSkillToSkill(const FGuid& InMaterialSkillInstanceId, const FGuid& InTargetSkillInstanceId, int32 InGridX, int32 InGridY);
+	/** 내부 장착 아이템 해제 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|Skill")
+	bool DetachEmbeddedItem(const FGuid& InEmbeddedItemInstanceId);
 
-    /** 내부 장착 아이템 해제 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory|Skill")
-    bool DetachEmbeddedItem(const FGuid& InEmbeddedItemInstanceId);
+	/** 퀵슬롯 장착 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|QuickSlot")
+	bool EquipSkillToQuickSlot(const FGuid& InSkillInstanceId, int32 InSlotIndex);
 
-    /** 퀵슬롯 장착 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory|QuickSlot")
-    bool EquipSkillToQuickSlot(const FGuid& InSkillInstanceId, int32 InSlotIndex);
+	/** 퀵슬롯 해제 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|QuickSlot")
+	bool UnequipSkillFromQuickSlot(int32 InSlotIndex);
 
-    /** 퀵슬롯 해제 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory|QuickSlot")
-    bool UnequipSkillFromQuickSlot(int32 InSlotIndex);
+	/** 활성 퀵슬롯 설정 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|QuickSlot")
+	void SetActiveQuickSlot(int32 InSlotIndex);
 
-    /** 활성 퀵슬롯 설정 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory|QuickSlot")
-    void SetActiveQuickSlot(int32 InSlotIndex);
+	/** 스킬 요약 재계산 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|Skill")
+	bool RebuildSkillSummary(const FGuid& InSkillInstanceId);
 
-    /** 스킬 요약 재계산 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory|Skill")
-    bool RebuildSkillSummary(const FGuid& InSkillInstanceId);
+	/** 일반 아이템 데이터 조회 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|Query")
+	bool GetItemData(const FGuid& InItemInstanceId, FSMItemInstanceData& OutItemData) const;
 
-    /** 일반 아이템 데이터 조회 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory|Query")
-    bool GetItemData(const FGuid& InItemInstanceId, FSMItemInstanceData& OutItemData) const;
+	/** 스킬 아이템 데이터 조회 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|Query")
+	bool GetSkillData(const FGuid& InSkillInstanceId, FSMSkillItemInstanceData& OutSkillData) const;
 
-    /** 스킬 아이템 데이터 조회 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory|Query")
-    bool GetSkillData(const FGuid& InSkillInstanceId, FSMSkillItemInstanceData& OutSkillData) const;
+	/** 스킬 요약 데이터 조회 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|Query")
+	bool GetSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const;
 
-    /** 스킬 요약 데이터 조회 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory|Query")
-    bool GetSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const;
-
-    /** 컨테이너 데이터 조회 요청 */
-    UFUNCTION(BlueprintCallable, Category="Inventory|Query")
-    bool GetContainerData(const FGuid& InContainerId, FSMGridContainerState& OutContainerData) const;
+	/** 컨테이너 데이터 조회 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|Query")
+	bool GetContainerData(const FGuid& InContainerId, FSMGridContainerState& OutContainerData) const;
 
 private:
-    /** 복제 상태 변경 수신 함수 */
-    UFUNCTION()
-    void OnRep_InventoryStateChanged();
+	/** 복제 상태 변경 수신 함수 */
+	UFUNCTION()
+	void OnRep_InventoryStateChanged();
 
 public:
-    /** 아이템 존재 여부 검사 */
-    bool HasItem(const FGuid& InItemInstanceId) const;
+	/** 아이템 존재 여부 검사 */
+	bool HasItem(const FGuid& InItemInstanceId) const;
 
-    /** 컨테이너 소유 여부 검사 */
-    bool OwnsContainer(const FGuid& InContainerId) const;
+	/** 컨테이너 소유 여부 검사 */
+	bool OwnsContainer(const FGuid& InContainerId) const;
 
-    /** 일반 아이템 포인터 조회 */
-    const FSMItemInstanceData* FindItem(const FGuid& InItemInstanceId) const;
+	/** 일반 아이템 포인터 조회 */
+	const FSMItemInstanceData* FindItem(const FGuid& InItemInstanceId) const;
 
-    /** 스킬 아이템 포인터 조회 */
-    const FSMSkillItemInstanceData* FindSkill(const FGuid& InSkillInstanceId) const;
+	/** 스킬 아이템 포인터 조회 */
+	const FSMSkillItemInstanceData* FindSkill(const FGuid& InSkillInstanceId) const;
 
-    /** 컨테이너 포인터 조회 */
-    const FSMGridContainerState* FindContainer(const FGuid& InContainerId) const;
+	/** 컨테이너 포인터 조회 */
+	const FSMGridContainerState* FindContainer(const FGuid& InContainerId) const;
 
-    /** 아이템 정의 로드 */
-    const USMItemDefinition* ResolveItemDefinition(const FSMItemInstanceData& InItemData) const;
+	/** 아이템 정의 로드 */
+	const USMItemDefinition* ResolveItemDefinition(const FSMItemInstanceData& InItemData) const;
 
 protected:
-    /** 일반 아이템 수정가능 포인터 조회 */
-    FSMItemInstanceData* FindEditableItem(const FGuid& InItemInstanceId);
+	/** 일반 아이템 수정가능 포인터 조회 */
+	FSMItemInstanceData* FindEditableItem(const FGuid& InItemInstanceId);
 
-    /** 스킬 아이템 수정가능 포인터 조회 */
-    FSMSkillItemInstanceData* FindEditableSkill(const FGuid& InSkillInstanceId);
+	/** 스킬 아이템 수정가능 포인터 조회 */
+	FSMSkillItemInstanceData* FindEditableSkill(const FGuid& InSkillInstanceId);
 
-    /** 컨테이너 수정가능 포인터 조회 */
-    FSMGridContainerState* FindEditableContainer(const FGuid& InContainerId);
+	/** 컨테이너 수정가능 포인터 조회 */
+	FSMGridContainerState* FindEditableContainer(const FGuid& InContainerId);
 
-    /** 메인 인벤토리 초기화 */
-    void InitializeMainInventory();
+	/** 메인 인벤토리 초기화 */
+	void InitializeMainInventory();
 
-    /** 스킬 내부 컨테이너 생성 */
-    bool CreateSkillInternalContainer(const FGuid& InSkillInstanceId, const FSMGridMaskData& InInternalMask, FGuid& OutCreatedContainerId);
+	/** 스킬 내부 컨테이너 생성 */
+	bool CreateSkillInternalContainer(const FGuid& InSkillInstanceId, const FSMGridMaskData& InInternalMask,
+	                                  FGuid& OutCreatedContainerId);
 
-    /** 장착 대상 스킬 태그 충족 여부 검사 */
-    bool CanApplyGemToSkillByTags(const USMGemModifierFragment* InGemModifierFragment, const USMItemDefinition* InTargetSkillDefinition) const;
+	/** 장착 대상 스킬 태그 충족 여부 검사 */
+	bool CanApplyGemToSkillByTags(const USMGemModifierFragment* InGemModifierFragment,
+	                              const USMItemDefinition* InTargetSkillDefinition) const;
 
 private:
-    /** 점유 셀 계산 */
-    bool BuildOccupiedCells(const FGuid& InItemInstanceId, int32 InGridX, int32 InGridY, int32 InRotation, TArray<FIntPoint>& OutOccupiedCells) const;
+	/** 점유 셀 계산 */
+	bool BuildOccupiedCells(const FGuid& InItemInstanceId, int32 InGridX, int32 InGridY, ESMGridRotation InRotation,
+	                        TArray<FIntPoint>& OutOccupiedCells) const;
 
-    /** 컨테이너 충돌 여부 검사 */
-    bool HasPlacementConflict(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX, int32 InGridY) const;
+	/** 컨테이너 충돌 여부 검사 */
+	bool HasPlacementConflict(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX,
+	                          int32 InGridY, ESMGridRotation InRotation) const;
 
-    /** 동일 이름 스킬 여부 검사 */
-    bool IsSameNamedSkill(const FGuid& InAItemInstanceId, const FGuid& InBItemInstanceId) const;
+	/** 동일 이름 스킬 여부 검사 */
+	bool IsSameNamedSkill(const FGuid& InAItemInstanceId, const FGuid& InBItemInstanceId) const;
 
-    /** 빈 스킬 여부 검사 */
-    bool IsSkillActuallyEmpty(const FGuid& InSkillInstanceId) const;
+	/** 빈 스킬 여부 검사 */
+	bool IsSkillActuallyEmpty(const FGuid& InSkillInstanceId) const;
 
-    /** 드랍 가능 여부 검사 */
-    bool CanDropItemInternal(const FGuid& InItemInstanceId) const;
+	/** 드랍 가능 여부 검사 */
+	bool CanDropItemInternal(const FGuid& InItemInstanceId) const;
 
-    /** 드랍 Payload 생성 */
-    bool BuildDropPayload(const FGuid& InItemInstanceId, FSMItemDropPayload& OutPayload) const;
+	/** 드랍 Payload 생성 */
+	bool BuildDropPayload(const FGuid& InItemInstanceId, FSMItemDropPayload& OutPayload) const;
 
-    /** 월드 드랍 액터 생성 */
-    bool SpawnDropActorFromPayload(const FSMItemDropPayload& InPayload);
+	/** 월드 드랍 액터 생성 */
+	ASMBaseItemDropActor* SpawnDropActorFromPayload(const FSMItemDropPayload& InPayload,
+	                                                const FTransform& InSpawnTransform);
 
-    /** 스킬 요약 계산 */
-    bool BuildSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const;
+	/** 스킬 요약 계산 */
+	bool BuildSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const;
 
-    /** 슬롯 인덱스 유효성 검사 */
-    bool IsValidQuickSlotIndex(int32 InSlotIndex) const;
+	/** 슬롯 인덱스 유효성 검사 */
+	bool IsValidQuickSlotIndex(int32 InSlotIndex) const;
 
-    /** 인벤토리 갱신 메시지 발행 */
-    void PublishInventoryUpdatedMessage(const FGuid& InContainerId) const;
+	/** 인벤토리 갱신 메시지 발행 */
+	void PublishInventoryUpdatedMessage(const FGuid& InContainerId) const;
 
-    /** 스킬 요약 갱신 메시지 발행 */
-    void PublishSkillSummaryUpdatedMessage(const FGuid& InSkillInstanceId) const;
+	/** 스킬 요약 갱신 메시지 발행 */
+	void PublishSkillSummaryUpdatedMessage(const FGuid& InSkillInstanceId) const;
 
-    /** 퀵슬롯 갱신 메시지 발행 */
-    void PublishQuickSlotUpdatedMessage(int32 InSlotIndex) const;
+	/** 퀵슬롯 갱신 메시지 발행 */
+	void PublishQuickSlotUpdatedMessage(int32 InSlotIndex) const;
+
+	/** 루트 스킬 기준 내부 드랍 스냅샷 수집 */
+	void CollectNestedDropSnapshots(const FGuid& InParentSkillInstanceId,
+	                                TArray<FSMNestedItemDropSnapshot>& OutSnapshots) const;
+
+	/** 내부 드랍 스냅샷 1개를 특정 컨테이너에 복원 */
+	FGuid AddNestedSnapshotToContainer(const FSMNestedItemDropSnapshot& InSnapshot,
+	                                   const FGuid& InTargetContainerId);
+
+	/** 특정 부모 스킬 아래의 내부 드랍 스냅샷들을 재귀 복원 */
+	bool RestoreNestedPayloads(const FSMItemDropPayload& InDropPayload, const FGuid& InParentSkillInstanceId);
+
+	/** 실제 아이템 제거 내부 함수 */
+	bool RemoveItemInternal(const FGuid& InItemInstanceId, bool bPublishInventoryMessage);
 
 public:
-    /** 기본 메인 인벤토리 마스크 설정값 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory|Config")
-    FSMGridMaskData DefaultMainInventoryMask;
+	/** 기본 메인 인벤토리 마스크 설정값 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory|Config")
+	FSMGridMaskData DefaultMainInventoryMask;
 
-    /** 기본 드랍 액터 클래스 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory|Config")
-    TSubclassOf<ASMBaseItemDropActor> DefaultDropActorClass;
+	/** 기본 드랍 액터 클래스 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory|Config")
+	TSubclassOf<ASMBaseItemDropActor> DefaultDropActorClass;
 
 protected:
-    /** 메인 인벤토리 상태 */
-    UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly, Category="Inventory|Runtime")
-    FSMGridContainerState MainInventory;
+	/** 메인 인벤토리 상태 */
+	UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly,
+		Category="Inventory|Runtime")
+	FSMGridContainerState MainInventory;
 
-    /** 퀵슬롯 상태 */
-    UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly, Category="Inventory|Runtime")
-    FSMQuickSlotSetState QuickSlots;
+	/** 퀵슬롯 상태 */
+	UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly,
+		Category="Inventory|Runtime")
+	FSMQuickSlotSetState QuickSlots;
 
-    /** 일반 아이템 엔트리 배열 */
-    UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly, Category="Inventory|Runtime")
-    TArray<FSMItemInstanceData> ItemEntries;
+	/** 일반 아이템 엔트리 배열 */
+	UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly,
+		Category="Inventory|Runtime")
+	TArray<FSMItemInstanceData> ItemEntries;
 
-    /** 스킬 아이템 엔트리 배열 */
-    UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly, Category="Inventory|Runtime")
-    TArray<FSMSkillItemInstanceData> SkillEntries;
+	/** 스킬 아이템 엔트리 배열 */
+	UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly,
+		Category="Inventory|Runtime")
+	TArray<FSMSkillItemInstanceData> SkillEntries;
 
-    /** 스킬 내부 컨테이너 배열 */
-    UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly, Category="Inventory|Runtime")
-    TArray<FSMGridContainerState> SkillInternalContainers;
+	/** 스킬 내부 컨테이너 배열 */
+	UPROPERTY(ReplicatedUsing=OnRep_InventoryStateChanged, VisibleAnywhere, BlueprintReadOnly,
+		Category="Inventory|Runtime")
+	TArray<FSMGridContainerState> SkillInternalContainers;
 };

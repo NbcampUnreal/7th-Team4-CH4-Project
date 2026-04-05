@@ -9,6 +9,7 @@
 #include "SMPlayerState.generated.h"
 
 class USMPlayerAttributeSet;
+class USMInventoryComponent;
 
 /**
  * 플레이어의 정보를 저장할 클래스
@@ -33,6 +34,11 @@ protected:
 	/** ASC */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
 	TObjectPtr<USMAbilitySystemComponent> SMAbilitySystemComponent;
+	
+	/** Inventory Component */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
+	TObjectPtr<USMInventoryComponent> SMInventoryComponent;
+	
 
 	/** Player Attribute Set */
 	UPROPERTY()

@@ -20,9 +20,9 @@
 UCLASS(BlueprintType)
 class SAGOMAGIC_API USMGemItemDefinition : public USMItemDefinition
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    /** 기본 생성자 */
-    USMGemItemDefinition() = default;
+	/** 기본 생성자 */
+	USMGemItemDefinition() = default;
 };

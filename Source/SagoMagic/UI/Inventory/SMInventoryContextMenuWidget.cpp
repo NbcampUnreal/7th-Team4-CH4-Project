@@ -3,35 +3,36 @@
 #include "Inventory/Components/SMInventoryComponent.h"
 
 USMInventoryContextMenuWidget::USMInventoryContextMenuWidget(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
-    , InventoryComponent(nullptr)
+	: Super(ObjectInitializer)
+	  , InventoryComponent(nullptr)
 {
 }
 
-void USMInventoryContextMenuWidget::InitializeContextMenu(const FGuid& InItemInstanceId, USMInventoryComponent* InInventoryComponent)
+void USMInventoryContextMenuWidget::InitializeContextMenu(const FGuid& InItemInstanceId,
+                                                          USMInventoryComponent* InInventoryComponent)
 {
-    ItemInstanceId = InItemInstanceId;
-    InventoryComponent = InInventoryComponent;
+	ItemInstanceId = InItemInstanceId;
+	InventoryComponent = InInventoryComponent;
 
-    BP_OnContextMenuUpdated();
+	BP_OnContextMenuUpdated();
 }
 
 void USMInventoryContextMenuWidget::RequestDropItem()
 {
-    if (InventoryComponent == nullptr)
-    {
-        return;
-    }
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
 
-    InventoryComponent->DropItem(ItemInstanceId);
+	InventoryComponent->DropItem(ItemInstanceId, FTransform::Identity);
 }
 
 void USMInventoryContextMenuWidget::RequestDetachEmbeddedItem()
 {
-    if (InventoryComponent == nullptr)
-    {
-        return;
-    }
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
 
-    InventoryComponent->DetachEmbeddedItem(ItemInstanceId);
+	InventoryComponent->DetachEmbeddedItem(ItemInstanceId);
 }

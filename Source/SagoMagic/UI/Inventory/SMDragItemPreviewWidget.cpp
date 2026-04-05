@@ -1,32 +1,31 @@
 ﻿#include "UI/Inventory/SMDragItemPreviewWidget.h"
 
 USMDragItemPreviewWidget::USMDragItemPreviewWidget(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
-    , PreviewRotation(0)
-    , bCanPlaceOnCurrentCell(false)
+	: Super(ObjectInitializer)
+	  , PreviewRotation(ESMGridRotation::Rot0)
+	  , bCanPlaceOnCurrentCell(false)
 {
-
 }
 
-void USMDragItemPreviewWidget::InitializePreview(const FGuid& InItemInstanceId, int32 InPreviewRotation)
+void USMDragItemPreviewWidget::InitializePreview(const FGuid& InItemInstanceId, ESMGridRotation InPreviewRotation)
 {
-    ItemInstanceId = InItemInstanceId;
-    PreviewRotation = InPreviewRotation;
-    bCanPlaceOnCurrentCell = false;
+	ItemInstanceId = InItemInstanceId;
+	PreviewRotation = InPreviewRotation;
+	bCanPlaceOnCurrentCell = false;
 
-    BP_OnPreviewDataChanged();
+	BP_OnPreviewDataChanged();
 }
 
-void USMDragItemPreviewWidget::UpdatePreviewRotation(int32 InPreviewRotation)
+void USMDragItemPreviewWidget::UpdatePreviewRotation(ESMGridRotation InPreviewRotation)
 {
-    PreviewRotation = InPreviewRotation;
+	PreviewRotation = InPreviewRotation;
 
-    BP_OnPreviewDataChanged();
+	BP_OnPreviewDataChanged();
 }
 
 void USMDragItemPreviewWidget::UpdatePlaceableState(bool bInCanPlaceOnCurrentCell)
 {
-    bCanPlaceOnCurrentCell = bInCanPlaceOnCurrentCell;
+	bCanPlaceOnCurrentCell = bInCanPlaceOnCurrentCell;
 
-    BP_OnPreviewDataChanged();
+	BP_OnPreviewDataChanged();
 }

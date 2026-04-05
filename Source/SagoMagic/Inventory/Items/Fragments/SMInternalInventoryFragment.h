@@ -22,62 +22,62 @@
 UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
 class SAGOMAGIC_API USMInternalInventoryFragment : public USMItemFragment
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    /** 기본 생성자 */
-    USMInternalInventoryFragment()
-        : bAllowGems(true)
-        , bAllowSameNamedEmptySkill(true)
-    {
-    }
+	/** 기본 생성자 */
+	USMInternalInventoryFragment()
+		: bAllowGems(true)
+		  , bAllowSameNamedEmptySkill(true)
+	{
+	}
 
-    /** 내부 인벤토리 마스크 Getter */
-    const FSMGridMaskData& GetInternalMask() const
-    {
-        return InternalMask;
-    }
+	/** 내부 인벤토리 마스크 Getter */
+	const FSMGridMaskData& GetInternalMask() const
+	{
+		return InternalMask;
+	}
 
-    /** 젬 장착 허용 여부 Getter */
-    bool IsGemAllowed() const
-    {
-        return bAllowGems;
-    }
+	/** 젬 장착 허용 여부 Getter */
+	bool IsGemAllowed() const
+	{
+		return bAllowGems;
+	}
 
-    /** 동일 이름 빈 스킬 장착 허용 여부 Getter */
-    bool IsSameNamedEmptySkillAllowed() const
-    {
-        return bAllowSameNamedEmptySkill;
-    }
+	/** 동일 이름 빈 스킬 장착 허용 여부 Getter */
+	bool IsSameNamedEmptySkillAllowed() const
+	{
+		return bAllowSameNamedEmptySkill;
+	}
 
-    /** 내부 인벤토리 마스크 Setter */
-    void SetInternalMask(const FSMGridMaskData& InInternalMask)
-    {
-        InternalMask = InInternalMask;
-    }
+	/** 내부 인벤토리 마스크 Setter */
+	void SetInternalMask(const FSMGridMaskData& InInternalMask)
+	{
+		InternalMask = InInternalMask;
+	}
 
-    /** 젬 장착 허용 여부 Setter */
-    void SetAllowGems(const bool bInAllowGems)
-    {
-        bAllowGems = bInAllowGems;
-    }
+	/** 젬 장착 허용 여부 Setter */
+	void SetAllowGems(const bool bInAllowGems)
+	{
+		bAllowGems = bInAllowGems;
+	}
 
-    /** 동일 이름 빈 스킬 장착 허용 여부 Setter */
-    void SetAllowSameNamedEmptySkill(const bool bInAllowSameNamedEmptySkill)
-    {
-        bAllowSameNamedEmptySkill = bInAllowSameNamedEmptySkill;
-    }
+	/** 동일 이름 빈 스킬 장착 허용 여부 Setter */
+	void SetAllowSameNamedEmptySkill(const bool bInAllowSameNamedEmptySkill)
+	{
+		bAllowSameNamedEmptySkill = bInAllowSameNamedEmptySkill;
+	}
 
 public:
-    /** 내부 인벤토리 마스크 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Internal Inventory Fragment")
-    FSMGridMaskData InternalMask;
+	/** 내부 인벤토리 마스크 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Internal Inventory Fragment")
+	FSMGridMaskData InternalMask;
 
-    /** 젬 장착 허용 여부 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Internal Inventory Fragment")
-    bool bAllowGems;
+	/** 젬 장착 허용 여부 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Internal Inventory Fragment")
+	bool bAllowGems;
 
-    /** 동일 이름 빈 스킬 장착 허용 여부 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Internal Inventory Fragment")
-    bool bAllowSameNamedEmptySkill;
+	/** 동일 이름 빈 스킬 장착 허용 여부 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Internal Inventory Fragment")
+	bool bAllowSameNamedEmptySkill;
 };

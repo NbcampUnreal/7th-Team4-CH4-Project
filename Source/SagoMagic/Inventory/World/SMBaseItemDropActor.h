@@ -5,8 +5,10 @@
 #include "Inventory/Core/SMItemDropTypes.h"
 #include "SMBaseItemDropActor.generated.h"
 
+class APawn;
 class USceneComponent;
 class UStaticMeshComponent;
+class USMInteractionTargetComponent;
 class USMItemDefinition;
 class USMWorldVisualFragment;
 
@@ -18,92 +20,112 @@ class USMWorldVisualFragment;
  * - 드랍 Payload 보관
  * - Payload 기반 초기화
  * - 월드 비주얼 적용 함수
+ * - 상호작용 타겟 컴포넌트
+ * - 아이템 습득 진입 함수
  * - 복제 상태 동기화 처리
  *
  * 역할:
- * - 인벤토리에서 제거된 아이템을 월드 드랍 액터 형태로 유지
+ * - 인벤토리에서 제거된 아이템을 월드 드랍 액터 형태로 유지하고
+ *   상호작용을 통해 다시 인벤토리로 복원되도록 연결
  */
 
 /** 월드 드랍 아이템 액터 */
 UCLASS()
 class SAGOMAGIC_API ASMBaseItemDropActor : public AActor
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    /** 기본 생성자 */
-    ASMBaseItemDropActor();
+	/** 기본 생성자 */
+	ASMBaseItemDropActor();
 
-    /** BeginPlay 오버라이드 */
-    virtual void BeginPlay() override;
+	/** BeginPlay 오버라이드 */
+	virtual void BeginPlay() override;
 
-    /** 리플리케이션 프로퍼티 등록 오버라이드 */
-    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	/** 리플리케이션 프로퍼티 등록 오버라이드 */
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-    /** 드랍 Payload Getter */
-    const FSMItemDropPayload& GetItemDropPayload() const
-    {
-        return ItemDropPayload;
-    }
+	/** 드랍 Payload Getter */
+	const FSMItemDropPayload& GetItemDropPayload() const
+	{
+		return ItemDropPayload;
+	}
 
-    /** 루트 씬 컴포넌트 Getter */
-    USceneComponent* GetRootSceneComponent() const
-    {
-        return RootSceneComponent;
-    }
+	/** 루트 씬 컴포넌트 Getter */
+	USceneComponent* GetRootSceneComponent() const
+	{
+		return RootSceneComponent;
+	}
 
-    /** 스태틱 메시 컴포넌트 Getter */
-    UStaticMeshComponent* GetStaticMeshComponent() const
-    {
-        return StaticMeshComponent;
-    }
+	/** 스태틱 메시 컴포넌트 Getter */
+	UStaticMeshComponent* GetStaticMeshComponent() const
+	{
+		return StaticMeshComponent;
+	}
 
-    /** 초기화 여부 Getter */
-    bool IsInitialized() const
-    {
-        return bInitialized;
-    }
+	/** 상호작용 타겟 컴포넌트 Getter */
+	USMInteractionTargetComponent* GetInteractionTargetComponent() const
+	{
+		return InteractionTargetComponent;
+	}
+
+	/** 초기화 여부 Getter */
+	bool IsInitialized() const
+	{
+		return bInitialized;
+	}
 
 public:
-    /** Payload 기반 초기화 요청 */
-    UFUNCTION(BlueprintCallable, Category="Item Drop")
-    void InitializeFromPayload(const FSMItemDropPayload& InItemDropPayload);
+	/** Payload 기반 초기화 요청 */
+	UFUNCTION(BlueprintCallable, Category="Item Drop")
+	void InitializeFromPayload(const FSMItemDropPayload& InItemDropPayload);
+
+	/** 아이템 습득 처리 요청 */
+	UFUNCTION(BlueprintCallable, Category="Item Drop")
+	void HandleInteract(APawn* InInteractingPawn);
 
 private:
-    /** Payload 복제 수신 함수 */
-    UFUNCTION()
-    void OnRep_ItemDropPayload();
+	/** Payload 복제 수신 함수 */
+	UFUNCTION()
+	void OnRep_ItemDropPayload();
 
 public:
-    /** 아이템 정의 로드 */
-    const USMItemDefinition* ResolveItemDefinition() const;
+	/** 아이템 정의 로드 */
+	const USMItemDefinition* ResolveItemDefinition() const;
 
 protected:
-    /** 월드 비주얼 적용 */
-    void ApplyWorldVisual();
+	/** 월드 비주얼 적용 */
+	void ApplyWorldVisual();
 
-    /** Payload 유효성 검사 */
-    bool HasValidPayload() const;
+	/** 상호작용 가능 상태 갱신 */
+	void RefreshInteractionState();
+
+	/** Payload 유효성 검사 */
+	bool HasValidPayload() const;
 
 private:
-    /** 월드 비주얼 Fragment 조회 */
-    const USMWorldVisualFragment* FindWorldVisualFragment(const USMItemDefinition* InItemDefinition) const;
+	/** 월드 비주얼 Fragment 조회 */
+	const USMWorldVisualFragment* FindWorldVisualFragment(const USMItemDefinition* InItemDefinition) const;
 
 public:
-    /** 루트 씬 컴포넌트 */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item Drop")
-    TObjectPtr<USceneComponent> RootSceneComponent;
+	/** 루트 씬 컴포넌트 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item Drop")
+	TObjectPtr<USceneComponent> RootSceneComponent;
 
-    /** 드랍 표시용 스태틱 메시 컴포넌트 */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item Drop")
-    TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
+	/** 드랍 표시용 스태틱 메시 컴포넌트 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item Drop")
+	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
+
+	/** 상호작용 타겟 컴포넌트 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item Drop")
+	TObjectPtr<USMInteractionTargetComponent> InteractionTargetComponent;
 
 protected:
-    /** 드랍 아이템 Payload */
-    UPROPERTY(ReplicatedUsing=OnRep_ItemDropPayload, VisibleAnywhere, BlueprintReadOnly, Category="Item Drop")
-    FSMItemDropPayload ItemDropPayload;
+	/** 드랍 아이템 Payload */
+	UPROPERTY(ReplicatedUsing=OnRep_ItemDropPayload, VisibleAnywhere, BlueprintReadOnly, Category="Item Drop")
+	FSMItemDropPayload ItemDropPayload;
 
 private:
-    /** 초기화 여부 */
-    bool bInitialized;
+	/** 초기화 여부 */
+	bool bInitialized;
 };

@@ -21,63 +21,63 @@
 UCLASS(BlueprintType, EditInlineNew, DefaultToInstanced)
 class SAGOMAGIC_API USMSkillProgressionFragment : public USMItemFragment
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    /** 기본 생성자 */
-    USMSkillProgressionFragment()
-        : BaseLevel(1)
-        , bLevelFromEmbeddedSameSkill(true)
-        , MaxLevel(99)
-    {
-    }
+	/** 기본 생성자 */
+	USMSkillProgressionFragment()
+		: BaseLevel(1)
+		  , bLevelFromEmbeddedSameSkill(true)
+		  , MaxLevel(99)
+	{
+	}
 
-    /** 기본 레벨 Getter */
-    int32 GetBaseLevel() const
-    {
-        return BaseLevel;
-    }
+	/** 기본 레벨 Getter */
+	int32 GetBaseLevel() const
+	{
+		return BaseLevel;
+	}
 
-    /** 동일 이름 스킬 장착 시 레벨 증가 여부 Getter */
-    bool IsLevelFromEmbeddedSameSkill() const
-    {
-        return bLevelFromEmbeddedSameSkill;
-    }
+	/** 동일 이름 스킬 장착 시 레벨 증가 여부 Getter */
+	bool IsLevelFromEmbeddedSameSkill() const
+	{
+		return bLevelFromEmbeddedSameSkill;
+	}
 
-    /** 최대 레벨 Getter */
-    int32 GetMaxLevel() const
-    {
-        return MaxLevel;
-    }
+	/** 최대 레벨 Getter */
+	int32 GetMaxLevel() const
+	{
+		return MaxLevel;
+	}
 
-    /** 기본 레벨 Setter */
-    void SetBaseLevel(const int32 InBaseLevel)
-    {
-        BaseLevel = InBaseLevel;
-    }
+	/** 기본 레벨 Setter */
+	void SetBaseLevel(const int32 InBaseLevel)
+	{
+		BaseLevel = InBaseLevel;
+	}
 
-    /** 동일 이름 스킬 장착 시 레벨 증가 여부 Setter */
-    void SetLevelFromEmbeddedSameSkill(const bool bInLevelFromEmbeddedSameSkill)
-    {
-        bLevelFromEmbeddedSameSkill = bInLevelFromEmbeddedSameSkill;
-    }
+	/** 동일 이름 스킬 장착 시 레벨 증가 여부 Setter */
+	void SetLevelFromEmbeddedSameSkill(const bool bInLevelFromEmbeddedSameSkill)
+	{
+		bLevelFromEmbeddedSameSkill = bInLevelFromEmbeddedSameSkill;
+	}
 
-    /** 최대 레벨 Setter */
-    void SetMaxLevel(const int32 InMaxLevel)
-    {
-        MaxLevel = InMaxLevel;
-    }
+	/** 최대 레벨 Setter */
+	void SetMaxLevel(const int32 InMaxLevel)
+	{
+		MaxLevel = InMaxLevel;
+	}
 
 public:
-    /** 기본 레벨 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Skill Progression Fragment")
-    int32 BaseLevel;
+	/** 기본 레벨 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Skill Progression Fragment")
+	int32 BaseLevel;
 
-    /** 동일 이름 스킬 장착 시 레벨 증가 여부 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Skill Progression Fragment")
-    bool bLevelFromEmbeddedSameSkill;
+	/** 동일 이름 스킬 장착 시 레벨 증가 여부 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Skill Progression Fragment")
+	bool bLevelFromEmbeddedSameSkill;
 
-    /** 최대 레벨 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Skill Progression Fragment")
-    int32 MaxLevel;
+	/** 최대 레벨 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Skill Progression Fragment")
+	int32 MaxLevel;
 };

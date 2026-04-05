@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Inventory/Core/SMInventoryCoreTypes.h"
 #include "Blueprint/DragDropOperation.h"
 #include "SMInventoryDragDropOperation.generated.h"
 
@@ -57,13 +58,13 @@ public:
 	}
 
 	/** 드래그 시작 회전값 Getter */
-	int32 GetStartRotation() const
+	ESMGridRotation GetStartRotation() const
 	{
 		return StartRotation;
 	}
 
 	/** 현재 드래그 회전값 Getter */
-	int32 GetCurrentRotation() const
+	ESMGridRotation GetCurrentRotation() const
 	{
 		return CurrentRotation;
 	}
@@ -99,13 +100,13 @@ public:
 	}
 
 	/** 드래그 시작 회전값 Setter */
-	void SetStartRotation(const int32 InStartRotation)
+	void SetStartRotation(const ESMGridRotation InStartRotation)
 	{
 		StartRotation = InStartRotation;
 	}
 
 	/** 현재 드래그 회전값 Setter */
-	void SetCurrentRotation(const int32 InCurrentRotation)
+	void SetCurrentRotation(const ESMGridRotation InCurrentRotation)
 	{
 		CurrentRotation = InCurrentRotation;
 	}
@@ -124,12 +125,12 @@ public:
 		const FGuid& InSourceContainerId,
 		int32 InSourceGridX,
 		int32 InSourceGridY,
-		int32 InStartRotation,
+		ESMGridRotation InStartRotation,
 		USMDragItemPreviewWidget* InDragPreviewWidget);
 
 	/** 현재 드래그 회전값 갱신 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Drag Drop")
-	void UpdateCurrentRotation(int32 InCurrentRotation);
+	void UpdateCurrentRotation(ESMGridRotation InCurrentRotation);
 
 	/** 드래그 대상 아이템 ID 유효성 검사 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Drag Drop")
@@ -156,11 +157,11 @@ public:
 
 	/** 드래그 시작 시 회전값 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Drag Drop")
-	int32 StartRotation;
+	ESMGridRotation StartRotation;
 
 	/** 현재 드래그 회전값 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Drag Drop")
-	int32 CurrentRotation;
+	ESMGridRotation CurrentRotation;
 
 	/** 드래그 미리보기 위젯 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Drag Drop")

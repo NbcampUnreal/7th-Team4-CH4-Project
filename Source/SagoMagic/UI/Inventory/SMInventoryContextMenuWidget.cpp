@@ -1,5 +1,8 @@
 ﻿#include "UI/Inventory/SMInventoryContextMenuWidget.h"
 
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
@@ -38,7 +41,20 @@ void USMInventoryContextMenuWidget::RequestDropItem()
 		return;
 	}
 
-	if (InventoryComponent->DropItem(ItemInstanceId, FTransform::Identity) == false)
+	FTransform DropTransform = FTransform::Identity;
+
+	if (APlayerController* OwningPlayerController = GetOwningPlayer())
+	{
+		if (APawn* OwningPawn = OwningPlayerController->GetPawn())
+		{
+			DropTransform = FTransform(
+				OwningPawn->GetActorRotation(),
+				OwningPawn->GetActorLocation(),
+				FVector::OneVector);
+		}
+	}
+
+	if (InventoryComponent->DropItem(ItemInstanceId, DropTransform) == false)
 	{
 		return;
 	}

@@ -24,7 +24,7 @@ void USMInventoryContextMenuWidget::RequestDropItem()
 		return;
 	}
 
-	InventoryComponent->DropItem(ItemInstanceId);
+	InventoryComponent->DropItem(ItemInstanceId, FTransform::Identity);
 }
 
 void USMInventoryContextMenuWidget::RequestDetachEmbeddedItem()

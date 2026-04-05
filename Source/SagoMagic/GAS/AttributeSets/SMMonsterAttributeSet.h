@@ -5,6 +5,8 @@
 #include "SagoMagic.h"
 #include "SMMonsterAttributeSet.generated.h"
 
+// 몬스터 사망 시 외부(MonsterBase)에 알리기 위한 델리게이트
+DECLARE_MULTICAST_DELEGATE(FOnMonsterDied);
 
 UCLASS()
 class SAGOMAGIC_API USMMonsterAttributeSet : public UAttributeSet
@@ -38,6 +40,9 @@ public:
     FGameplayAttributeData MoveSpeed;
     ATTRIBUTE_ACCESSORS(USMMonsterAttributeSet, MoveSpeed)
 
+
+    /** HP가 0이 됐을 때 브로드캐스트 (서버에서만 발생) **/
+    FOnMonsterDied OnMonsterDied;
 
      UFUNCTION()
     virtual void OnRep_Health(const FGameplayAttributeData& OldHealth);

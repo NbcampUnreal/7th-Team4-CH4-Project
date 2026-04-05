@@ -38,9 +38,12 @@ void USMMonsterAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModC
 	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
 		SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
+
 		if (GetHealth() <= 0.0f)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Monster is Dead!"));
+			UE_LOG(LogTemp, Warning, TEXT("[Monster] HP가 0이 되었습니다. 사망 처리를 시작합니다."));
+			// MonsterBase가 바인딩한 HandleDeath()를 호출
+			OnMonsterDied.Broadcast();
 		}
 	}
 }

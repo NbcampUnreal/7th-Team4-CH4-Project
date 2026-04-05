@@ -7,11 +7,14 @@
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Inventory/Core/SMContainerTypes.h"
 #include "Inventory/Core/SMItemInstanceTypes.h"
+#include "Inventory/Items/Definitions/SMItemDefinition.h"
+#include "Inventory/Items/Fragments/SMGridShapeFragment.h"
 
 #include "UI/Inventory/SMInventoryCellWidget.h"
 #include "UI/Inventory/SMItemWidget.h"
 #include "UI/Inventory/SMInventoryDragDropOperation.h"
 #include "UI/Inventory/SMDragItemPreviewWidget.h"
+#include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
 USMInventoryGridWidget::USMInventoryGridWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -101,10 +104,18 @@ bool USMInventoryGridWidget::NativeOnDrop(
 		InventoryOperation->GetCurrentRotation());
 
 	ActiveDragDropOperation = nullptr;
+	ClearHoveredCellState();
 
 	if (bMoveSucceeded)
 	{
-		RefreshGrid();
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->RefreshPanel();
+		}
+		else
+		{
+			RefreshGrid();
+		}
 	}
 
 	return bMoveSucceeded;
@@ -167,17 +178,20 @@ void USMInventoryGridWidget::RequestRotateDraggedItem()
 		PreviewWidget->UpdatePreviewRotation(NextRotation);
 	}
 
-	if (HoveredGridX >= 0 && HoveredGridY >= 0 && InventoryComponent != nullptr)
+	if (HoveredGridX < 0 || HoveredGridY < 0 || InventoryComponent == nullptr)
 	{
-		const bool bCanPlace = InventoryComponent->CanPlaceItem(
-			ActiveDragDropOperation->GetItemInstanceId(),
-			ContainerId,
-			HoveredGridX,
-			HoveredGridY,
-			NextRotation);
-
-		UpdateDraggedPreviewState(ActiveDragDropOperation, bCanPlace);
+		return;
 	}
+
+	const bool bCanPlace = InventoryComponent->CanPlaceItem(
+		ActiveDragDropOperation->GetItemInstanceId(),
+		ContainerId,
+		HoveredGridX,
+		HoveredGridY,
+		NextRotation);
+
+	UpdateDraggedPreviewState(ActiveDragDropOperation, bCanPlace);
+	UpdateCellStates();
 }
 
 void USMInventoryGridWidget::ClearHoveredCellState()
@@ -361,22 +375,118 @@ void USMInventoryGridWidget::ClearCellWidgets()
 {
 	CellWidgets.Reset();
 
-	if (CellLayerPanel != nullptr)
+	if (CellLayerPanel == nullptr)
 	{
-		CellLayerPanel->ClearChildren();
+		return;
 	}
+
+	CellLayerPanel->ClearChildren();
 }
 
 void USMInventoryGridWidget::ClearItemWidgets()
 {
-	if (ItemLayerPanel != nullptr)
+	if (ItemLayerPanel == nullptr)
 	{
-		ItemLayerPanel->ClearChildren();
+		return;
 	}
+
+	ItemLayerPanel->ClearChildren();
 }
 
 void USMInventoryGridWidget::UpdateCellStates()
 {
+	TArray<FIntPoint> HighlightedCells;
+	bool bCanPlace = false;
+
+	if (InventoryComponent != nullptr &&
+		ActiveDragDropOperation != nullptr &&
+		ActiveDragDropOperation->HasValidItemInstanceId() &&
+		HoveredGridX >= 0 &&
+		HoveredGridY >= 0)
+	{
+		bCanPlace = InventoryComponent->CanPlaceItem(
+			ActiveDragDropOperation->GetItemInstanceId(),
+			ContainerId,
+			HoveredGridX,
+			HoveredGridY,
+			ActiveDragDropOperation->GetCurrentRotation());
+
+		FSMItemInstanceData BaseItemData;
+		const FSMItemInstanceData* ItemData = InventoryComponent->FindItem(
+			ActiveDragDropOperation->GetItemInstanceId());
+		const FSMSkillItemInstanceData* SkillData = ItemData == nullptr
+			                                            ? InventoryComponent->FindSkill(
+				                                            ActiveDragDropOperation->GetItemInstanceId())
+			                                            : nullptr;
+
+		if (ItemData != nullptr)
+		{
+			BaseItemData = *ItemData;
+		}
+		else if (SkillData != nullptr)
+		{
+			BaseItemData = SkillData->BaseItem;
+		}
+
+		if (BaseItemData.InstanceId.IsValid())
+		{
+			const USMItemDefinition* ItemDefinition = InventoryComponent->ResolveItemDefinition(BaseItemData);
+			if (ItemDefinition != nullptr)
+			{
+				const USMGridShapeFragment* GridShapeFragment =
+					ItemDefinition->FindFragmentByClass<USMGridShapeFragment>();
+				if (GridShapeFragment != nullptr)
+				{
+					const FSMGridMaskData& ShapeMask = GridShapeFragment->GetShapeMask();
+					if (ShapeMask.IsValidMaskData())
+					{
+						for (int32 Y = 0; Y < ShapeMask.Height; ++Y)
+						{
+							for (int32 X = 0; X < ShapeMask.Width; ++X)
+							{
+								const int32 MaskIndex = (Y * ShapeMask.Width) + X;
+								if (ShapeMask.BitMask.IsValidIndex(MaskIndex) == false ||
+									ShapeMask.BitMask[MaskIndex] != TEXT('1'))
+								{
+									continue;
+								}
+
+								int32 RotatedX = X;
+								int32 RotatedY = Y;
+
+								switch (ActiveDragDropOperation->GetCurrentRotation())
+								{
+								case ESMGridRotation::Rot0:
+									break;
+
+								case ESMGridRotation::Rot90:
+									RotatedX = ShapeMask.Height - 1 - Y;
+									RotatedY = X;
+									break;
+
+								case ESMGridRotation::Rot180:
+									RotatedX = ShapeMask.Width - 1 - X;
+									RotatedY = ShapeMask.Height - 1 - Y;
+									break;
+
+								case ESMGridRotation::Rot270:
+									RotatedX = Y;
+									RotatedY = ShapeMask.Width - 1 - X;
+									break;
+
+								default:
+									continue;
+								}
+
+								HighlightedCells.Add(FIntPoint(HoveredGridX + RotatedX, HoveredGridY + RotatedY));
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	for (USMInventoryCellWidget* CellWidget : CellWidgets)
 	{
 		if (CellWidget == nullptr)
@@ -388,11 +498,23 @@ void USMInventoryGridWidget::UpdateCellStates()
 			CellWidget->GetGridX() == HoveredGridX &&
 			CellWidget->GetGridY() == HoveredGridY;
 
+		const bool bHighlighted =
+			HighlightedCells.Contains(FIntPoint(CellWidget->GetGridX(), CellWidget->GetGridY()));
+		const bool bPlaceableHighlighted = bHighlighted && bCanPlace;
+		const bool bBlockedHighlighted = bHighlighted && bCanPlace == false;
+
+		if (CellWidget->IsHoveredCell() == bHovered &&
+			CellWidget->IsPlaceableHighlighted() == bPlaceableHighlighted &&
+			CellWidget->IsBlockedHighlighted() == bBlockedHighlighted)
+		{
+			continue;
+		}
+
 		CellWidget->UpdateCellState(
 			CellWidget->IsCellEnabled(),
 			bHovered,
-			false,
-			false);
+			bPlaceableHighlighted,
+			bBlockedHighlighted);
 	}
 }
 
@@ -470,6 +592,24 @@ void USMInventoryGridWidget::ApplyCellWidgetLayout(USMInventoryCellWidget* InCel
 	{
 		return;
 	}
+
+	if (GridWidth <= 0 || GridHeight <= 0)
+	{
+		return;
+	}
+
+	const FVector2D MinAnchor(
+		static_cast<float>(InGridX) / static_cast<float>(GridWidth),
+		static_cast<float>(InGridY) / static_cast<float>(GridHeight));
+	const FVector2D MaxAnchor(
+		static_cast<float>(InGridX + 1) / static_cast<float>(GridWidth),
+		static_cast<float>(InGridY + 1) / static_cast<float>(GridHeight));
+
+	CanvasSlot->SetAnchors(FAnchors(MinAnchor.X, MinAnchor.Y, MaxAnchor.X, MaxAnchor.Y));
+	CanvasSlot->SetOffsets(FMargin(0.0f));
+	CanvasSlot->SetAlignment(FVector2D::ZeroVector);
+	CanvasSlot->SetAutoSize(false);
+	CanvasSlot->SetZOrder(0);
 }
 
 void USMInventoryGridWidget::ApplyItemWidgetLayout(USMItemWidget* InItemWidget, int32 InGridX, int32 InGridY)
@@ -484,4 +624,123 @@ void USMInventoryGridWidget::ApplyItemWidgetLayout(USMItemWidget* InItemWidget, 
 	{
 		return;
 	}
+
+	if (GridWidth <= 0 || GridHeight <= 0)
+	{
+		return;
+	}
+
+	int32 MinGridX = InGridX;
+	int32 MinGridY = InGridY;
+	int32 MaxGridX = InGridX;
+	int32 MaxGridY = InGridY;
+
+	if (InventoryComponent != nullptr)
+	{
+		FSMItemInstanceData BaseItemData;
+		const FSMItemInstanceData* ItemData = InventoryComponent->FindItem(InItemWidget->GetItemInstanceId());
+		const FSMSkillItemInstanceData* SkillData = ItemData == nullptr
+			                                            ? InventoryComponent->FindSkill(
+				                                            InItemWidget->GetItemInstanceId())
+			                                            : nullptr;
+
+		if (ItemData != nullptr)
+		{
+			BaseItemData = *ItemData;
+		}
+		else if (SkillData != nullptr)
+		{
+			BaseItemData = SkillData->BaseItem;
+		}
+
+		if (BaseItemData.InstanceId.IsValid())
+		{
+			const USMItemDefinition* ItemDefinition = InventoryComponent->ResolveItemDefinition(BaseItemData);
+			if (ItemDefinition != nullptr)
+			{
+				const USMGridShapeFragment* GridShapeFragment =
+					ItemDefinition->FindFragmentByClass<USMGridShapeFragment>();
+				if (GridShapeFragment != nullptr)
+				{
+					const FSMGridMaskData& ShapeMask = GridShapeFragment->GetShapeMask();
+					if (ShapeMask.IsValidMaskData())
+					{
+						bool bInitializedBounds = false;
+
+						for (int32 Y = 0; Y < ShapeMask.Height; ++Y)
+						{
+							for (int32 X = 0; X < ShapeMask.Width; ++X)
+							{
+								const int32 MaskIndex = (Y * ShapeMask.Width) + X;
+								if (ShapeMask.BitMask.IsValidIndex(MaskIndex) == false ||
+									ShapeMask.BitMask[MaskIndex] != TEXT('1'))
+								{
+									continue;
+								}
+
+								int32 RotatedX = X;
+								int32 RotatedY = Y;
+
+								switch (InItemWidget->GetDisplayRotation())
+								{
+								case ESMGridRotation::Rot0:
+									break;
+
+								case ESMGridRotation::Rot90:
+									RotatedX = ShapeMask.Height - 1 - Y;
+									RotatedY = X;
+									break;
+
+								case ESMGridRotation::Rot180:
+									RotatedX = ShapeMask.Width - 1 - X;
+									RotatedY = ShapeMask.Height - 1 - Y;
+									break;
+
+								case ESMGridRotation::Rot270:
+									RotatedX = Y;
+									RotatedY = ShapeMask.Width - 1 - X;
+									break;
+
+								default:
+									continue;
+								}
+
+								const int32 CellX = InGridX + RotatedX;
+								const int32 CellY = InGridY + RotatedY;
+
+								if (bInitializedBounds == false)
+								{
+									MinGridX = CellX;
+									MinGridY = CellY;
+									MaxGridX = CellX;
+									MaxGridY = CellY;
+									bInitializedBounds = true;
+								}
+								else
+								{
+									MinGridX = FMath::Min(MinGridX, CellX);
+									MinGridY = FMath::Min(MinGridY, CellY);
+									MaxGridX = FMath::Max(MaxGridX, CellX);
+									MaxGridY = FMath::Max(MaxGridY, CellY);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	const FVector2D MinAnchor(
+		static_cast<float>(FMath::Clamp(MinGridX, 0, GridWidth)) / static_cast<float>(GridWidth),
+		static_cast<float>(FMath::Clamp(MinGridY, 0, GridHeight)) / static_cast<float>(GridHeight));
+	const FVector2D MaxAnchor(
+		static_cast<float>(FMath::Clamp(MaxGridX + 1, 0, GridWidth)) / static_cast<float>(GridWidth),
+		static_cast<float>(FMath::Clamp(MaxGridY + 1, 0, GridHeight)) / static_cast<float>(GridHeight));
+
+	CanvasSlot->SetAnchors(FAnchors(MinAnchor.X, MinAnchor.Y, MaxAnchor.X, MaxAnchor.Y));
+	CanvasSlot->SetOffsets(FMargin(0.0f));
+	CanvasSlot->SetAlignment(FVector2D::ZeroVector);
+	CanvasSlot->SetAutoSize(false);
+	CanvasSlot->SetZOrder(1);
 }

@@ -5,12 +5,23 @@
 #include "Enemy/SMMonsterBase.h"
 #include "SMMonsterData.generated.h"
 
+UENUM()
+enum class EMonsterType : uint8
+{
+    None    UMETA(DisplayName = "없음"),
+    Snake   UMETA(DisplayName = "Snake"),
+    Squid   UMETA(DisplayName = "Squid"),
+    Bird    UMETA(DisplayName = "Bird")
+};
 
 USTRUCT(BlueprintType)
 struct FSMMonsterData : public FTableRowBase
 {
     GENERATED_BODY()
-
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster|Info")
+    EMonsterType MonsterType = EMonsterType::None;
+    
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster|Info")
     FText MonsterName;
 

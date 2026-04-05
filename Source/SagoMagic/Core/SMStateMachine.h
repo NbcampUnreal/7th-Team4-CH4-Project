@@ -62,7 +62,7 @@ private:
     EGameState CurrentStateType = EGameState::None;
 
     /** 현재 웨이브 번호 - Combat -> Build 전환마다 증가 */
-    int32 CurrentWaveIndex = 0;
+    int32 CurrentWaveIndex = 1;
 
     /** 총 웨이브 수 - 추후 Result 전환 조건에 사용 */
     static constexpr int32 MaxWaveCount = 3;

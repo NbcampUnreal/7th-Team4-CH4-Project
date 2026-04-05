@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "GameplayTagContainer.h" // GameplayTag
+#include "SMMonsterData.h"
 #include "SMWaveData.generated.h"
 
 
@@ -12,7 +13,7 @@ struct FWaveSpawnData
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave Spawn")
-    FDataTableRowHandle MonsterHandle;
+    EMonsterType MonsterType = EMonsterType::None;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave Spawn")
     int32 SpawnCount = 0;

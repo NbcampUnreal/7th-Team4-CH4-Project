@@ -33,9 +33,6 @@ void ASMGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (USMWaveManagerSubsystem* WM = GetWorld()->GetSubsystem<USMWaveManagerSubsystem>())
-        WM->SetWaveDataTable(WaveDataTable);
-
     StateMachine = NewObject<USMStateMachine>(this);
     StateMachine->Initialize(this);
 

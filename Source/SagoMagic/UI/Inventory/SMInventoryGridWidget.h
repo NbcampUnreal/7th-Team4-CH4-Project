@@ -159,6 +159,9 @@ protected:
 	/** 베이스 아이템 데이터 기준 점유 셀 계산 */
 	bool BuildOccupiedCellsFromItemData(const FSMItemInstanceData& InBaseItemData, TArray<FIntPoint>& OutOccupiedCells) const;
 
+	/** 베이스 아이템 데이터 기준 셀 표시 색상 조회 */
+	bool GetItemAccentColor(const FSMItemInstanceData& InBaseItemData, FLinearColor& OutAccentColor) const;
+
 	/** 베이스 아이템 데이터 기준 셀 점유 정보 반영 */
 	void ApplyItemOwnershipToCells(const FSMItemInstanceData& InBaseItemData);
 

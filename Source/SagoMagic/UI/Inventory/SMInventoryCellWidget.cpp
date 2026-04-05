@@ -1,4 +1,4 @@
-#include "UI/Inventory/SMInventoryCellWidget.h"
+﻿#include "UI/Inventory/SMInventoryCellWidget.h"
 
 #include "Blueprint/WidgetBlueprintLibrary.h"
 
@@ -14,6 +14,8 @@ USMInventoryCellWidget::USMInventoryCellWidget(const FObjectInitializer& ObjectI
 	  , bHoveredCell(false)
 	  , bPlaceableHighlighted(false)
 	  , bBlockedHighlighted(false)
+	  , bOccupiedCell(false)
+	  , OccupiedAccentColor(FLinearColor::White)
 {
 }
 
@@ -127,6 +129,8 @@ void USMInventoryCellWidget::InitializeCellWidget(int32 InGridX, int32 InGridY, 
 	bPlaceableHighlighted = false;
 	bBlockedHighlighted = false;
 	OwnerItemInstanceId.Invalidate();
+	bOccupiedCell = false;
+	OccupiedAccentColor = FLinearColor::White;
 
 	BP_OnCellStateChanged();
 }
@@ -154,13 +158,18 @@ void USMInventoryCellWidget::ClearHighlightState()
 	BP_OnCellStateChanged();
 }
 
-void USMInventoryCellWidget::UpdateOccupiedItem(const FGuid& InOwnerItemInstanceId)
+void USMInventoryCellWidget::UpdateOccupiedItem(const FGuid& InOwnerItemInstanceId, const FLinearColor& InOccupiedAccentColor)
 {
-	if (OwnerItemInstanceId == InOwnerItemInstanceId)
+	const bool bInOccupiedCell = InOwnerItemInstanceId.IsValid();
+	if (OwnerItemInstanceId == InOwnerItemInstanceId &&
+		bOccupiedCell == bInOccupiedCell &&
+		OccupiedAccentColor.Equals(InOccupiedAccentColor))
 	{
 		return;
 	}
 
 	OwnerItemInstanceId = InOwnerItemInstanceId;
+	bOccupiedCell = bInOccupiedCell;
+	OccupiedAccentColor = bOccupiedCell ? InOccupiedAccentColor : FLinearColor::White;
 	BP_OnCellStateChanged();
 }

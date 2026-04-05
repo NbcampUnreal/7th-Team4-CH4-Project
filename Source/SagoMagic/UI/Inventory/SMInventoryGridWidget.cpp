@@ -8,6 +8,7 @@
 #include "Inventory/Core/SMContainerTypes.h"
 #include "Inventory/Core/SMItemInstanceTypes.h"
 #include "Inventory/Items/Definitions/SMItemDefinition.h"
+#include "Inventory/Items/Fragments/SMDisplayInfoFragment.h"
 #include "Inventory/Items/Fragments/SMGridShapeFragment.h"
 
 #include "UI/Inventory/SMInventoryCellWidget.h"
@@ -709,6 +710,31 @@ bool USMInventoryGridWidget::BuildOccupiedCellsFromItemData(const FSMItemInstanc
 	return true;
 }
 
+bool USMInventoryGridWidget::GetItemAccentColor(const FSMItemInstanceData& InBaseItemData, FLinearColor& OutAccentColor) const
+{
+	OutAccentColor = FLinearColor::White;
+
+	if (InventoryComponent == nullptr || InBaseItemData.InstanceId.IsValid() == false)
+	{
+		return false;
+	}
+
+	const USMItemDefinition* ItemDefinition = InventoryComponent->ResolveItemDefinition(InBaseItemData);
+	if (ItemDefinition == nullptr)
+	{
+		return false;
+	}
+
+	const USMDisplayInfoFragment* DisplayInfoFragment = ItemDefinition->FindFragmentByClass<USMDisplayInfoFragment>();
+	if (DisplayInfoFragment == nullptr)
+	{
+		return false;
+	}
+
+	OutAccentColor = DisplayInfoFragment->GetAccentColor();
+	return true;
+}
+
 void USMInventoryGridWidget::ApplyItemOwnershipToCells(const FSMItemInstanceData& InBaseItemData)
 {
 	TArray<FIntPoint> OccupiedCells;
@@ -716,6 +742,9 @@ void USMInventoryGridWidget::ApplyItemOwnershipToCells(const FSMItemInstanceData
 	{
 		return;
 	}
+
+	FLinearColor AccentColor = FLinearColor::White;
+	GetItemAccentColor(InBaseItemData, AccentColor);
 
 	for (const FIntPoint& OccupiedCell : OccupiedCells)
 	{
@@ -725,7 +754,7 @@ void USMInventoryGridWidget::ApplyItemOwnershipToCells(const FSMItemInstanceData
 			continue;
 		}
 
-		CellWidget->UpdateOccupiedItem(InBaseItemData.InstanceId);
+		CellWidget->UpdateOccupiedItem(InBaseItemData.InstanceId, AccentColor);
 	}
 }
 

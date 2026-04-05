@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
@@ -93,7 +93,13 @@ public:
 	/** 점유 여부 Getter */
 	bool IsOccupiedCell() const
 	{
-		return OwnerItemInstanceId.IsValid();
+		return bOccupiedCell;
+	}
+
+	/** 점유 셀 강조 색상 Getter */
+	const FLinearColor& GetOccupiedAccentColor() const
+	{
+		return OccupiedAccentColor;
 	}
 
 	/** Grid X Setter */
@@ -138,6 +144,18 @@ public:
 		OwnerItemInstanceId = InOwnerItemInstanceId;
 	}
 
+	/** 점유 여부 Setter */
+	void SetOccupiedCell(const bool bInOccupiedCell)
+	{
+		bOccupiedCell = bInOccupiedCell;
+	}
+
+	/** 점유 셀 강조 색상 Setter */
+	void SetOccupiedAccentColor(const FLinearColor& InOccupiedAccentColor)
+	{
+		OccupiedAccentColor = InOccupiedAccentColor;
+	}
+
 public:
 	/** 셀 초기화 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Cell Widget")
@@ -157,7 +175,7 @@ public:
 
 	/** 점유 아이템 갱신 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Cell Widget")
-	void UpdateOccupiedItem(const FGuid& InOwnerItemInstanceId);
+	void UpdateOccupiedItem(const FGuid& InOwnerItemInstanceId, const FLinearColor& InOccupiedAccentColor);
 
 protected:
 	/** 셀 상태 갱신 블루프린트 이벤트 */
@@ -193,6 +211,14 @@ protected:
 	/** 현재 셀 점유 아이템 인스턴스 ID */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Cell Widget")
 	FGuid OwnerItemInstanceId;
+
+	/** 현재 셀 점유 여부 */
+	UPROPERTY(BlueprintReadOnly, Category="Inventory Cell Widget")
+	bool bOccupiedCell;
+
+	/** 현재 셀 점유 아이템 강조 색상 */
+	UPROPERTY(BlueprintReadOnly, Category="Inventory Cell Widget")
+	FLinearColor OccupiedAccentColor;
 
 private:
 };

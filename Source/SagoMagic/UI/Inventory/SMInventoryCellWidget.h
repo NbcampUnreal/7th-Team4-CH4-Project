@@ -48,6 +48,9 @@ public:
 	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
 	                                  UDragDropOperation*& OutOperation) override;
 
+	/** 드래그 취소 처리 오버라이드 */
+	virtual void NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+
 	/** Grid X Getter */
 	int32 GetGridX() const
 	{

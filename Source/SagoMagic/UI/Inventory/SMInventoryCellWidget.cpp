@@ -120,6 +120,16 @@ void USMInventoryCellWidget::NativeOnDragDetected(const FGeometry& InGeometry, c
 	}
 }
 
+void USMInventoryCellWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
+{
+	Super::NativeOnDragCancelled(InDragDropEvent, InOperation);
+
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		OwningPanel->ClearActiveDragState();
+	}
+}
+
 void USMInventoryCellWidget::InitializeCellWidget(int32 InGridX, int32 InGridY, bool bInCellEnabled)
 {
 	GridX = InGridX;

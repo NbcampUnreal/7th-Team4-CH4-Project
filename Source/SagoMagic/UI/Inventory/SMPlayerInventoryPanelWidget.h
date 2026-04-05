@@ -10,6 +10,7 @@ class USMSkillInventoryWidget;
 class USMQuickSlotBarWidget;
 class USMInventoryContextMenuWidget;
 class USMItemHoverInfoWidget;
+class USMInventoryDragDropOperation;
 
 
 /**
@@ -116,6 +117,13 @@ public:
 	/** 현재 드래그 중인 아이템 회전 요청 전달 */
 	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
 	bool RequestRotateCurrentDraggedItem();
+
+	/** 현재 드래그 상태 전체 초기화 요청 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	void ClearActiveDragState();
+
+	/** 현재 활성 드래그 그리드 설정 */
+	void SetActiveDragGrid(USMInventoryGridWidget* InActiveGrid, USMInventoryDragDropOperation* InOperation);
 
 	/** 현재 호버 아이템 설정 요청 */
 	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")

@@ -52,6 +52,9 @@ public:
 	virtual bool NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	                              UDragDropOperation* InOperation) override;
 
+	/** 드래그 이탈 처리 오버라이드 */
+	virtual void NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+
 	/** 드롭 처리 오버라이드 */
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	                          UDragDropOperation* InOperation) override;
@@ -115,8 +118,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Inventory Grid Widget")
 	void ClearHoveredCellState();
 
+	/** 현재 드래그 상태 전체 초기화 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory Grid Widget")
+	void ClearActiveDragState();
+
 	/** 특정 아이템 기준 드래그 드롭 오퍼레이션 생성 */
 	USMInventoryDragDropOperation* CreateDragDropOperationForItem(const FGuid& InItemInstanceId);
+
+	/** 현재 활성 드래그 오퍼레이션 설정 */
+	void SetActiveDragOperation(USMInventoryDragDropOperation* InActiveDragDropOperation);
 
 protected:
 	/** 드래그 중 목표 Grid 좌표 계산 */

@@ -166,7 +166,7 @@ USMDragItemPreviewWidget* USMItemWidget::CreateDragPreviewWidget()
 		return nullptr;
 	}
 
-	PreviewWidget->InitializePreview(ItemInstanceId, DisplayRotation);
+	PreviewWidget->InitializePreviewFromInventory(ItemInstanceId, DisplayRotation, InventoryComponent);
 	return PreviewWidget;
 }
 

@@ -134,6 +134,39 @@ bool USMPlayerInventoryPanelWidget::RequestRotateCurrentDraggedItem()
 	return false;
 }
 
+void USMPlayerInventoryPanelWidget::ClearActiveDragState()
+{
+	if (MainInventoryGridWidget != nullptr)
+	{
+		MainInventoryGridWidget->ClearActiveDragState();
+	}
+
+	if (SkillInventoryWidget != nullptr)
+	{
+		SkillInventoryWidget->ClearActiveDragState();
+	}
+}
+
+void USMPlayerInventoryPanelWidget::SetActiveDragGrid(
+	USMInventoryGridWidget* InActiveGrid,
+	USMInventoryDragDropOperation* InOperation)
+{
+	if (MainInventoryGridWidget != nullptr && MainInventoryGridWidget != InActiveGrid)
+	{
+		MainInventoryGridWidget->ClearActiveDragState();
+	}
+
+	if (SkillInventoryWidget != nullptr && SkillInventoryWidget != InActiveGrid)
+	{
+		SkillInventoryWidget->ClearActiveDragState();
+	}
+
+	if (InActiveGrid != nullptr)
+	{
+		InActiveGrid->SetActiveDragOperation(InOperation);
+	}
+}
+
 void USMPlayerInventoryPanelWidget::SetHoveredItem(const FGuid& InItemInstanceId)
 {
 	if (HoveredItemInstanceId == InItemInstanceId)

@@ -46,7 +46,14 @@ bool USMInventoryGridWidget::NativeOnDragOver(
 		return Super::NativeOnDragOver(InGeometry, InDragDropEvent, InOperation);
 	}
 
-	ActiveDragDropOperation = InventoryOperation;
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		OwningPanel->SetActiveDragGrid(this, InventoryOperation);
+	}
+	else
+	{
+		SetActiveDragOperation(InventoryOperation);
+	}
 
 	int32 GridX = 0;
 	int32 GridY = 0;
@@ -74,6 +81,25 @@ bool USMInventoryGridWidget::NativeOnDragOver(
 	return true;
 }
 
+void USMInventoryGridWidget::NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
+{
+	Super::NativeOnDragLeave(InDragDropEvent, InOperation);
+
+	USMInventoryDragDropOperation* InventoryOperation = GetInventoryDragDropOperation(InOperation);
+	if (InventoryOperation == nullptr)
+	{
+		return;
+	}
+
+	if (ActiveDragDropOperation != InventoryOperation)
+	{
+		return;
+	}
+
+	ClearHoveredCellState();
+	UpdateDraggedPreviewState(InOperation, false);
+}
+
 bool USMInventoryGridWidget::NativeOnDrop(
 	const FGeometry& InGeometry,
 	const FDragDropEvent& InDragDropEvent,
@@ -87,6 +113,15 @@ bool USMInventoryGridWidget::NativeOnDrop(
 
 	if (InventoryComponent == nullptr)
 	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->ClearActiveDragState();
+		}
+		else
+		{
+			ClearActiveDragState();
+		}
+
 		return false;
 	}
 
@@ -94,6 +129,15 @@ bool USMInventoryGridWidget::NativeOnDrop(
 	int32 GridY = 0;
 	if (CalculateDropGridPosition(InGeometry, InDragDropEvent, GridX, GridY) == false)
 	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->ClearActiveDragState();
+		}
+		else
+		{
+			ClearActiveDragState();
+		}
+
 		return false;
 	}
 
@@ -104,8 +148,14 @@ bool USMInventoryGridWidget::NativeOnDrop(
 		GridY,
 		InventoryOperation->GetCurrentRotation());
 
-	ActiveDragDropOperation = nullptr;
-	ClearHoveredCellState();
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		OwningPanel->ClearActiveDragState();
+	}
+	else
+	{
+		ClearActiveDragState();
+	}
 
 	if (bMoveSucceeded)
 	{
@@ -202,6 +252,17 @@ void USMInventoryGridWidget::ClearHoveredCellState()
 	UpdateCellStates();
 }
 
+void USMInventoryGridWidget::ClearActiveDragState()
+{
+	ActiveDragDropOperation = nullptr;
+	ClearHoveredCellState();
+}
+
+void USMInventoryGridWidget::SetActiveDragOperation(USMInventoryDragDropOperation* InActiveDragDropOperation)
+{
+	ActiveDragDropOperation = InActiveDragDropOperation;
+}
+
 USMInventoryDragDropOperation* USMInventoryGridWidget::CreateDragDropOperationForItem(const FGuid& InItemInstanceId)
 {
 	if (InventoryComponent == nullptr || InItemInstanceId.IsValid() == false)
@@ -235,7 +296,7 @@ USMInventoryDragDropOperation* USMInventoryGridWidget::CreateDragDropOperationFo
 			PreviewWidget = CreateWidget<USMDragItemPreviewWidget>(this, ItemWidgetCDO->GetDragPreviewWidgetClass());
 			if (PreviewWidget != nullptr)
 			{
-				PreviewWidget->InitializePreview(BaseItemData.InstanceId, BaseItemData.Rotation);
+				PreviewWidget->InitializePreviewFromInventory(BaseItemData.InstanceId, BaseItemData.Rotation, InventoryComponent);
 			}
 		}
 	}
@@ -249,7 +310,7 @@ USMInventoryDragDropOperation* USMInventoryGridWidget::CreateDragDropOperationFo
 		PreviewWidget);
 
 	NewOperation->DefaultDragVisual = PreviewWidget;
-	ActiveDragDropOperation = NewOperation;
+	SetActiveDragOperation(NewOperation);
 	return NewOperation;
 }
 

@@ -19,8 +19,18 @@ public:
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 protected:
     virtual void BeginPlay() override;
-    //virtual void PossessedBy(AController* NewController) override;
+    virtual void PossessedBy(AController* NewController) override;
+
+    /** 실제로 부여된 어빌리티를 관리하기 위한 함수 **/
+    void GiveDefaultAbilities();
+
+    /** HP가 0이 됐을 때 AttributeSet의 델리게이트로 호출 (서버 전용) **/
+    void HandleDeath();
 public:
+    /** 몬스터가 기본적으로 가질 어빌리티 목록 **/
+    UPROPERTY(EditAnywhere, Category = "GAS")
+    TArray<TSubclassOf<class UGameplayAbility>> DefaultAbilities;
+
     /** 몬스터 ASC 컴포넌트* */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
     TObjectPtr<UAbilitySystemComponent> MonsterAbilitySystemComponent;

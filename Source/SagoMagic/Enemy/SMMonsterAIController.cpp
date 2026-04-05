@@ -2,58 +2,109 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
+#include "AbilitySystemComponent.h"
+#include "Enemy/SMMonsterBase.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/Pawn.h"
 
 ASMMonsterAIController::ASMMonsterAIController()
 {
     BlackboardComp = CreateDefaultSubobject<UBlackboardComponent>(TEXT("BlackboardComp"));
     PerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("PerceptionComp"));
-
-    // 2. 델리게이트에 내가 만든 함수를 등록 (바인딩)
-    // "이벤트가 발생하면 내 OnTargetDetected 함수를 실행해줘!"라는 뜻입니다.
     PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &ASMMonsterAIController::OnTargetDetected);
-    
 }
 
 void ASMMonsterAIController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 
-    //나중에 behaviorTree
-    //MoveToLocation(FVector::ZeroVector);
-    // 블랙보드 에셋이 유효한지 확인 후 초기화
     if (BBAsset && BTAsset)
     {
         UBlackboardComponent* BlackboardCompPointer = BlackboardComp.Get();
         if (UseBlackboard(BBAsset, BlackboardCompPointer))
         {
-            //갱신된 포인터 다시 저장
             BlackboardComp = BlackboardCompPointer;
-            // 2. 월드에서 플레이어 캐릭터를 찾아 블랙보드에 강제 주입
+
             APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-            //GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("UseBlackboard!")));
             if (PlayerPawn)
             {
-                GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, FString::Printf(TEXT("Target find!")));
+                //GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, TEXT("Target find!"));
                 Blackboard->SetValueAsObject(FName("TargetActor"), PlayerPawn);
             }
 
-            // 3. 비헤이비어 트리 실행
             RunBehaviorTree(BTAsset);
-           
         }
     }
+
+  
+}
+
+void ASMMonsterAIController::OnUnPossess()
+{
+    Super::OnUnPossess();
+    GetWorldTimerManager().ClearTimer(AttackCheckTimerHandle);
+}
+void ASMMonsterAIController::StartAttackTimer()
+{
+    // 이미 타이머가 돌고 있으면 중복 실행 방지
+    if (GetWorldTimerManager().IsTimerActive(AttackCheckTimerHandle)) return;
+
+    GetWorldTimerManager().SetTimer(
+        AttackCheckTimerHandle,
+        this,
+        &ASMMonsterAIController::CheckAttackRange,
+        AttackCooldown,
+        true
+    );
+
+    //UE_LOG(LogTemp, Warning, TEXT("[AI] 공격 타이머 시작. 쿨다운: %.1f초"), AttackCooldown);
 }
 
 void ASMMonsterAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
 {
-    // 여기서 타겟이 플레이어인지 구조물인지 판단하여 블랙보드 갱신
     if (Actor && Stimulus.WasSuccessfullySensed())
     {
         if (Actor->ActorHasTag(FName("Player")))
         {
             GetBlackboardComponent()->SetValueAsObject(FName("TargetActor"), Actor);
-            // ... 추가 로직
         }
     }
+}
+
+void ASMMonsterAIController::CheckAttackRange()
+{
+   /* UE_LOG(LogTemp, Warning, TEXT("[AI] NetMode:%d Role:%d LocalRole:%d"),
+        (int32)GetNetMode(),
+        (int32)GetPawn()->GetRemoteRole(),
+        (int32)GetPawn()->GetLocalRole());*/
+
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return;
+
+    UAbilitySystemComponent* ASC = nullptr;
+    if (IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(MyPawn))
+    {
+        ASC = ASCInterface->GetAbilitySystemComponent();
+    }
+
+    if (!ASC)
+    {
+        //UE_LOG(LogTemp, Warning, TEXT("[AI] Pawn:%s / ASC 없음"), *MyPawn->GetName());
+        return;
+    }
+
+    const TArray<FGameplayAbilitySpec>& AllSpecs = ASC->GetActivatableAbilities();
+
+    /*UE_LOG(LogTemp, Warning, TEXT("[AI] Pawn:%s / ASC:%p / 부여된 어빌리티 수: %d"),
+        *MyPawn->GetName(),
+        ASC,
+        AllSpecs.Num());*/
+
+    if (AllSpecs.Num() == 0)
+    {
+        return;
+    }
+
+    const FGameplayAbilitySpec& Spec = AllSpecs[0];
+    ASC->TryActivateAbility(Spec.Handle);
 }

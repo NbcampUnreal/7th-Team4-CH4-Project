@@ -1,10 +1,12 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "AttributeSet.h"
 #include "SagoMagic.h"
 #include "SMMonsterAttributeSet.generated.h"
 
+// 몬스터 사망 시 외부(MonsterBase)에 알리기 위한 델리게이트
+DECLARE_MULTICAST_DELEGATE(FOnMonsterDied);
 
 UCLASS()
 class SAGOMAGIC_API USMMonsterAttributeSet : public UAttributeSet
@@ -14,29 +16,44 @@ public:
     USMMonsterAttributeSet();
 
     /** HP **/
-    UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+    UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Health)
     FGameplayAttributeData Health;
     ATTRIBUTE_ACCESSORS(USMMonsterAttributeSet, Health)
 
     /** 최대 HP **/
-    UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+    UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_MaxHealth)
     FGameplayAttributeData MaxHealth;
     ATTRIBUTE_ACCESSORS(USMMonsterAttributeSet, MaxHealth)
 
     /** 공격력 **/
-    UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+    UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_AttackPower)
     FGameplayAttributeData AttackPower;
     ATTRIBUTE_ACCESSORS(USMMonsterAttributeSet, AttackPower)
 
     /** 방어력  **/
-    UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+    UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Defense)
     FGameplayAttributeData Defense;
     ATTRIBUTE_ACCESSORS(USMMonsterAttributeSet, Defense)
 
     /** 이동속도 **/
-    UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+    UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_MoveSpeed)
     FGameplayAttributeData MoveSpeed;
     ATTRIBUTE_ACCESSORS(USMMonsterAttributeSet, MoveSpeed)
+
+
+    /** HP가 0이 됐을 때 브로드캐스트 (서버에서만 발생) **/
+    FOnMonsterDied OnMonsterDied;
+
+     UFUNCTION()
+    virtual void OnRep_Health(const FGameplayAttributeData& OldHealth);
+    UFUNCTION() 
+    virtual void OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth);
+    UFUNCTION() 
+    virtual void OnRep_AttackPower(const FGameplayAttributeData& OldAttackPower);
+    UFUNCTION()
+    virtual void OnRep_Defense(const FGameplayAttributeData& OldDefense);
+    UFUNCTION()
+    virtual void OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed);
 
     virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
     virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;

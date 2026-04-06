@@ -2,61 +2,62 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "AbilitySystemComponent.h"
-#include "AbilitySystemGlobals.h"
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
+
 
 void USMPlayerHPBarWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
-	if (TextBlock_PlayerHP) HPTextTemplate = TextBlock_PlayerHP->GetText();
-	
-	APlayerController* PC = GetOwningPlayer();
-	if (PC && PC->GetPawn())
+	if (TextBlock_PlayerHP)
 	{
-		UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(PC->GetPawn());
-		if (ASC)
-		{
-			HealthChangedHandle = ASC->GetGameplayAttributeValueChangeDelegate(USMPlayerAttributeSet::GetHealthAttribute())
-			.AddUObject(this, &USMPlayerHPBarWidget::OnHealthChanged);
-			MaxHealthChangedHandle = ASC->GetGameplayAttributeValueChangeDelegate(USMPlayerAttributeSet::GetMaxHealthAttribute())
-			.AddUObject(this, &USMPlayerHPBarWidget::OnMaxHealthChanged);
-			
-			// 초기값 캐싱
-			CachedMaxHP = ASC->GetNumericAttribute(USMPlayerAttributeSet::GetMaxHealthAttribute());
-			CachedCurrentHP = ASC->GetNumericAttribute(USMPlayerAttributeSet::GetHealthAttribute());
-			
-			UpdateHPText(CachedCurrentHP, CachedMaxHP);
-			
-			if (CachedMaxHP > 0.0f)
-			{
-				TargetPercent = FMath::Clamp(CachedCurrentHP / CachedMaxHP, 0.0f, 1.0f);
-			}
-			else
-			{
-				TargetPercent = 0.0f;
-			}
-			CurrentPercent = TargetPercent;
-			if (ProgressBar_PlayerHP)
-			{
-				ProgressBar_PlayerHP->SetPercent(CurrentPercent);
-			}
-		}
+		HPTextTemplate = TextBlock_PlayerHP->GetText();
 	}
+}
+
+void USMPlayerHPBarWidget::InitializeWithASC(UAbilitySystemComponent* InASC)
+{
+	if (!InASC) return;
+	
+	UnbindASC();
+	BoundASC = InASC;
+	
+	// GAS Attribute 변경 시 호출될 델리게이트 연결
+	HealthChangedHandle = BoundASC->GetGameplayAttributeValueChangeDelegate(USMPlayerAttributeSet::GetHealthAttribute())
+	.AddUObject(this, &USMPlayerHPBarWidget::OnHealthChanged);
+	MaxHealthChangedHandle = BoundASC->GetGameplayAttributeValueChangeDelegate(USMPlayerAttributeSet::GetMaxHealthAttribute())
+	.AddUObject(this, &USMPlayerHPBarWidget::OnMaxHealthChanged);
+			
+	// 초기값 캐싱
+	CachedMaxHP = BoundASC->GetNumericAttribute(USMPlayerAttributeSet::GetMaxHealthAttribute());
+	CachedCurrentHP = BoundASC->GetNumericAttribute(USMPlayerAttributeSet::GetHealthAttribute());
+	
+	TargetPercent = (CachedMaxHP > 0.f) ? FMath::Clamp(CachedCurrentHP / CachedMaxHP, 0.f, 1.f) : 0.f;
+	CurrentPercent = TargetPercent;
+
+	UpdateHPBar(CachedCurrentHP, CachedMaxHP);
+	
+	if (ProgressBar_PlayerHP)
+	{
+		ProgressBar_PlayerHP->SetPercent(CurrentPercent);
+	}
+}
+
+void USMPlayerHPBarWidget::UnbindASC()
+{
+	if (!BoundASC) return;
+
+	BoundASC->GetGameplayAttributeValueChangeDelegate(USMPlayerAttributeSet::GetHealthAttribute())
+	.Remove(HealthChangedHandle);
+	BoundASC->GetGameplayAttributeValueChangeDelegate(USMPlayerAttributeSet::GetMaxHealthAttribute())
+	.Remove(MaxHealthChangedHandle);
+
+	BoundASC = nullptr;
 }
 
 void USMPlayerHPBarWidget::NativeDestruct()
 {
-	// 구독 해제
-	UAbilitySystemComponent* ASC = GetPlayerASC();
-	if (ASC)
-	{
-		ASC->GetGameplayAttributeValueChangeDelegate(USMPlayerAttributeSet::GetHealthAttribute())
-		.Remove(HealthChangedHandle);
-		ASC->GetGameplayAttributeValueChangeDelegate(USMPlayerAttributeSet::GetMaxHealthAttribute())
-		.Remove(MaxHealthChangedHandle);
-	}
-	
+	UnbindASC();
 	Super::NativeDestruct();
 }
 
@@ -75,16 +76,15 @@ void USMPlayerHPBarWidget::NativeTick(const FGeometry& Geometry, float DeltaTime
 	}
 }
 
-void USMPlayerHPBarWidget::UpdateHPText(float CurrentHP, float MaxHP)
+void USMPlayerHPBarWidget::UpdateHPBar(float CurrentHP, float MaxHP)
 {
+	// 텍스트 업데이트 로직
 	if (TextBlock_PlayerHP && !HPTextTemplate.IsEmpty())
 	{
 		FFormatNamedArguments Args;
 		Args.Add(TEXT("CurrentHP"), FText::AsNumber(FMath::RoundToInt(CurrentHP)));
 		Args.Add(TEXT("MaxHP"), FText::AsNumber(FMath::RoundToInt(MaxHP)));
-		
 		FText FormattedText = FText::Format(HPTextTemplate, Args);
-		
 		TextBlock_PlayerHP->SetText(FormattedText);
 	}
 }
@@ -97,39 +97,17 @@ void USMPlayerHPBarWidget::OnHealthChanged(const FOnAttributeChangeData& Data)
 	{
 		TargetPercent = FMath::Clamp(CachedCurrentHP / CachedMaxHP, 0.0f, 1.0f);
 	}
-	else
-	{
-		TargetPercent = 0.0f;
-	}
-
-	UpdateHPText(CachedCurrentHP, CachedMaxHP);
+	UpdateHPBar(CachedCurrentHP, CachedMaxHP);
 }
 
 void USMPlayerHPBarWidget::OnMaxHealthChanged(const FOnAttributeChangeData& Data)
 {
 	CachedMaxHP = Data.NewValue;
-    
-	APlayerController* PC = GetOwningPlayer();
-	if (PC && PC->GetPawn())
-	{
-		UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(PC->GetPawn());
-		if (ASC && CachedMaxHP > 0.0f)
-		{
-			CachedCurrentHP = ASC->GetNumericAttribute(USMPlayerAttributeSet::GetHealthAttribute());
-			TargetPercent = FMath::Clamp(CachedCurrentHP / CachedMaxHP, 0.0f, 1.0f);
+    if (!BoundASC) return;
+	
+	CachedCurrentHP = BoundASC->GetNumericAttribute(USMPlayerAttributeSet::GetHealthAttribute());
+	TargetPercent = FMath::Clamp(CachedCurrentHP / CachedMaxHP, 0.0f, 1.0f);
             
-			// 나중에 최대 체력이 변했을 때도 텍스트 갱신
-			UpdateHPText(CachedCurrentHP, CachedMaxHP);
-		}
-	}
-}
-
-UAbilitySystemComponent* USMPlayerHPBarWidget::GetPlayerASC() const
-{
-	APlayerController* PC = GetOwningPlayer();
-	if (PC && PC->GetPawn())
-	{
-		return UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(PC->GetPawn());
-	}
-	return nullptr;
+	// 나중에 최대 체력이 변했을 때도 텍스트 갱신
+	UpdateHPBar(CachedCurrentHP, CachedMaxHP);
 }

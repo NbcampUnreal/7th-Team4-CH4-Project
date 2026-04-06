@@ -54,7 +54,7 @@ void UGA_SkillBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle, con
 void UGA_SkillBase::ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
 {
     //CooldownGameplatEffectClass가 없거나 쿨다운이 0이면 패스
-    if (CooldownGameplayEffectClass || CooldownSeconds <=0.f)
+    if (!CooldownGameplayEffectClass || CooldownSeconds <= 0.f)
     {
         Super::ApplyCooldown(Handle, ActorInfo, ActivationInfo);
         return;

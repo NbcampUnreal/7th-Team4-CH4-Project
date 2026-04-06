@@ -1,6 +1,8 @@
 #include "Enemy/SMMonsterBase.h"
 #include "Enemy/SMMonsterAIController.h"
 #include "AbilitySystemComponent.h"
+#include "UI/SMEnemyHPBarComponent.h"
+
 
 ASMMonsterBase::ASMMonsterBase()
 {
@@ -42,6 +44,13 @@ void ASMMonsterBase::PossessedBy(AController* NewController)
     if (MonsterAbilitySystemComponent)
     {
         MonsterAbilitySystemComponent->InitAbilityActorInfo(this, this);
+        
+        // TODO 현 : HP바 컴포넌트 찾아 ASC 알림
+        USMEnemyHPBarComponent* HPBarComp = FindComponentByClass<USMEnemyHPBarComponent>();
+        if (HPBarComp)
+        {
+            HPBarComp->InitializeHPBar(MonsterAbilitySystemComponent);
+        }
 
         if (HasAuthority() && MonsterAttributeSet)
         {

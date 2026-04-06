@@ -8,6 +8,7 @@ class USphereComponent;
 class UProjectileMovementComponent;
 class UNiagaraComponent;
 class UNiagaraSystem;
+class UGameplayEffect;
 
 UCLASS()
 class SAGOMAGIC_API ASMASkillProjectile : public AActor
@@ -17,7 +18,7 @@ class SAGOMAGIC_API ASMASkillProjectile : public AActor
 public:
     ASMASkillProjectile();
 
-    void InitProjectile(float InDamage, float InRangeCm, const FVector& InDirection, AActor* InInstigatorActor, AController* InController);
+    void InitProjectile(float InDamage, float InRangeCm, const FVector& InDirection, AActor* InInstigatorActor, AController* InController, TSubclassOf<UGameplayEffect> InDamageEffectClass);
 
 protected:
     virtual void BeginPlay() override;
@@ -44,6 +45,7 @@ private:
     float Damage = 0.f;
     float RangeCm = 0.f;
     FVector SpawnLocation = FVector::ZeroVector;
+    TSubclassOf<UGameplayEffect> DamageEffectClass;
 
     TWeakObjectPtr<AActor> InstigatorActor;
     TWeakObjectPtr<AController> InstigatorController;

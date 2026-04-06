@@ -35,7 +35,7 @@ ASMASkillProjectile::ASMASkillProjectile()
 }
 
 void ASMASkillProjectile::InitProjectile(float InDamage, float InRangeCm, const FVector& InDirection,
-    AActor* InInstigatorActor, AController* InController)
+    AActor* InInstigatorActor, AController* InController, TSubclassOf<UGameplayEffect> InDamageEffectClass)
 {
     //충돌 시 ApplySkillDamage에 전달 -> GE의 IncomingDamage -> AttributeSet(체력 차감)
     Damage = InDamage;
@@ -43,6 +43,7 @@ void ASMASkillProjectile::InitProjectile(float InDamage, float InRangeCm, const 
     SpawnLocation = GetActorLocation();
     InstigatorActor = InInstigatorActor;
     InstigatorController = InController;
+    DamageEffectClass = InDamageEffectClass;
 
     //발사방향 -> 커서방향 값
     ProjectileMovement->Velocity = InDirection.GetSafeNormal() * ProjectileSpeed;
@@ -77,7 +78,7 @@ void ASMASkillProjectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AAc
     if (OtherActor->IsA<APawn>())
     {
         //TODO: SMMonsterBase::GetAbilitySystemComponent() 가 AbilitySystemComponent를반환해야 GAS 경로가 동작함
-        //USMAbilitySystemComponent::ApplySkillDamage(OtherActor, Damage, InstigatorActor.Get(), InstigatorController.Get());
+        USMAbilitySystemComponent::ApplySkillDamage(OtherActor, Damage, InstigatorActor.Get(), InstigatorController.Get(), DamageEffectClass);
     }
     Destroy();
 }

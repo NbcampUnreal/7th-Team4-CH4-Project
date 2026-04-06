@@ -35,10 +35,13 @@ void USMMonsterAttributeSet::PreAttributeChange(const FGameplayAttribute& Attrib
 void USMMonsterAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
 	Super::PostGameplayEffectExecute(Data);
+	UE_LOG(LogTemp, Warning, TEXT("PostGameplayEffectExecute"));
 	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
 		SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
 
+		UE_LOG(LogTemp, Warning, TEXT("[MonsterHP] HP 변경됨: %.1f / %.1f"),
+			GetHealth(), GetMaxHealth());
 		if (GetHealth() <= 0.0f)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("[Monster] HP가 0이 되었습니다. 사망 처리를 시작합니다."));

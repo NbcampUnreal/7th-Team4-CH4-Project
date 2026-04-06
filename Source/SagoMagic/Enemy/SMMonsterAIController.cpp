@@ -73,10 +73,13 @@ void ASMMonsterAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulu
 
 void ASMMonsterAIController::CheckAttackRange()
 {
-   /* UE_LOG(LogTemp, Warning, TEXT("[AI] NetMode:%d Role:%d LocalRole:%d"),
+    /*UE_LOG(LogTemp, Warning, TEXT("[AI] NetMode:%d Role:%d LocalRole:%d"),
         (int32)GetNetMode(),
         (int32)GetPawn()->GetRemoteRole(),
         (int32)GetPawn()->GetLocalRole());*/
+    /*UE_LOG(LogTemp, Warning, TEXT("[AI] CheckAttackRange - NetMode: %d, HasAuthority: %s"),
+        (int32)GetNetMode(),
+        HasAuthority() ? TEXT("Server") : TEXT("Client"));*/
 
     APawn* MyPawn = GetPawn();
     if (!MyPawn) return;

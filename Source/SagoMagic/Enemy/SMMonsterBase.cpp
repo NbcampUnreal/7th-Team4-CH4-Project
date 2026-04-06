@@ -1,6 +1,8 @@
 #include "Enemy/SMMonsterBase.h"
 #include "Enemy/SMMonsterAIController.h"
 #include "AbilitySystemComponent.h"
+#include "UI/SMEnemyHPBarComponent.h"
+
 
 ASMMonsterBase::ASMMonsterBase()
 {
@@ -31,7 +33,21 @@ UAbilitySystemComponent* ASMMonsterBase::GetAbilitySystemComponent() const
 void ASMMonsterBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+    
+    // TODO 현 : 클라이언트 전용 초기화 로직
+    // PossessedBy는 서버에서만 실행되므로 클라이언트는 여기서 ASC와 HP바를 연결해야 함
+    if (!HasAuthority() && MonsterAbilitySystemComponent)
+    {
+        // 클라이언트 측 ASC 액터 정보 초기화
+        MonsterAbilitySystemComponent->InitAbilityActorInfo(this, this);
+        
+        // 클라이언트 측 HP바 컴포넌트 초기화 및 델리게이트 바인딩
+        USMEnemyHPBarComponent* HPBarComp = FindComponentByClass<USMEnemyHPBarComponent>();
+        if (HPBarComp)
+        {
+            HPBarComp->InitializeHPBar(MonsterAbilitySystemComponent);
+        }
+    }
 }
 void ASMMonsterBase::PossessedBy(AController* NewController)
 {
@@ -42,6 +58,13 @@ void ASMMonsterBase::PossessedBy(AController* NewController)
     if (MonsterAbilitySystemComponent)
     {
         MonsterAbilitySystemComponent->InitAbilityActorInfo(this, this);
+        
+        // TODO 현 : HP바 컴포넌트 찾아 ASC 알림
+        USMEnemyHPBarComponent* HPBarComp = FindComponentByClass<USMEnemyHPBarComponent>();
+        if (HPBarComp)
+        {
+            HPBarComp->InitializeHPBar(MonsterAbilitySystemComponent);
+        }
 
         if (HasAuthority() && MonsterAttributeSet)
         {

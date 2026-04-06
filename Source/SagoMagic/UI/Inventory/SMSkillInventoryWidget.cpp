@@ -29,6 +29,11 @@ void USMSkillInventoryWidget::ClearTargetSkill()
 {
 	SkillInstanceId.Invalidate();
 	SetContainerId(FGuid());
-	RefreshGrid();
+	GridWidth = 0;
+	GridHeight = 0;
+	ClearActiveDragState();
+	ClearItemWidgets();
+	ClearCellWidgets();
+	BP_OnGridRefreshed();
 	BP_OnSkillInventoryUpdated();
 }

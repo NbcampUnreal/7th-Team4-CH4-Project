@@ -105,6 +105,11 @@ void USMPlayerInventoryPanelWidget::RefreshSkillInventoryWidget()
 
 	if (SkillInventoryWidget != nullptr)
 	{
+		if (SelectedSkillInstanceId.IsValid() == false || SkillInventoryWidget->GetContainerId().IsValid() == false)
+		{
+			return;
+		}
+
 		SkillInventoryWidget->RefreshGrid();
 	}
 }
@@ -269,6 +274,11 @@ void USMPlayerInventoryPanelWidget::InitializeChildWidgets()
 	if (MainInventoryGridWidget != nullptr)
 	{
 		MainInventoryGridWidget->InitializeGridWidget(MainInventoryContainerId, InventoryComponent);
+	}
+
+	if (SkillInventoryWidget != nullptr)
+	{
+		SkillInventoryWidget->SetInventoryComponent(InventoryComponent);
 	}
 
 	if (QuickSlotBarWidget != nullptr)

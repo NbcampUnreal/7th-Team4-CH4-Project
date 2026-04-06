@@ -15,8 +15,8 @@ ASMASkillProjectile::ASMASkillProjectile()
     //콜리전
     CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
     CollisionComponent->InitSphereRadius(20.f);
-    CollisionComponent->SetCollisionProfileName(TEXT("Projectile"));
-    CollisionComponent->OnComponentHit.AddDynamic(this, &ASMASkillProjectile::OnProjectileHit);
+    CollisionComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+    CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &ASMASkillProjectile::OnProjectileOverlap);
     SetRootComponent(CollisionComponent);
 
     //낭라가는 이펙트
@@ -34,8 +34,7 @@ ASMASkillProjectile::ASMASkillProjectile()
     ProjectileMovement->ProjectileGravityScale = 0.f;
 }
 
-void ASMASkillProjectile::InitProjectile(float InDamage, float InRangeCm, const FVector& InDirection,
-    AActor* InInstigatorActor, AController* InController, TSubclassOf<UGameplayEffect> InDamageEffectClass)
+void ASMASkillProjectile::InitProjectile(float InDamage, float InRangeCm, const FVector& InDirection, AActor* InInstigatorActor, AController* InController, TSubclassOf<UGameplayEffect> InDamageEffectClass)
 {
     //충돌 시 ApplySkillDamage에 전달 -> GE의 IncomingDamage -> AttributeSet(체력 차감)
     Damage = InDamage;
@@ -62,22 +61,32 @@ void ASMASkillProjectile::BeginPlay()
     Super::BeginPlay();
 }
 
-void ASMASkillProjectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
-    UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
+void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+    UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex,
+    bool bFromSweep, const FHitResult& SweepResult)
 {
     if (!HasAuthority()) return;
-    if (!OtherActor || OtherActor == InstigatorActor.Get()) return;
+    if (!OtherActor) return;
+    // InitProjectile 호출 전 스폰 직후 Overlap 무시
+    if (!InstigatorActor.IsValid()) return;
+    // 자기 자신 또는 instigator 무시
+    if (OtherActor == this) return;
+    if (OtherActor == InstigatorActor.Get()) return;
+
+    UE_LOG(LogTemp, Warning, TEXT("[Projectile] Overlap: %s, IsPawn: %d, DamageEffectClass: %s"),
+        *OtherActor->GetName(),
+        OtherActor->IsA<APawn>(),
+        DamageEffectClass ? *DamageEffectClass->GetName() : TEXT("NULL"));
 
     //히트 이펙트 재생
     if (HitEffect)
     {
-        UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitEffect, SweepResult.ImpactPoint, SweepResult.ImpactNormal.Rotation());
     }
 
-    //액터에 닿으면 ApplyDamage로 데미지 주고 사라지게
+    //액터에 닿으면 데미지 주고 사라지게
     if (OtherActor->IsA<APawn>())
     {
-        //TODO: SMMonsterBase::GetAbilitySystemComponent() 가 AbilitySystemComponent를반환해야 GAS 경로가 동작함
         USMAbilitySystemComponent::ApplySkillDamage(OtherActor, Damage, InstigatorActor.Get(), InstigatorController.Get(), DamageEffectClass);
     }
     Destroy();

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Inventory/Core/SMItemInstanceTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "SMInventoryGridWidget.generated.h"
 
@@ -50,6 +51,9 @@ public:
 	/** 드래그 진입 처리 오버라이드 */
 	virtual bool NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	                              UDragDropOperation* InOperation) override;
+
+	/** 드래그 이탈 처리 오버라이드 */
+	virtual void NativeOnDragLeave(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 
 	/** 드롭 처리 오버라이드 */
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
@@ -114,6 +118,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Inventory Grid Widget")
 	void ClearHoveredCellState();
 
+	/** 현재 드래그 상태 전체 초기화 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory Grid Widget")
+	void ClearActiveDragState();
+
+	/** 특정 아이템 기준 드래그 드롭 오퍼레이션 생성 */
+	USMInventoryDragDropOperation* CreateDragDropOperationForItem(const FGuid& InItemInstanceId);
+
+	/** 현재 활성 드래그 오퍼레이션 설정 */
+	void SetActiveDragOperation(USMInventoryDragDropOperation* InActiveDragDropOperation);
+
 protected:
 	/** 드래그 중 목표 Grid 좌표 계산 */
 	bool CalculateDropGridPosition(
@@ -149,6 +163,32 @@ protected:
 	/** 현재 호버 셀 설정 */
 	void SetHoveredCell(int32 InGridX, int32 InGridY);
 
+	/** 아이템 인스턴스 기준 공통 베이스 데이터 조회 */
+	bool GetBaseItemData(const FGuid& InItemInstanceId, FSMItemInstanceData& OutBaseItemData) const;
+
+	/** 좌표와 회전값을 명시적으로 받아 점유 셀 계산 */
+	bool BuildOccupiedCells(const FSMItemInstanceData& InBaseItemData,
+	                        int32 InGridX,
+	                        int32 InGridY,
+	                        ESMGridRotation InRotation,
+	                        TArray<FIntPoint>& OutOccupiedCells) const;
+
+	/** 베이스 아이템 데이터 기준 점유 셀 계산 */
+	bool BuildOccupiedCellsFromItemData(const FSMItemInstanceData& InBaseItemData, TArray<FIntPoint>& OutOccupiedCells) const;
+
+	/** 점유 셀 배열 기준 외곽 경계 계산 */
+	bool CalculateOccupiedCellBounds(const TArray<FIntPoint>& InOccupiedCells,
+	                                 int32& OutMinGridX,
+	                                 int32& OutMinGridY,
+	                                 int32& OutMaxGridX,
+	                                 int32& OutMaxGridY) const;
+
+	/** 베이스 아이템 데이터 기준 셀 표시 색상 조회 */
+	bool GetItemAccentColor(const FSMItemInstanceData& InBaseItemData, FLinearColor& OutAccentColor) const;
+
+	/** 베이스 아이템 데이터 기준 셀 점유 정보 반영 */
+	void ApplyItemOwnershipToCells(const FSMItemInstanceData& InBaseItemData);
+
 	/** 컨테이너 크기 갱신 */
 	void RefreshContainerSize();
 
@@ -157,6 +197,9 @@ protected:
 
 	/** 아이템 위젯 위치 적용 */
 	void ApplyItemWidgetLayout(USMItemWidget* InItemWidget, int32 InGridX, int32 InGridY);
+
+	/** 그리드 좌표를 셀 배열 인덱스로 변환 */
+	bool TryGetCellArrayIndex(int32 InGridX, int32 InGridY, int32& OutCellArrayIndex) const;
 
 	/** 그리드 갱신 블루프린트 이벤트 */
 	UFUNCTION(BlueprintImplementableEvent, Category="Inventory Grid Widget")

@@ -9,6 +9,8 @@ class USMInventoryGridWidget;
 class USMSkillInventoryWidget;
 class USMQuickSlotBarWidget;
 class USMInventoryContextMenuWidget;
+class USMItemHoverInfoWidget;
+class USMInventoryDragDropOperation;
 
 
 /**
@@ -51,6 +53,18 @@ public:
 		return SelectedSkillInstanceId;
 	}
 
+	/** 현재 호버 중인 아이템 인스턴스 ID Getter */
+	const FGuid& GetHoveredItemInstanceId() const
+	{
+		return HoveredItemInstanceId;
+	}
+
+	/** 컨텍스트 메뉴 화면 좌표 Getter */
+	const FVector2D& GetContextMenuScreenPosition() const
+	{
+		return ContextMenuScreenPosition;
+	}
+
 	/** 인벤토리 컴포넌트 Setter */
 	void SetInventoryComponent(USMInventoryComponent* InInventoryComponent)
 	{
@@ -80,6 +94,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
 	void ClearSelectedSkill();
 
+	/** 스킬 인벤토리 열기 요청 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	void OpenSkillInventory(const FGuid& InSkillInstanceId);
+
+	/** 스킬 인벤토리 닫기 요청 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	void CloseSkillInventory();
+
 	/** 메인 인벤토리 위젯 새로고침 요청 */
 	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
 	void RefreshMainInventoryWidget();
@@ -92,12 +114,55 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
 	void RefreshQuickSlotBarWidget();
 
+	/** 현재 드래그 중인 아이템 회전 요청 전달 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	bool RequestRotateCurrentDraggedItem();
+
+	/** 현재 드래그 상태 전체 초기화 요청 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	void ClearActiveDragState();
+
+	/** 현재 활성 드래그 그리드 설정 */
+	void SetActiveDragGrid(USMInventoryGridWidget* InActiveGrid, USMInventoryDragDropOperation* InOperation);
+
+	/** 현재 호버 아이템 설정 요청 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	void SetHoveredItem(const FGuid& InItemInstanceId);
+
+	/** 현재 호버 아이템 초기화 요청 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	void ClearHoveredItem();
+
+	/** 컨텍스트 메뉴 열기 요청 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	void OpenContextMenuForItem(const FGuid& InItemInstanceId, FVector2D InScreenPosition);
+
+	/** 컨텍스트 메뉴 닫기 요청 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	void CloseContextMenu();
+
+	/** 현재 호버 아이템 정보 표시 요청 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	void ShowHoveredItemInfo(const FGuid& InItemInstanceId, FVector2D InScreenPosition);
+
+	/** 현재 호버 아이템 정보 숨김 요청 */
+	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
+	void HideHoveredItemInfo();
+
 protected:
 	/** 내부 위젯 초기화 */
 	void InitializeChildWidgets();
 
 	/** 선택된 스킬 상태 반영 */
 	void ApplySelectedSkillState();
+
+	/** 호버 아이템 상태 갱신 블루프린트 이벤트 */
+	UFUNCTION(BlueprintImplementableEvent, Category="Player Inventory Panel Widget")
+	void BP_OnHoveredItemChanged();
+
+	/** 컨텍스트 메뉴 상태 갱신 블루프린트 이벤트 */
+	UFUNCTION(BlueprintImplementableEvent, Category="Player Inventory Panel Widget")
+	void BP_OnContextMenuStateChanged();
 
 	/** 패널 갱신 블루프린트 이벤트 */
 	UFUNCTION(BlueprintImplementableEvent, Category="Player Inventory Panel Widget")
@@ -125,9 +190,21 @@ protected:
 	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Player Inventory Panel Widget")
 	TObjectPtr<USMInventoryContextMenuWidget> ContextMenuWidget;
 
+	/** 아이템 호버 정보 위젯 */
+	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Player Inventory Panel Widget")
+	TObjectPtr<USMItemHoverInfoWidget> ItemHoverInfoWidget;
+
 	/** 현재 선택된 스킬 인스턴스 ID */
 	UPROPERTY(BlueprintReadOnly, Category="Player Inventory Panel Widget")
 	FGuid SelectedSkillInstanceId;
+
+	/** 현재 호버 중인 아이템 인스턴스 ID */
+	UPROPERTY(BlueprintReadOnly, Category="Player Inventory Panel Widget")
+	FGuid HoveredItemInstanceId;
+
+	/** 현재 컨텍스트 메뉴 화면 좌표 */
+	UPROPERTY(BlueprintReadOnly, Category="Player Inventory Panel Widget")
+	FVector2D ContextMenuScreenPosition;
 
 private:
 };

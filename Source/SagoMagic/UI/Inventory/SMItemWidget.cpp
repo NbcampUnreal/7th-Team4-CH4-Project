@@ -5,6 +5,7 @@
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "UI/Inventory/SMInventoryDragDropOperation.h"
 #include "UI/Inventory/SMDragItemPreviewWidget.h"
+#include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
 USMItemWidget::USMItemWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -23,6 +24,31 @@ void USMItemWidget::NativeConstruct()
 
 FReply USMItemWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
+	if (InMouseEvent.GetEffectingButton() == EKeys::RightMouseButton)
+	{
+		if (ItemInstanceId.IsValid() == false || InventoryComponent == nullptr)
+		{
+			return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+		}
+
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->SetHoveredItem(ItemInstanceId);
+			OwningPanel->OpenContextMenuForItem(ItemInstanceId, InMouseEvent.GetScreenSpacePosition());
+			return FReply::Handled();
+		}
+
+		return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+	}
+
+	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->CloseContextMenu();
+		}
+	}
+
 	if (CanStartDrag() == false)
 	{
 		return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
@@ -31,9 +57,47 @@ FReply USMItemWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const
 	return UWidgetBlueprintLibrary::DetectDragIfPressed(InMouseEvent, this, EKeys::LeftMouseButton).NativeReply;
 }
 
+void USMItemWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
+
+	if (ItemInstanceId.IsValid() == false)
+	{
+		return;
+	}
+
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		OwningPanel->SetHoveredItem(ItemInstanceId);
+	}
+}
+
+void USMItemWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseLeave(InMouseEvent);
+
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		if (OwningPanel->GetHoveredItemInstanceId() == ItemInstanceId)
+		{
+			OwningPanel->ClearHoveredItem();
+		}
+	}
+}
+
 void USMItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
                                          UDragDropOperation*& OutOperation)
 {
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		if (OwningPanel->GetHoveredItemInstanceId() == ItemInstanceId)
+		{
+			OwningPanel->ClearHoveredItem();
+		}
+
+		OwningPanel->CloseContextMenu();
+	}
+
 	OutOperation = CreateDragDropOperation();
 }
 
@@ -102,7 +166,7 @@ USMDragItemPreviewWidget* USMItemWidget::CreateDragPreviewWidget()
 		return nullptr;
 	}
 
-	PreviewWidget->InitializePreview(ItemInstanceId, DisplayRotation);
+	PreviewWidget->InitializePreviewFromInventory(ItemInstanceId, DisplayRotation, InventoryComponent);
 	return PreviewWidget;
 }
 
@@ -110,6 +174,31 @@ void USMItemWidget::UpdateDisplayFromInventory()
 {
 	if (InventoryComponent == nullptr)
 	{
+		bDraggable = false;
 		return;
 	}
+
+	FSMItemInstanceData ItemData;
+	if (InventoryComponent->GetItemData(ItemInstanceId, ItemData))
+	{
+		OwningContainerId = ItemData.ParentContainerId;
+		GridX = ItemData.GridX;
+		GridY = ItemData.GridY;
+		DisplayRotation = ItemData.Rotation;
+		bDraggable = ItemData.bLocked == false;
+		return;
+	}
+
+	FSMSkillItemInstanceData SkillData;
+	if (InventoryComponent->GetSkillData(ItemInstanceId, SkillData))
+	{
+		OwningContainerId = SkillData.BaseItem.ParentContainerId;
+		GridX = SkillData.BaseItem.GridX;
+		GridY = SkillData.BaseItem.GridY;
+		DisplayRotation = SkillData.BaseItem.Rotation;
+		bDraggable = SkillData.BaseItem.bLocked == false;
+		return;
+	}
+
+	bDraggable = false;
 }

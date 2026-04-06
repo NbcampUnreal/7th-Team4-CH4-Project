@@ -42,6 +42,24 @@ public:
 		return InventoryComponent;
 	}
 
+	/** 스킬 인벤토리 열기 가능 여부 Getter */
+	bool CanOpenSkillInventory() const
+	{
+		return bCanOpenSkillInventory;
+	}
+
+	/** 드랍 가능 여부 Getter */
+	bool CanDropItem() const
+	{
+		return bCanDropItem;
+	}
+
+	/** 즉시 삭제 가능 여부 Getter */
+	bool CanDeleteItem() const
+	{
+		return bCanDeleteItem;
+	}
+
 	/** 대상 아이템 인스턴스 ID Setter */
 	void SetItemInstanceId(const FGuid& InItemInstanceId)
 	{
@@ -62,6 +80,14 @@ public:
 	/** 아이템 드랍 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Context Menu Widget")
 	void RequestDropItem();
+
+	/** 스킬 인벤토리 열기 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory Context Menu Widget")
+	void RequestOpenSkillInventory();
+
+	/** 아이템 즉시 삭제 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory Context Menu Widget")
+	void RequestDeleteItem();
 
 	/** 내부 장착 아이템 해제 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Context Menu Widget")
@@ -84,6 +110,18 @@ protected:
 	/** 인벤토리 컴포넌트 참조 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Context Menu Widget")
 	TObjectPtr<USMInventoryComponent> InventoryComponent;
+
+	/** 스킬 인벤토리 열기 가능 여부 */
+	UPROPERTY(BlueprintReadOnly, Category="Inventory Context Menu Widget")
+	bool bCanOpenSkillInventory;
+
+	/** 드랍 가능 여부 */
+	UPROPERTY(BlueprintReadOnly, Category="Inventory Context Menu Widget")
+	bool bCanDropItem;
+
+	/** 즉시 삭제 가능 여부 */
+	UPROPERTY(BlueprintReadOnly, Category="Inventory Context Menu Widget")
+	bool bCanDeleteItem;
 
 private:
 };

@@ -26,6 +26,10 @@ USMInventoryComponent::USMInventoryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	SetIsReplicatedByDefault(true);
+
+	DefaultMainInventoryMask.Width = 15;
+	DefaultMainInventoryMask.Height = 15;
+	DefaultMainInventoryMask.BitMask = FString::ChrN(DefaultMainInventoryMask.Width * DefaultMainInventoryMask.Height, TEXT('1'));
 }
 
 void USMInventoryComponent::BeginPlay()

@@ -4,6 +4,8 @@
 #include "GameplayEffect.h"
 #include "Enemy/SMMonsterBase.h"
 #include "GAS/AttributeSets/SMMonsterAttributeSet.h"
+#include "Character/SMPlayerCharacter.h"  
+
 
 UGA_MonsterAttackBase::UGA_MonsterAttackBase()
 {    // 서버에서만 실행, 클라이언트는 복제로 받음
@@ -18,8 +20,8 @@ void UGA_MonsterAttackBase::ActivateAbility(
     const FGameplayAbilityActivationInfo ActivationInfo,
     const FGameplayEventData* TriggerEventData)
 {
-    UE_LOG(LogTemp, Warning, TEXT("[Attack] ActivateAbility 호출됨. HasAuthority: %s"),
-        GetActorInfo().IsNetAuthority() ? TEXT("TRUE") : TEXT("FALSE"));
+    /*UE_LOG(LogTemp, Warning, TEXT("[Attack] ActivateAbility 호출됨. HasAuthority: %s"),
+        GetActorInfo().IsNetAuthority() ? TEXT("TRUE") : TEXT("FALSE"));*/
     // 애니메이션 몽타주 태스크 (나중에 주석 해제)
     //UAbilityTask_PlayMontageAndWait* MontageTask =
     //    UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, AttackMontage);
@@ -37,8 +39,14 @@ void UGA_MonsterAttackBase::ActivateAbility(
 
 void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
 {
-    UE_LOG(LogTemp, Warning, TEXT("[Attack] OnHitEventReceived 호출됨. HasAuthority: %s"),
-        GetActorInfo().IsNetAuthority() ? TEXT("TRUE") : TEXT("FALSE"));
+    // 서버에서만 데미지 적용
+    if (!GetActorInfo().IsNetAuthority())
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+    /*UE_LOG(LogTemp, Warning, TEXT("[Attack] OnHitEventReceived 호출됨. HasAuthority: %s"),
+        GetActorInfo().IsNetAuthority() ? TEXT("TRUE") : TEXT("FALSE"));*/
     AActor* SourceActor = GetAvatarActorFromActorInfo();
     UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 
@@ -65,8 +73,8 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
 
             if (SpecHandle.IsValid())
             {
-                UE_LOG(LogTemp, Warning, TEXT("[Attack] SpecHandle 유효. DamageEffectClass: %s"),
-                    DamageEffectClass ? *DamageEffectClass->GetName() : TEXT("NULL ← 에디터에서 할당 필요!"));
+                /*UE_LOG(LogTemp, Warning, TEXT("[Attack] SpecHandle 유효. DamageEffectClass: %s"),
+                    DamageEffectClass ? *DamageEffectClass->GetName() : TEXT("NULL ← 에디터에서 할당 필요!"));*/
                 SpecHandle.Data.Get()->SetSetByCallerMagnitude(
                     FGameplayTag::RequestGameplayTag("Data.Damage.Amount"), -DamageAmount);
 
@@ -135,8 +143,9 @@ bool UGA_MonsterAttackBase::PerformHitCheck(FHitResult& OutHitResult) const
     FCollisionQueryParams Params;
     Params.AddIgnoredActor(AvatarActor);
 
-    bool bHit = World->SweepSingleByChannel(
-        OutHitResult,
+    TArray<FHitResult> HitResults;
+    World->SweepMultiByChannel(
+        HitResults,
         Start, End,
         FQuat::Identity,
         ECC_Pawn,
@@ -144,12 +153,18 @@ bool UGA_MonsterAttackBase::PerformHitCheck(FHitResult& OutHitResult) const
         Params
     );
 
-    if (bHit)
+    for (FHitResult& Hit : HitResults)
     {
-        UE_LOG(LogTemp, Log, TEXT("[Attack] HitCheck 성공: %s"), *OutHitResult.GetActor()->GetName());
+        // 플레이어 캐릭터인지 타입으로 확인
+        if (Cast<ASMPlayerCharacter>(Hit.GetActor()))
+        {
+            OutHitResult = Hit;
+            UE_LOG(LogTemp, Log, TEXT("[HitCheck] 성공: %s"), *Hit.GetActor()->GetName());
+            return true;
+        }
     }
 
-    return bHit;
+    return false;
 }
 
 float UGA_MonsterAttackBase::GetMonsterAttackPower() const

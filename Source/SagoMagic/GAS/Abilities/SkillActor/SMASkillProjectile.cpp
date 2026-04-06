@@ -77,7 +77,7 @@ void ASMASkillProjectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AAc
     if (OtherActor->IsA<APawn>())
     {
         //TODO: SMMonsterBase::GetAbilitySystemComponent() 가 AbilitySystemComponent를반환해야 GAS 경로가 동작함
-        //USMAbilitySystemComponent::ApplySkillDamage(OtherActor, Damage, InstigatorActor.Get(), InstigatorController.Get());
+        USMAbilitySystemComponent::ApplySkillDamage(OtherActor, Damage, InstigatorActor.Get(), InstigatorController.Get());
     }
     Destroy();
 }

@@ -25,6 +25,10 @@ void USMEnemyHPBarComponent::InitializeHPBar(UAbilitySystemComponent* InASC)
     {
         ASC = InASC;
         
+        // 중복 바인딩 방지
+        ASC->GetGameplayAttributeValueChangeDelegate(USMMonsterAttributeSet::GetHealthAttribute())
+        .RemoveAll(this);
+        
         // ASC 체력 델리게이트 바인딩
         ASC->GetGameplayAttributeValueChangeDelegate(USMMonsterAttributeSet::GetHealthAttribute())
         .AddUObject(this, &USMEnemyHPBarComponent::OnHPChanged);

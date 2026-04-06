@@ -29,7 +29,7 @@ void USMCombatState::Enter()
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("[CombatState] DataManager 없음 - 기본값 %1.f초 사용"), Duration);
+        UE_LOG(LogTemp, Warning, TEXT("[CombatState] DataManager 없음 - 기본값 %.1f초 사용"), Duration);
     }
     if (USMWaveManagerSubsystem* WM = GM->GetWorld()->GetSubsystem<USMWaveManagerSubsystem>())
     {
@@ -50,7 +50,7 @@ void USMCombatState::OnWaveCleared()
     }
     else
     {
-        UE_LOG(LogTemp, Log, TEXT("[CombatState] -> Build 전환 (WaveIndex : %d -> %d)"), WaveIndex, WaveIndex + 1);
+        UE_LOG(LogTemp, Log, TEXT("[CombatState] -> Build 전환 (WaveIndex : %d -> %d)"), WaveIndex, WaveIndex);
         ChangeState(EGameState::Build);
     }
 }

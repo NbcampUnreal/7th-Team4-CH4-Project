@@ -4,7 +4,6 @@
 #include "Core/SMGameMode.h"
 #include "Core/DataManager/SMSyncDataManager.h"
 #include "Data/SMMonsterData.h"
-#include "GameFramework/Character.h"
 #include "Data/SMWaveData.h"
 
 bool USMWaveManagerSubsystem::ShouldCreateSubsystem(UObject* Outer) const

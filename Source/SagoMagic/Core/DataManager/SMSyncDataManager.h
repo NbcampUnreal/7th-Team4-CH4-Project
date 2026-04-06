@@ -15,7 +15,7 @@
  * USMSyncDataManager* Manager = USMSyncDataManager::Get(GetWorld());
  * if (Manager)
  * {
- *		const FWaveRowData& WaveInfo = Manager->GetWaveData(1);//1은 WaveLevel
+ *		FSMWaveData WaveInfo = Manager->GetWaveData(1);//1은 WaveLevel
  * }
  */
 UCLASS()

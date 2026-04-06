@@ -26,6 +26,8 @@ void USMAbilitySystemComponent::ApplySkillDamage(AActor* TargetActor, float Dama
 
         if (SpecHandle.IsValid())
         {
+            // SetByCaller로 데미지 수치 주입 (BP_GE_EnergyBall의 Data.Damage.Amount)
+            SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("Data.Damage.Amount")), -DamageAmount);
             SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetASC);
         }
         return;

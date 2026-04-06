@@ -2,6 +2,7 @@
 
 #include "Core/SMGameMode.h"
 #include "Core/SMStateMachine.h"
+#include "Core/DataManager/SMSyncDataManager.h"
 #include "Core/Wave/SMWaveManagerSubsystem.h"
 #include "Data/SMWaveData.h"
 
@@ -19,27 +20,20 @@ void USMCombatState::Enter()
     //WaveCleared 이벤트 바인딩
     GM->OnWaveCleared.BindUObject(this, &USMCombatState::OnWaveCleared);
 
+    USMSyncDataManager* DM = USMSyncDataManager::Get(GM->GetWorld());
+    if (DM)
+    {
+        FSMWaveData WaveData = DM->GetWaveData(WaveIndex);
+        Duration = WaveData.MaintenanceTime;
+        UE_LOG(LogTemp, Log, TEXT("[CombatState] 제한 시간 설정 : %.1f초"),Duration);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[CombatState] DataManager 없음 - 기본값 %.1f초 사용"), Duration);
+    }
     if (USMWaveManagerSubsystem* WM = GM->GetWorld()->GetSubsystem<USMWaveManagerSubsystem>())
     {
-        UDataTable* DataTable = WM->GetWaveDataTable();
-        if (DataTable)
-        {
-            TArray<FSMWaveData*> Rows;
-            DataTable->GetAllRows<FSMWaveData>(TEXT(""),Rows);
-
-            if (Rows.IsValidIndex(WaveIndex))
-            {
-                Duration = Rows[WaveIndex]->MaintenanceTime;
-                UE_LOG(LogTemp, Log, TEXT("[CombatState] 제한 시간 설정: %.1f초"), Duration);
-            }
-            else
-            {
-                UE_LOG(LogTemp, Warning, TEXT("[CombatState] WaveIndex %d 범위 초과 - 기본값 %.1f초 사용"),
-                    WaveIndex, Duration);
-            }
-            WM->StartWave(WaveIndex);
-        }
-        
+        WM->StartWave(WaveIndex);
     }
 }
 
@@ -56,7 +50,7 @@ void USMCombatState::OnWaveCleared()
     }
     else
     {
-        UE_LOG(LogTemp, Log, TEXT("[CombatState] -> Build 전환 (WaveIndex : %d -> %d)"), WaveIndex, WaveIndex + 1);
+        UE_LOG(LogTemp, Log, TEXT("[CombatState] -> Build 전환 (WaveIndex : %d -> %d)"), WaveIndex, WaveIndex);
         ChangeState(EGameState::Build);
     }
 }

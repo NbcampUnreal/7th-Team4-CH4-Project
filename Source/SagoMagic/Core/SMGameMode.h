@@ -34,9 +34,6 @@ public:
     virtual void Tick(float DeltaSeconds) override;
 
     FSimpleDelegate OnWaveCleared;
-public:
-    UPROPERTY(EditDefaultsOnly, Category = "Wave")
-    TObjectPtr<UDataTable> WaveDataTable;
 
 protected:
     /** 로그인 한 플레이어 Controller 모음 */

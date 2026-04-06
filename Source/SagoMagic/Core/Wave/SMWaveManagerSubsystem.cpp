@@ -2,9 +2,18 @@
 
 #include "EngineUtils.h"
 #include "Core/SMGameMode.h"
+#include "Core/DataManager/SMSyncDataManager.h"
 #include "Data/SMMonsterData.h"
-#include "GameFramework/Character.h"
 #include "Data/SMWaveData.h"
+
+bool USMWaveManagerSubsystem::ShouldCreateSubsystem(UObject* Outer) const
+{
+    UWorld* World = Cast<UWorld>(Outer);
+    if (!World) return false;
+    if (World->GetNetMode() == NM_Client) return false;//클라이언트 차단
+    return World->GetMapName().Contains(TEXT("L_Play"));//L_Play에서만 생성
+
+}
 
 void USMWaveManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -63,21 +72,14 @@ void USMWaveManagerSubsystem::StartWave(int32 WaveIndex)
     //서버에서만 동작
     if (GetWorld()->GetNetMode() == NM_Client) return;
 
-    //웨이브 데이터 가져오기
-    TArray<FSMWaveData*> Rows;
-    WaveDataTable->GetAllRows<FSMWaveData>(TEXT(""),Rows);
-
-    if (!Rows.IsValidIndex(WaveIndex))
+    USMSyncDataManager* DM = USMSyncDataManager::Get(this);
+    if (!DM)
     {
-        UE_LOG(LogTemp, Error, TEXT("[WaveManager] WaveIndex %d 범위 초과 (전체 : %d)"),
-            WaveIndex, Rows.Num());
-        bIsWaveActive = false;
-        bSpawningInProgress = false;
+        UE_LOG(LogTemp, Error, TEXT("[WaveManager] DataManager 없음"));
         return;
     }
-
-    FSMWaveData* WaveData = Rows[WaveIndex];
-
+    FSMWaveData WaveData = DM->GetWaveData(WaveIndex);
+    
     ActiveSpawnTasks.Empty();
     AliveMonsterCount = 0;
     bIsWaveActive = true;
@@ -93,17 +95,10 @@ void USMWaveManagerSubsystem::StartWave(int32 WaveIndex)
         return;
     }
 
-    for (const FWaveSpawnData& Entry : WaveData->SpawnList)
+    for (const FWaveSpawnData& Entry : WaveData.SpawnList)
     {
-        const FSMMonsterData* MonsterData =
-            Entry.MonsterHandle.GetRow<FSMMonsterData>(TEXT("WaveManager"));
-        if (!MonsterData)
-        {
-            UE_LOG(LogTemp,Warning, TEXT("[WaveManager] MonsterClass 로드 실패"));
-            continue;
-        }
-        //동기로 데이터 처리
-        TSubclassOf<ASMMonsterBase> MonsterClass = MonsterData->MonsterClass.LoadSynchronous();
+        FSMMonsterData MonsterData = DM->GetMonsterData(Entry.MonsterType);
+        TSubclassOf<ASMMonsterBase> MonsterClass = MonsterData.MonsterClass.LoadSynchronous();
         if (!MonsterClass)
         {
             UE_LOG(LogTemp, Warning, TEXT("[WaveManager] MonsterClass 로드 실패"));
@@ -114,7 +109,7 @@ void USMWaveManagerSubsystem::StartWave(int32 WaveIndex)
         Task.MonsterClass = MonsterClass;
         Task.RemainingCount = Entry.SpawnCount;
         Task.Interval = Entry.SpawnInterval;
-        Task.AccumulatedTime = Entry.SpawnInterval;// 첫 스폰은 즉시
+        Task.AccumulatedTime = Entry.SpawnInterval;
 
         ActiveSpawnTasks.Add(Task);
     }
@@ -132,23 +127,6 @@ void USMWaveManagerSubsystem::OnMonsterDied()
     UE_LOG(LogTemp, Log, TEXT("[WaveManager] 몬스터 사망 - 생존 : %d"), AliveMonsterCount);
 
     CheckWaveCleared();
-}
-
-void USMWaveManagerSubsystem::SetWaveDataTable(UDataTable* InDataTable)
-{
-    if (!InDataTable)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[WaveManager] SetWaveDataTable - nullptr 전달"));
-        return;
-    }
-    WaveDataTable = InDataTable;
-    UE_LOG(LogTemp, Log, TEXT("[WaveManager] DataTable 설정 완료"));
-}
-
-UDataTable* USMWaveManagerSubsystem::GetWaveDataTable()
-{
-    if (!WaveDataTable) return nullptr;
-    return WaveDataTable;
 }
 
 void USMWaveManagerSubsystem::CollectSpawners()
@@ -174,7 +152,7 @@ void USMWaveManagerSubsystem::SpawnOne(TSubclassOf<ASMMonsterBase> MonsterClass)
     ASMMonsterSpawner* Spawner = GetRandomSpawner();
     if (!Spawner) return;
 
-    ACharacter* Monster = Spawner->SpawnMonster(MonsterClass);
+    ASMMonsterBase* Monster = Spawner->SpawnMonster(MonsterClass);
     if (Monster)
     {
         AliveMonsterCount++;

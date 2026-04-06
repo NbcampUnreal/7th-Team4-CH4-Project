@@ -40,6 +40,7 @@ class SAGOMAGIC_API USMWaveManagerSubsystem : public UTickableWorldSubsystem
 {
     GENERATED_BODY()
 public:
+    virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
     virtual void Tick(float DeltaTime) override;
@@ -58,10 +59,6 @@ public:
      */
     void OnMonsterDied();
 
-    /** GameMode BeginPlay()에서 DataTable 주입 */
-    void SetWaveDataTable(UDataTable* InDataTable);
-    UDataTable* GetWaveDataTable();
-
 private:
     /**레벨에 배치된 모든 Spawner 수집 */
     void CollectSpawners();
@@ -76,8 +73,6 @@ private:
     void CheckWaveCleared();
 private:
 
-    UPROPERTY()
-    TObjectPtr<UDataTable> WaveDataTable;
     /**레벨 내 모든 스포너 */
     UPROPERTY()
     TArray<TObjectPtr<ASMMonsterSpawner>> Spawners;

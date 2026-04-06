@@ -166,8 +166,22 @@ protected:
 	/** 아이템 인스턴스 기준 공통 베이스 데이터 조회 */
 	bool GetBaseItemData(const FGuid& InItemInstanceId, FSMItemInstanceData& OutBaseItemData) const;
 
+	/** 좌표와 회전값을 명시적으로 받아 점유 셀 계산 */
+	bool BuildOccupiedCells(const FSMItemInstanceData& InBaseItemData,
+	                        int32 InGridX,
+	                        int32 InGridY,
+	                        ESMGridRotation InRotation,
+	                        TArray<FIntPoint>& OutOccupiedCells) const;
+
 	/** 베이스 아이템 데이터 기준 점유 셀 계산 */
 	bool BuildOccupiedCellsFromItemData(const FSMItemInstanceData& InBaseItemData, TArray<FIntPoint>& OutOccupiedCells) const;
+
+	/** 점유 셀 배열 기준 외곽 경계 계산 */
+	bool CalculateOccupiedCellBounds(const TArray<FIntPoint>& InOccupiedCells,
+	                                 int32& OutMinGridX,
+	                                 int32& OutMinGridY,
+	                                 int32& OutMaxGridX,
+	                                 int32& OutMaxGridY) const;
 
 	/** 베이스 아이템 데이터 기준 셀 표시 색상 조회 */
 	bool GetItemAccentColor(const FSMItemInstanceData& InBaseItemData, FLinearColor& OutAccentColor) const;
@@ -183,6 +197,9 @@ protected:
 
 	/** 아이템 위젯 위치 적용 */
 	void ApplyItemWidgetLayout(USMItemWidget* InItemWidget, int32 InGridX, int32 InGridY);
+
+	/** 그리드 좌표를 셀 배열 인덱스로 변환 */
+	bool TryGetCellArrayIndex(int32 InGridX, int32 InGridY, int32& OutCellArrayIndex) const;
 
 	/** 그리드 갱신 블루프린트 이벤트 */
 	UFUNCTION(BlueprintImplementableEvent, Category="Inventory Grid Widget")

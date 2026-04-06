@@ -512,8 +512,13 @@ void USMInventoryGridWidget::ClearItemWidgets()
 
 void USMInventoryGridWidget::UpdateCellStates()
 {
-	TArray<FIntPoint> HighlightedCells;
+	TArray<bool> HighlightedCellMask;
 	bool bCanPlace = false;
+
+	if (GridWidth > 0 && GridHeight > 0)
+	{
+		HighlightedCellMask.Init(false, GridWidth * GridHeight);
+	}
 
 	if (InventoryComponent != nullptr &&
 		ActiveDragDropOperation != nullptr &&
@@ -528,79 +533,32 @@ void USMInventoryGridWidget::UpdateCellStates()
 			HoveredGridY,
 			ActiveDragDropOperation->GetCurrentRotation());
 
+		TArray<FIntPoint> HighlightedCells;
 		FSMItemInstanceData BaseItemData;
-		const FSMItemInstanceData* ItemData = InventoryComponent->FindItem(
-			ActiveDragDropOperation->GetItemInstanceId());
-		const FSMSkillItemInstanceData* SkillData = ItemData == nullptr
-			                                            ? InventoryComponent->FindSkill(
-				                                            ActiveDragDropOperation->GetItemInstanceId())
-			                                            : nullptr;
-
-		if (ItemData != nullptr)
+		if (GetBaseItemData(ActiveDragDropOperation->GetItemInstanceId(), BaseItemData))
 		{
-			BaseItemData = *ItemData;
-		}
-		else if (SkillData != nullptr)
-		{
-			BaseItemData = SkillData->BaseItem;
+			BuildOccupiedCells(
+				BaseItemData,
+				HoveredGridX,
+				HoveredGridY,
+				ActiveDragDropOperation->GetCurrentRotation(),
+				HighlightedCells);
 		}
 
-		if (BaseItemData.InstanceId.IsValid())
+		if (HighlightedCells.IsEmpty())
 		{
-			const USMItemDefinition* ItemDefinition = InventoryComponent->ResolveItemDefinition(BaseItemData);
-			if (ItemDefinition != nullptr)
+			HighlightedCells.Add(FIntPoint(HoveredGridX, HoveredGridY));
+		}
+
+		for (const FIntPoint& HighlightedCell : HighlightedCells)
+		{
+			int32 CellArrayIndex = INDEX_NONE;
+			if (TryGetCellArrayIndex(HighlightedCell.X, HighlightedCell.Y, CellArrayIndex) == false)
 			{
-				const USMGridShapeFragment* GridShapeFragment =
-					ItemDefinition->FindFragmentByClass<USMGridShapeFragment>();
-				if (GridShapeFragment != nullptr)
-				{
-					const FSMGridMaskData& ShapeMask = GridShapeFragment->GetShapeMask();
-					if (ShapeMask.IsValidMaskData())
-					{
-						for (int32 Y = 0; Y < ShapeMask.Height; ++Y)
-						{
-							for (int32 X = 0; X < ShapeMask.Width; ++X)
-							{
-								const int32 MaskIndex = (Y * ShapeMask.Width) + X;
-								if (ShapeMask.BitMask.IsValidIndex(MaskIndex) == false ||
-									ShapeMask.BitMask[MaskIndex] != TEXT('1'))
-								{
-									continue;
-								}
-
-								int32 RotatedX = X;
-								int32 RotatedY = Y;
-
-								switch (ActiveDragDropOperation->GetCurrentRotation())
-								{
-								case ESMGridRotation::Rot0:
-									break;
-
-								case ESMGridRotation::Rot90:
-									RotatedX = ShapeMask.Height - 1 - Y;
-									RotatedY = X;
-									break;
-
-								case ESMGridRotation::Rot180:
-									RotatedX = ShapeMask.Width - 1 - X;
-									RotatedY = ShapeMask.Height - 1 - Y;
-									break;
-
-								case ESMGridRotation::Rot270:
-									RotatedX = Y;
-									RotatedY = ShapeMask.Width - 1 - X;
-									break;
-
-								default:
-									continue;
-								}
-
-								HighlightedCells.Add(FIntPoint(HoveredGridX + RotatedX, HoveredGridY + RotatedY));
-							}
-						}
-					}
-				}
+				continue;
 			}
+
+			HighlightedCellMask[CellArrayIndex] = true;
 		}
 	}
 
@@ -615,8 +573,11 @@ void USMInventoryGridWidget::UpdateCellStates()
 			CellWidget->GetGridX() == HoveredGridX &&
 			CellWidget->GetGridY() == HoveredGridY;
 
+		int32 CellArrayIndex = INDEX_NONE;
 		const bool bHighlighted =
-			HighlightedCells.Contains(FIntPoint(CellWidget->GetGridX(), CellWidget->GetGridY()));
+			TryGetCellArrayIndex(CellWidget->GetGridX(), CellWidget->GetGridY(), CellArrayIndex) &&
+			HighlightedCellMask.IsValidIndex(CellArrayIndex) &&
+			HighlightedCellMask[CellArrayIndex];
 		const bool bPlaceableHighlighted = bHighlighted && bCanPlace;
 		const bool bBlockedHighlighted = bHighlighted && bCanPlace == false;
 
@@ -696,8 +657,11 @@ bool USMInventoryGridWidget::GetBaseItemData(const FGuid& InItemInstanceId, FSMI
 	return false;
 }
 
-bool USMInventoryGridWidget::BuildOccupiedCellsFromItemData(const FSMItemInstanceData& InBaseItemData,
-                                                            TArray<FIntPoint>& OutOccupiedCells) const
+bool USMInventoryGridWidget::BuildOccupiedCells(const FSMItemInstanceData& InBaseItemData,
+                                                int32 InGridX,
+                                                int32 InGridY,
+                                                ESMGridRotation InRotation,
+                                                TArray<FIntPoint>& OutOccupiedCells) const
 {
 	OutOccupiedCells.Reset();
 
@@ -709,21 +673,21 @@ bool USMInventoryGridWidget::BuildOccupiedCellsFromItemData(const FSMItemInstanc
 	const USMItemDefinition* ItemDefinition = InventoryComponent->ResolveItemDefinition(InBaseItemData);
 	if (ItemDefinition == nullptr)
 	{
-		OutOccupiedCells.Add(FIntPoint(InBaseItemData.GridX, InBaseItemData.GridY));
+		OutOccupiedCells.Add(FIntPoint(InGridX, InGridY));
 		return true;
 	}
 
 	const USMGridShapeFragment* GridShapeFragment = ItemDefinition->FindFragmentByClass<USMGridShapeFragment>();
 	if (GridShapeFragment == nullptr)
 	{
-		OutOccupiedCells.Add(FIntPoint(InBaseItemData.GridX, InBaseItemData.GridY));
+		OutOccupiedCells.Add(FIntPoint(InGridX, InGridY));
 		return true;
 	}
 
 	const FSMGridMaskData& ShapeMask = GridShapeFragment->GetShapeMask();
 	if (ShapeMask.IsValidMaskData() == false)
 	{
-		OutOccupiedCells.Add(FIntPoint(InBaseItemData.GridX, InBaseItemData.GridY));
+		OutOccupiedCells.Add(FIntPoint(InGridX, InGridY));
 		return true;
 	}
 
@@ -740,7 +704,7 @@ bool USMInventoryGridWidget::BuildOccupiedCellsFromItemData(const FSMItemInstanc
 			int32 RotatedX = X;
 			int32 RotatedY = Y;
 
-			switch (InBaseItemData.Rotation)
+			switch (InRotation)
 			{
 			case ESMGridRotation::Rot0:
 				break;
@@ -764,8 +728,47 @@ bool USMInventoryGridWidget::BuildOccupiedCellsFromItemData(const FSMItemInstanc
 				continue;
 			}
 
-			OutOccupiedCells.Add(FIntPoint(InBaseItemData.GridX + RotatedX, InBaseItemData.GridY + RotatedY));
+			OutOccupiedCells.Add(FIntPoint(InGridX + RotatedX, InGridY + RotatedY));
 		}
+	}
+
+	return true;
+}
+
+bool USMInventoryGridWidget::BuildOccupiedCellsFromItemData(const FSMItemInstanceData& InBaseItemData,
+                                                            TArray<FIntPoint>& OutOccupiedCells) const
+{
+	return BuildOccupiedCells(
+		InBaseItemData,
+		InBaseItemData.GridX,
+		InBaseItemData.GridY,
+		InBaseItemData.Rotation,
+		OutOccupiedCells);
+}
+
+bool USMInventoryGridWidget::CalculateOccupiedCellBounds(const TArray<FIntPoint>& InOccupiedCells,
+                                                         int32& OutMinGridX,
+                                                         int32& OutMinGridY,
+                                                         int32& OutMaxGridX,
+                                                         int32& OutMaxGridY) const
+{
+	if (InOccupiedCells.IsEmpty())
+	{
+		return false;
+	}
+
+	OutMinGridX = InOccupiedCells[0].X;
+	OutMinGridY = InOccupiedCells[0].Y;
+	OutMaxGridX = InOccupiedCells[0].X;
+	OutMaxGridY = InOccupiedCells[0].Y;
+
+	for (int32 CellIndex = 1; CellIndex < InOccupiedCells.Num(); ++CellIndex)
+	{
+		const FIntPoint& OccupiedCell = InOccupiedCells[CellIndex];
+		OutMinGridX = FMath::Min(OutMinGridX, OccupiedCell.X);
+		OutMinGridY = FMath::Min(OutMinGridY, OccupiedCell.Y);
+		OutMaxGridX = FMath::Max(OutMaxGridX, OccupiedCell.X);
+		OutMaxGridY = FMath::Max(OutMaxGridY, OccupiedCell.Y);
 	}
 
 	return true;
@@ -894,99 +897,18 @@ void USMInventoryGridWidget::ApplyItemWidgetLayout(USMItemWidget* InItemWidget, 
 	int32 MaxGridX = InGridX;
 	int32 MaxGridY = InGridY;
 
-	if (InventoryComponent != nullptr)
+	FSMItemInstanceData BaseItemData;
+	if (GetBaseItemData(InItemWidget->GetItemInstanceId(), BaseItemData))
 	{
-		FSMItemInstanceData BaseItemData;
-		const FSMItemInstanceData* ItemData = InventoryComponent->FindItem(InItemWidget->GetItemInstanceId());
-		const FSMSkillItemInstanceData* SkillData = ItemData == nullptr
-			                                            ? InventoryComponent->FindSkill(
-				                                            InItemWidget->GetItemInstanceId())
-			                                            : nullptr;
-
-		if (ItemData != nullptr)
+		TArray<FIntPoint> OccupiedCells;
+		if (BuildOccupiedCells(
+			BaseItemData,
+			InGridX,
+			InGridY,
+			InItemWidget->GetDisplayRotation(),
+			OccupiedCells))
 		{
-			BaseItemData = *ItemData;
-		}
-		else if (SkillData != nullptr)
-		{
-			BaseItemData = SkillData->BaseItem;
-		}
-
-		if (BaseItemData.InstanceId.IsValid())
-		{
-			const USMItemDefinition* ItemDefinition = InventoryComponent->ResolveItemDefinition(BaseItemData);
-			if (ItemDefinition != nullptr)
-			{
-				const USMGridShapeFragment* GridShapeFragment =
-					ItemDefinition->FindFragmentByClass<USMGridShapeFragment>();
-				if (GridShapeFragment != nullptr)
-				{
-					const FSMGridMaskData& ShapeMask = GridShapeFragment->GetShapeMask();
-					if (ShapeMask.IsValidMaskData())
-					{
-						bool bInitializedBounds = false;
-
-						for (int32 Y = 0; Y < ShapeMask.Height; ++Y)
-						{
-							for (int32 X = 0; X < ShapeMask.Width; ++X)
-							{
-								const int32 MaskIndex = (Y * ShapeMask.Width) + X;
-								if (ShapeMask.BitMask.IsValidIndex(MaskIndex) == false ||
-									ShapeMask.BitMask[MaskIndex] != TEXT('1'))
-								{
-									continue;
-								}
-
-								int32 RotatedX = X;
-								int32 RotatedY = Y;
-
-								switch (InItemWidget->GetDisplayRotation())
-								{
-								case ESMGridRotation::Rot0:
-									break;
-
-								case ESMGridRotation::Rot90:
-									RotatedX = ShapeMask.Height - 1 - Y;
-									RotatedY = X;
-									break;
-
-								case ESMGridRotation::Rot180:
-									RotatedX = ShapeMask.Width - 1 - X;
-									RotatedY = ShapeMask.Height - 1 - Y;
-									break;
-
-								case ESMGridRotation::Rot270:
-									RotatedX = Y;
-									RotatedY = ShapeMask.Width - 1 - X;
-									break;
-
-								default:
-									continue;
-								}
-
-								const int32 CellX = InGridX + RotatedX;
-								const int32 CellY = InGridY + RotatedY;
-
-								if (bInitializedBounds == false)
-								{
-									MinGridX = CellX;
-									MinGridY = CellY;
-									MaxGridX = CellX;
-									MaxGridY = CellY;
-									bInitializedBounds = true;
-								}
-								else
-								{
-									MinGridX = FMath::Min(MinGridX, CellX);
-									MinGridY = FMath::Min(MinGridY, CellY);
-									MaxGridX = FMath::Max(MaxGridX, CellX);
-									MaxGridY = FMath::Max(MaxGridY, CellY);
-								}
-							}
-						}
-					}
-				}
-			}
+			CalculateOccupiedCellBounds(OccupiedCells, MinGridX, MinGridY, MaxGridX, MaxGridY);
 		}
 	}
 
@@ -1002,4 +924,22 @@ void USMInventoryGridWidget::ApplyItemWidgetLayout(USMItemWidget* InItemWidget, 
 	CanvasSlot->SetAlignment(FVector2D::ZeroVector);
 	CanvasSlot->SetAutoSize(false);
 	CanvasSlot->SetZOrder(1);
+}
+
+bool USMInventoryGridWidget::TryGetCellArrayIndex(int32 InGridX, int32 InGridY, int32& OutCellArrayIndex) const
+{
+	OutCellArrayIndex = INDEX_NONE;
+
+	if (GridWidth <= 0 || GridHeight <= 0)
+	{
+		return false;
+	}
+
+	if (InGridX < 0 || InGridY < 0 || InGridX >= GridWidth || InGridY >= GridHeight)
+	{
+		return false;
+	}
+
+	OutCellArrayIndex = (InGridY * GridWidth) + InGridX;
+	return true;
 }

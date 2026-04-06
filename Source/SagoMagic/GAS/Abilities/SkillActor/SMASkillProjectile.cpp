@@ -3,6 +3,8 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "GAS/SMAbilitySystemComponent.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 
 
 ASMASkillProjectile::ASMASkillProjectile()
@@ -17,10 +19,10 @@ ASMASkillProjectile::ASMASkillProjectile()
     CollisionComponent->OnComponentHit.AddDynamic(this, &ASMASkillProjectile::OnProjectileHit);
     SetRootComponent(CollisionComponent);
 
-    //메쉬
-    MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-    MeshComponent->SetupAttachment(CollisionComponent);
-    MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    //낭라가는 이펙트
+    FlyingEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("FlyingEffect"));
+    FlyingEffect->SetupAttachment(CollisionComponent);
+    FlyingEffect->SetAutoActivate(true);
 
     //Projectile 이동
     ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
@@ -65,11 +67,17 @@ void ASMASkillProjectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AAc
     if (!HasAuthority()) return;
     if (!OtherActor || OtherActor == InstigatorActor.Get()) return;
 
+    //히트 이펙트 재생
+    if (HitEffect)
+    {
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitEffect, Hit.ImpactPoint, Hit.ImpactNormal.Rotation());
+    }
+
     //액터에 닿으면 ApplyDamage로 데미지 주고 사라지게
     if (OtherActor->IsA<APawn>())
     {
         //TODO: SMMonsterBase::GetAbilitySystemComponent() 가 AbilitySystemComponent를반환해야 GAS 경로가 동작함
-        //USMAbilitySystemComponent::ApplyDamage(OtherActor, Damage, InstigatorActor.Get(), InstigatorController.Get());
+        //USMAbilitySystemComponent::ApplySkillDamage(OtherActor, Damage, InstigatorActor.Get(), InstigatorController.Get());
     }
     Destroy();
 }

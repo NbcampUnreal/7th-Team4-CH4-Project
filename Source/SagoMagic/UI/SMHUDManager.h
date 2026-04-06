@@ -5,12 +5,12 @@
 #include "SMHUDManager.generated.h"
 
 
-class USMPlayerHPBarWidget;
+class USMPlayerStatusWidget;
 class UAbilitySystemComponent;
 
 /**
  * 인게임 HUD 루트 위젯 - 뷰포트에 올라가며 자식 위젯들 소유
- * 폰 빙의 완료 후 InitializeHUD()를 호출해 ASC 연결
+ * 플레이어 캐릭터 찾아 ASC 확보 -> 자식 위젯에 넘겨줌
  */
 UCLASS()
 class SAGOMAGIC_API USMHUDManager : public UUserWidget
@@ -29,5 +29,5 @@ protected:
 	virtual void NativeConstruct() override;
 
 	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="HUD")
-	TObjectPtr<USMPlayerHPBarWidget> WBP_PlayerBar;
+	TObjectPtr<USMPlayerStatusWidget> WBP_PlayerStatus;
 };

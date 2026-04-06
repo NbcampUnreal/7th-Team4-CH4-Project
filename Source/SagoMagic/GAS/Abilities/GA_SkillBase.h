@@ -3,9 +3,11 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Abilities/GameplayAbility.h"
+#include "Engine/DataTable.h"
 #include "GA_SkillBase.generated.h"
 
 class UGameplayEffect;
+struct FSMSkillData;
 
 UCLASS()
 class SAGOMAGIC_API UGA_SkillBase : public UGameplayAbility
@@ -36,23 +38,22 @@ protected:
 
     //스킬효과 서버
     virtual void OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo){}
-    
+
     /** 쿨다운중 쿨다운 재발동 차단용 ex) Cooldown.Skill.Projectile */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
     FGameplayTag CooldownTag;
 
-    /** 수치들 나중에 DA로 옮길 예정, 아직 스켈레탈 코드라서 */
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SagoMagic|Stats")
-    float BaseDamage = 30.f;
+    /** DT_SkillData에서 스킬 행 참조 - 에디터에서 테이블과 행 이름 지정 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Stats")
+    FDataTableRowHandle SkillStatRow;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SagoMagic|Stats")
-    float RangeCm = 3000.f;
-    /** 쿨타임 0.5초로 설정*/
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "SagoMagic|Stats")
-    float CooldownSeconds= 0.5f;
-    
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
     TSubclassOf<UGameplayEffect> DamageEffectClass;
+
+    // ActivateAbility 시 DT에서 읽어서 채워지는 수치
+    float BaseDamage = 0.f;
+    float RangeCm = 0.f;
+    float CooldownSeconds = 0.f;
 
     FVector CurrentAimOrigin = FVector::ZeroVector;
     FVector CurrentAimDirection = FVector::ForwardVector;
@@ -61,4 +62,7 @@ private:
 
     // 마우스 정보
     void ExtractAimData(const FGameplayAbilityActorInfo* ActorInfo);
+
+    // DT에서 스킬 수치 로드 ActivateAbility 시작 시 호출
+    bool LoadSkillStats();
 };

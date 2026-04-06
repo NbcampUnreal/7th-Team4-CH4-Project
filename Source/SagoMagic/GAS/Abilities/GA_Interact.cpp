@@ -45,7 +45,10 @@ void UGA_Interact::ActivateAbility(
 	
 	if (IsValid(BestTarget))
 	{
-		BestTarget->Interact(AvatarCharacter);
+		if (AvatarCharacter->HasAuthority())
+		{
+			BestTarget->Interact(AvatarCharacter);
+		}
 	}
 	
 	EndAbility(Handle, ActorInfo, ActivationInfo, true, false);

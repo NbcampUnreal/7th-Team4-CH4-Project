@@ -18,7 +18,7 @@ void UGA_Projectile::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
     if (!World || !ProjectileClass) return;
 
     // 캐릭터 앞 30cm 에서 발사
-    const FVector SpawnLocation = CurrentAimOrigin + CurrentAimDirection * 5.f;
+    const FVector SpawnLocation = CurrentAimOrigin + CurrentAimDirection * 30.f;
 
     FActorSpawnParameters Params;
     Params.Owner = Avatar;

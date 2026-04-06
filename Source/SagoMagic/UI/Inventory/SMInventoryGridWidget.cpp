@@ -11,6 +11,7 @@
 #include "Inventory/Items/Fragments/SMDisplayInfoFragment.h"
 #include "Inventory/Items/Fragments/SMGridShapeFragment.h"
 
+#include "Character/SMPlayerController.h"
 #include "UI/Inventory/SMInventoryCellWidget.h"
 #include "UI/Inventory/SMItemWidget.h"
 #include "UI/Inventory/SMInventoryDragDropOperation.h"
@@ -141,12 +142,27 @@ bool USMInventoryGridWidget::NativeOnDrop(
 		return false;
 	}
 
-	const bool bMoveSucceeded = InventoryComponent->MoveItem(
-		InventoryOperation->GetItemInstanceId(),
-		ContainerId,
-		GridX,
-		GridY,
-		InventoryOperation->GetCurrentRotation());
+	bool bMoveRequested = false;
+
+	if (ASMPlayerController* OwningPlayerController = GetOwningPlayer<ASMPlayerController>())
+	{
+		OwningPlayerController->ServerRPCRequestMoveItem(
+			InventoryOperation->GetItemInstanceId(),
+			ContainerId,
+			GridX,
+			GridY,
+			InventoryOperation->GetCurrentRotation());
+		bMoveRequested = true;
+	}
+	else if (InventoryComponent->GetOwner() != nullptr && InventoryComponent->GetOwner()->HasAuthority())
+	{
+		bMoveRequested = InventoryComponent->MoveItem(
+			InventoryOperation->GetItemInstanceId(),
+			ContainerId,
+			GridX,
+			GridY,
+			InventoryOperation->GetCurrentRotation());
+	}
 
 	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 	{
@@ -157,7 +173,7 @@ bool USMInventoryGridWidget::NativeOnDrop(
 		ClearActiveDragState();
 	}
 
-	if (bMoveSucceeded)
+	if (bMoveRequested && InventoryComponent->GetOwner() != nullptr && InventoryComponent->GetOwner()->HasAuthority())
 	{
 		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 		{
@@ -169,7 +185,7 @@ bool USMInventoryGridWidget::NativeOnDrop(
 		}
 	}
 
-	return bMoveSucceeded;
+	return bMoveRequested;
 }
 
 void USMInventoryGridWidget::InitializeGridWidget(const FGuid& InContainerId,

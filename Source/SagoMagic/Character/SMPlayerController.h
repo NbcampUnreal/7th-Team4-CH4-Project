@@ -9,6 +9,7 @@
 class USMSessionSubsystem;
 class USMTitleWidget;
 class USMLobbyWidget;
+enum class ESMGridRotation : uint8;
 /**
  * UI 조작 및 캐릭터에 빙의 후 조작할 컨트롤러
  * Controller는 항상 하나의 클라이언트와 서버만 갖고 있다.
@@ -39,6 +40,15 @@ public:
 	/** ServerRPC - USMLobbyWidget에서 호출 */
 	UFUNCTION(Server, Reliable)
 	void ServerRPCRequestStartGame();
+
+	/** ServerRPC - 인벤토리 드래그 드롭 이동 요청 */
+	UFUNCTION(Server, Reliable)
+	void ServerRPCRequestMoveItem(
+		const FGuid& InItemInstanceId,
+		const FGuid& InTargetContainerId,
+		int32 InGridX,
+		int32 InGridY,
+		ESMGridRotation InRotation);
 	
 private:
 	UPROPERTY(EditDefaultsOnly,Category = "UI")

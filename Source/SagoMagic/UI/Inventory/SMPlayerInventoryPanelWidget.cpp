@@ -1,8 +1,10 @@
 ﻿#include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
 #include "Inventory/Components/SMInventoryComponent.h"
+#include "Inventory/Core/SMInventoryMessageTypes.h"
 #include "Inventory/Core/SMItemInstanceTypes.h"
 #include "Inventory/Core/SMContainerTypes.h"
+#include "GameplayTags/Message/SMMessageTag.h"
 
 #include "UI/Inventory/SMInventoryGridWidget.h"
 #include "UI/Inventory/SMSkillInventoryWidget.h"
@@ -27,9 +29,16 @@ void USMPlayerInventoryPanelWidget::NativeConstruct()
 	Super::NativeConstruct();
 }
 
+void USMPlayerInventoryPanelWidget::NativeDestruct()
+{
+	UnregisterInventoryMessageListeners();
+	Super::NativeDestruct();
+}
+
 void USMPlayerInventoryPanelWidget::InitializePanelWidget(USMInventoryComponent* InInventoryComponent)
 {
 	InventoryComponent = InInventoryComponent;
+	RegisterInventoryMessageListeners();
 	InitializeChildWidgets();
 	RefreshPanel();
 }
@@ -329,4 +338,47 @@ void USMPlayerInventoryPanelWidget::ApplySelectedSkillState()
 	}
 
 	SkillInventoryWidget->ChangeTargetSkill(SelectedSkillInstanceId, SkillData.InternalContainerId);
+}
+
+void USMPlayerInventoryPanelWidget::RegisterInventoryMessageListeners()
+{
+	UnregisterInventoryMessageListeners();
+
+	InventoryUpdatedListenerHandle = UGameplayMessageSubsystem::Get(this).RegisterListener<FSMInventoryUpdatedMessage>(
+		SMMessageTag::Inventory_Updated,
+		this,
+		&ThisClass::HandleInventoryUpdatedMessage);
+}
+
+void USMPlayerInventoryPanelWidget::UnregisterInventoryMessageListeners()
+{
+	InventoryUpdatedListenerHandle.Unregister();
+}
+
+void USMPlayerInventoryPanelWidget::HandleInventoryUpdatedMessage(
+	FGameplayTag InChannel,
+	const FSMInventoryUpdatedMessage& InMessage)
+{
+	APlayerState* OwningPlayerState = GetOwningPlayerState();
+	if (OwningPlayerState == nullptr)
+	{
+		return;
+	}
+
+	if (InMessage.GetOwningPlayerState() != OwningPlayerState)
+	{
+		return;
+	}
+
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	if (InventoryComponent->OwnsContainer(InMessage.GetContainerId()) == false)
+	{
+		return;
+	}
+
+	RefreshPanel();
 }

@@ -2,8 +2,10 @@
 
 
 #include "SMPlayerController.h"
+
 #include "Core/SMPlayerState.h"
 #include "Core/SessionSubsystem/SMLobbyGameMode.h"
+#include "Inventory/Components/SMInventoryComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/SessionUI/SMLobbyWidget.h"
 
@@ -68,6 +70,27 @@ void ASMPlayerController::ServerRPCRequestStartGame_Implementation()
 	if (IsValid(GM) == false) return;
 
 	GM->TryStartGame();
+}
+
+void ASMPlayerController::ServerRPCRequestMoveItem_Implementation(
+	const FGuid& InItemInstanceId,
+	const FGuid& InTargetContainerId,
+	int32 InGridX,
+	int32 InGridY,
+	ESMGridRotation InRotation)
+{
+	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
+	if (!PS) return;
+
+	USMInventoryComponent* InventoryComponent = PS->GetInventoryComponent();
+	if (!InventoryComponent) return;
+
+	InventoryComponent->MoveItem(
+		InItemInstanceId,
+		InTargetContainerId,
+		InGridX,
+		InGridY,
+		InRotation);
 }
 
 void ASMPlayerController::ShowLobbyWidget()

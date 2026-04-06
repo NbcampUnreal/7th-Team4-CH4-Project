@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
 #include "SMPlayerInventoryPanelWidget.generated.h"
 
 class USMInventoryComponent;
@@ -11,6 +12,7 @@ class USMQuickSlotBarWidget;
 class USMInventoryContextMenuWidget;
 class USMItemHoverInfoWidget;
 class USMInventoryDragDropOperation;
+struct FSMInventoryUpdatedMessage;
 
 
 /**
@@ -40,6 +42,9 @@ public:
 
 	/** NativeConstruct 오버라이드 */
 	virtual void NativeConstruct() override;
+
+	/** NativeDestruct 오버라이드 */
+	virtual void NativeDestruct() override;
 
 	/** 인벤토리 컴포넌트 Getter */
 	USMInventoryComponent* GetInventoryComponent() const
@@ -156,6 +161,15 @@ protected:
 	/** 선택된 스킬 상태 반영 */
 	void ApplySelectedSkillState();
 
+	/** 인벤토리 갱신 메시지 리스너 등록 */
+	void RegisterInventoryMessageListeners();
+
+	/** 인벤토리 갱신 메시지 리스너 해제 */
+	void UnregisterInventoryMessageListeners();
+
+	/** 인벤토리 갱신 메시지 수신 처리 */
+	void HandleInventoryUpdatedMessage(FGameplayTag InChannel, const FSMInventoryUpdatedMessage& InMessage);
+
 	/** 호버 아이템 상태 갱신 블루프린트 이벤트 */
 	UFUNCTION(BlueprintImplementableEvent, Category="Player Inventory Panel Widget")
 	void BP_OnHoveredItemChanged();
@@ -207,4 +221,6 @@ protected:
 	FVector2D ContextMenuScreenPosition;
 
 private:
+	/** 인벤토리 갱신 메시지 리스너 핸들 */
+	FGameplayMessageListenerHandle InventoryUpdatedListenerHandle;
 };

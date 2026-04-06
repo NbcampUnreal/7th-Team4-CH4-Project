@@ -27,6 +27,7 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 	FORCEINLINE USMAbilitySystemComponent* GetSMAbilitySystemComponent() const { return SMAbilitySystemComponent; }
+	FORCEINLINE USMInventoryComponent* GetInventoryComponent() const { return SMInventoryComponent; }
 
 	FORCEINLINE USMPlayerAttributeSet* GetAttributeSet() const { return AttributeSet; }
 

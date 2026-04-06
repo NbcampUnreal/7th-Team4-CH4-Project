@@ -39,7 +39,16 @@ USMPlayerInventoryPanelWidget* USMInventoryRootWidget::CreateCurrentPanelWidget(
 		return nullptr;
 	}
 
-	CurrentPanelWidget = CreateWidget<USMPlayerInventoryPanelWidget>(this, PlayerInventoryPanelWidgetClass);
+	APlayerController* OwningPlayerController = GetOwningPlayer();
+	if (OwningPlayerController != nullptr)
+	{
+		CurrentPanelWidget = CreateWidget<USMPlayerInventoryPanelWidget>(OwningPlayerController, PlayerInventoryPanelWidgetClass);
+	}
+	else
+	{
+		CurrentPanelWidget = CreateWidget<USMPlayerInventoryPanelWidget>(this, PlayerInventoryPanelWidgetClass);
+	}
+
 	if (CurrentPanelWidget == nullptr)
 	{
 		return nullptr;

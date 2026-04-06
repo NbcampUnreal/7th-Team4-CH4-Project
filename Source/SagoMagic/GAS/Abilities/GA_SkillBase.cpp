@@ -2,6 +2,8 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameFramework/Character.h"
+#include "Data/SMSkillData.h"
+#include "GAS/Effects/GE_SkillCooldown.h"
 
 UGA_SkillBase::UGA_SkillBase()
 {
@@ -11,8 +13,6 @@ UGA_SkillBase::UGA_SkillBase()
     NetExecutionPolicy =EGameplayAbilityNetExecutionPolicy::LocalPredicted;
     //인스턴스를 네트워크로 복제할지 - 복제안함
     ReplicationPolicy = EGameplayAbilityReplicationPolicy::ReplicateNo;
-    //쿨다운 GE 설정 - 에디터
-    //CooldownGameplayEffectClass = UGE_SkillCooldown::StaticClass;
 }
 
 bool UGA_SkillBase::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
@@ -24,6 +24,13 @@ bool UGA_SkillBase::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 void UGA_SkillBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
     if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
+    {
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    // DT에서 스킬 수치 로드
+    if (!LoadSkillStats())
     {
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
@@ -56,9 +63,7 @@ void UGA_SkillBase::ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const
     //GE Spec 생성
     FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(CooldownGameplayEffectClass, GetAbilityLevel());
     if (!SpecHandle.IsValid()) return;
-
-    //TODO: UGE_SkillCooldown 만들어서 SetByCaller 이용 CooldownSeconds 전달
-    //TODO: CooldownSeconds가 0 초과일때만 적용할 수 있는지 디버깅 필요
+    
     //SetByCaller로 쿨다운 시간 주입.
     SpecHandle.Data->SetSetByCallerMagnitude(SMSkillTag::Data_Cooldown, CooldownSeconds);
 
@@ -92,6 +97,17 @@ bool UGA_SkillBase::IsPredictionKeyValidForMorePrediction() const
     //현재 예측 키 가 추가적인 예측을 더 할 수 있는 상태인지 bool값으로 반환.
     UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
     return ASC->ScopedPredictionKey.IsValidForMorePrediction();
+}
+
+bool UGA_SkillBase::LoadSkillStats()
+{
+    const FSMSkillData* Row = SkillStatRow.GetRow<FSMSkillData>(TEXT("LoadSkillStats"));
+    if (!Row) return false;
+
+    BaseDamage = Row->BaseDamage;
+    RangeCm = Row->RangeCm;
+    CooldownSeconds = Row->Cooldown;
+    return true;
 }
 
 void UGA_SkillBase::ExtractAimData(const FGameplayAbilityActorInfo* ActorInfo)

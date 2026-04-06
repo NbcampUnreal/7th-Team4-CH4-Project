@@ -10,6 +10,9 @@ class UProgressBar;
 class UTextBlock;
 class UAbilitySystemComponent;
 
+/**
+ * 전달받은 ASC 구독, HP 변화마다 알림 받음 + 보간 처리
+ */
 UCLASS()
 class SAGOMAGIC_API USMPlayerHPBarWidget : public UUserWidget
 {

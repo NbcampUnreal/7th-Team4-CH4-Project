@@ -6,6 +6,7 @@
 #include "SMDragItemPreviewWidget.generated.h"
 
 class USMInventoryComponent;
+class UUniformGridPanel;
 
 
 /**
@@ -132,6 +133,12 @@ protected:
 	/** 현재 인벤토리 데이터 기준 미리보기 정보 동기화 */
 	void SyncFromInventoryComponent();
 
+	/** 현재 Shape/Rotation 기준 프리뷰 셀 재구성 */
+	void RebuildPreviewGrid();
+
+	/** 회전 반영 후 프리뷰 셀 좌표 계산 */
+	bool CalculatePreviewCellPosition(int32 InLocalX, int32 InLocalY, int32& OutColumn, int32& OutRow) const;
+
 	/** 미리보기 상태 갱신 블루프린트 이벤트 */
 	UFUNCTION(BlueprintImplementableEvent, Category="Inventory Drag Preview")
 	void BP_OnPreviewDataChanged();
@@ -172,6 +179,18 @@ protected:
 	/** 현재 배치 가능 여부 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Drag Preview")
 	bool bCanPlaceOnCurrentCell;
+
+	/** 프리뷰 셀 그리드 */
+	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Inventory Drag Preview")
+	TObjectPtr<UUniformGridPanel> PreviewGrid;
+
+	/** 프리뷰 셀 크기 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory Drag Preview")
+	float PreviewCellSize;
+
+	/** 프리뷰 셀 간격 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory Drag Preview")
+	float PreviewCellPadding;
 
 private:
 };

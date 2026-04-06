@@ -225,6 +225,10 @@ void ASMPlayerCharacter::GiveDefaultAbilities()
 void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	
+	// 캐릭터가 생성되기 전에 PlayerState 데이터가 서버로부터 매우 빠르게 날아올 수 있으므로
+	// 한 번더 이니셜라이즈(Lyra도 총 3번 호출 함)
+	InitializeAbilitySystem();
 
 	if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{

@@ -23,6 +23,10 @@ struct FSMSkillData : public FTableRowBase
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Combat")
     float Cooldown = 5.0f;
 
+    /** 투사체 최대 사거리 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Combat")
+    float RangeCm = 3000.0f;
+
     /** 어떤 시너지 젬도 장착하지 않았을 때 발사되는 기본 클래스 */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Asset")
     TSoftClassPtr<AActor> DefaultProjectile;

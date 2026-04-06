@@ -1,37 +1,50 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "SMAbilitySystemComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "AbilitySystemBlueprintLibrary.h"
 
-
-// Sets default values for this component's properties
 USMAbilitySystemComponent::USMAbilitySystemComponent()
 {
-    // Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-    // off to improve performance if you don't need them.
     PrimaryComponentTick.bCanEverTick = true;
-
-    // ...
 }
 
+void USMAbilitySystemComponent::ApplySkillDamage(AActor* TargetActor, float DamageAmount, AActor* InstigatorActor,
+    AController* InstigatorController, TSubclassOf<UGameplayEffect> DamageEffectClass)
+{
+    if (!TargetActor || !InstigatorActor) return;
 
-// Called when the game starts
+    // GAS 경로 — 몬스터에 ASC 있으면 GE 적용
+    UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
+    UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(InstigatorActor);
+
+    if (TargetASC && SourceASC && DamageEffectClass)
+    {
+        FGameplayEffectContextHandle ContextHandle = SourceASC->MakeEffectContext();
+        ContextHandle.AddInstigator(InstigatorActor, InstigatorController);
+
+        FGameplayEffectSpecHandle SpecHandle =
+            SourceASC->MakeOutgoingSpec(DamageEffectClass, 1.f, ContextHandle);
+
+        if (SpecHandle.IsValid())
+        {
+            SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data, TargetASC);
+        }
+        return;
+    }
+
+    // 폴백 — ASC 없는 몬스터
+    UGameplayStatics::ApplyDamage(TargetActor, DamageAmount,
+        InstigatorController, InstigatorActor, nullptr);
+}
+
 void USMAbilitySystemComponent::BeginPlay()
 {
     Super::BeginPlay();
-
-    // ...
-    
 }
 
-
-// Called every frame
 void USMAbilitySystemComponent::TickComponent(float DeltaTime,
                                               ELevelTick TickType,
                                               FActorComponentTickFunction* ThisTickFunction)
 {
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-    // ...
 }
 

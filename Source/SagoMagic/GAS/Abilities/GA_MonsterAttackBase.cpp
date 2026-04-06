@@ -68,7 +68,7 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
                 UE_LOG(LogTemp, Warning, TEXT("[Attack] SpecHandle 유효. DamageEffectClass: %s"),
                     DamageEffectClass ? *DamageEffectClass->GetName() : TEXT("NULL ← 에디터에서 할당 필요!"));
                 SpecHandle.Data.Get()->SetSetByCallerMagnitude(
-                    FGameplayTag::RequestGameplayTag("Data.Damage"), -DamageAmount);
+                    FGameplayTag::RequestGameplayTag("Data.Damage.Amount"), -DamageAmount);
 
                 // 타겟 ASC의 모든 AttributeSet 중 "Health" Attribute를 찾아 읽기
                 // (플레이어 코드 include 없이 문자열로 탐색)
@@ -87,13 +87,13 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
 
                             HPAfterVal = TargetASC->GetNumericAttribute(HealthAttr);
 
-                           /* UE_LOG(LogTemp, Warning,
+                            UE_LOG(LogTemp, Warning,
                                 TEXT("[Attack] %s -> %s | 데미지: %.0f | 플레이어 HP: %.0f -> %.0f"),
                                 *SourceActor->GetName(),
                                 *HitResult.GetActor()->GetName(),
                                 DamageAmount,
                                 HPBeforeVal,
-                                HPAfterVal);*/
+                                HPAfterVal);
                             goto ApplyDone; // 중첩 루프 탈출
                         }
                     }
@@ -160,6 +160,6 @@ float UGA_MonsterAttackBase::GetMonsterAttackPower() const
         return Monster->MonsterAttributeSet->GetAttackPower();
     }
 
-    UE_LOG(LogTemp, Warning, TEXT("[Attack] MonsterAttributeSet을 찾지 못해 기본 공격력(10)을 사용합니다."));
+    //UE_LOG(LogTemp, Warning, TEXT("[Attack] MonsterAttributeSet을 찾지 못해 기본 공격력(10)을 사용합니다."));
     return 10.0f;
 }

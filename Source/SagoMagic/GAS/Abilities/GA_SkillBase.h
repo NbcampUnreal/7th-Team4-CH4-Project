@@ -58,10 +58,10 @@ protected:
     FVector CurrentAimOrigin = FVector::ZeroVector;
     FVector CurrentAimDirection = FVector::ForwardVector;
 
-private:
-
     // 마우스 정보
     void ExtractAimData(const FGameplayAbilityActorInfo* ActorInfo);
+
+private:
 
     // DT에서 스킬 수치 로드 ActivateAbility 시작 시 호출
     bool LoadSkillStats();

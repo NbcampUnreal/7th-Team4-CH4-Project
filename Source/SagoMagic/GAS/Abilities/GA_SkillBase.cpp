@@ -47,8 +47,6 @@ void UGA_SkillBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle, con
 
     // TODO: HasAuthority 체크 요망
     OnSkillEffect(ActorInfo);
-
-    EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }
 
 void UGA_SkillBase::ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const

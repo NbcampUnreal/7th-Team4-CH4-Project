@@ -17,11 +17,11 @@ void UGA_Projectile::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
     UWorld* World = GetWorld();
     if (!World || !ProjectileClass) return;
 
-    // 캐릭터 앞 50cm 에서 발사
-    const FVector SpawnLocation = CurrentAimOrigin + CurrentAimDirection * 50.f;
+    // 캐릭터 앞 30cm 에서 발사
+    const FVector SpawnLocation = CurrentAimOrigin + CurrentAimDirection * 30.f;
 
     FActorSpawnParameters Params;
-    Params.Owner      = Avatar;
+    Params.Owner = Avatar;
     Params.Instigator = Avatar;
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 

@@ -30,7 +30,7 @@ void ATwinStickPlayerController::BeginPlay()
 
 		} else {
 
-			UE_LOG(LogSagoMagic, Error, TEXT("Could not spawn mobile controls widget."));
+			UE_LOG(LogSM, Error, TEXT("Could not spawn mobile controls widget."));
 
 		}
 

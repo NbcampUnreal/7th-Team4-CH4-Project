@@ -44,22 +44,16 @@ public:
 	}
 
 	/** 스킬 인벤토리 열기 가능 여부 Getter */
-	bool CanOpenSkillInventory() const
-	{
-		return bCanOpenSkillInventory;
-	}
+	UFUNCTION(BlueprintPure, Category="Inventory Context Menu Widget")
+	bool CanOpenSkillInventory() const;
 
 	/** 드랍 가능 여부 Getter */
-	bool CanDropItem() const
-	{
-		return bCanDropItem;
-	}
+	UFUNCTION(BlueprintPure, Category="Inventory Context Menu Widget")
+	bool CanDropItem() const;
 
 	/** 즉시 삭제 가능 여부 Getter */
-	bool CanDeleteItem() const
-	{
-		return bCanDeleteItem;
-	}
+	UFUNCTION(BlueprintPure, Category="Inventory Context Menu Widget")
+	bool CanDeleteItem() const;
 
 	/** 대상 아이템 인스턴스 ID Setter */
 	void SetItemInstanceId(const FGuid& InItemInstanceId)

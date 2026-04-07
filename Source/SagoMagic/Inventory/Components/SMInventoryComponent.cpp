@@ -879,6 +879,11 @@ bool USMInventoryComponent::GetSkillData(const FGuid& InSkillInstanceId, FSMSkil
 	return true;
 }
 
+bool USMInventoryComponent::CanDropItem(const FGuid& InItemInstanceId) const
+{
+	return CanDropItemInternal(InItemInstanceId);
+}
+
 bool USMInventoryComponent::GetSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const
 {
 	/** TODO: 요약 캐시 조회 처리 */

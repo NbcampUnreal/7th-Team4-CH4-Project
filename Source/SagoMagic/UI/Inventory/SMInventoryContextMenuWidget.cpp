@@ -15,6 +15,21 @@ USMInventoryContextMenuWidget::USMInventoryContextMenuWidget(const FObjectInitia
 {
 }
 
+bool USMInventoryContextMenuWidget::CanOpenSkillInventory() const
+{
+	return bCanOpenSkillInventory;
+}
+
+bool USMInventoryContextMenuWidget::CanDropItem() const
+{
+	return bCanDropItem;
+}
+
+bool USMInventoryContextMenuWidget::CanDeleteItem() const
+{
+	return bCanDeleteItem;
+}
+
 void USMInventoryContextMenuWidget::InitializeContextMenu(const FGuid& InItemInstanceId,
                                                           USMInventoryComponent* InInventoryComponent)
 {
@@ -28,8 +43,8 @@ void USMInventoryContextMenuWidget::InitializeContextMenu(const FGuid& InItemIns
 	{
 		FSMSkillItemInstanceData SkillData;
 		bCanOpenSkillInventory = InventoryComponent->GetSkillData(ItemInstanceId, SkillData);
-		bCanDropItem = true;
-		bCanDeleteItem = true;
+		bCanDropItem = InventoryComponent->CanDropItem(ItemInstanceId);
+		bCanDeleteItem = InventoryComponent->HasItem(ItemInstanceId);
 	}
 
 	BP_OnContextMenuUpdated();

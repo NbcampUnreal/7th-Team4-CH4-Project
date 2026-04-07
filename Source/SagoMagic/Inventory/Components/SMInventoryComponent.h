@@ -148,6 +148,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Inventory|Query")
 	bool GetSkillData(const FGuid& InSkillInstanceId, FSMSkillItemInstanceData& OutSkillData) const;
 
+	/** 아이템 드랍 가능 여부 조회 요청 */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Inventory|Query")
+	bool CanDropItem(const FGuid& InItemInstanceId) const;
+
 	/** 스킬 요약 데이터 조회 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory|Query")
 	bool GetSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const;

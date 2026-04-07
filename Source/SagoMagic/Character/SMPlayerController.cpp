@@ -116,12 +116,13 @@ void ASMPlayerController::ClientRPCArrivedAtGameLevel_Implementation()
 	SetShowMouseCursor(true);
 
 	ApplyControllerMappingContext();
-	
+
 	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
 	if (!PS) return;
-	
+
 	UE_LOG(LogTemp, Log, TEXT("[GameLevel] 플레이어 도착 - 이름:%s / Host:%d"),
 		*PS->GetPlayerName(), PS->GetIsHost());
+
 	//TODO 현 : 게임 HUD 생성, 캐릭터 선택 등 여기서 처리
 }
 
@@ -180,15 +181,34 @@ void ASMPlayerController::ServerRPCDropInventoryItem_Implementation(const FGuid&
 		return;
 	}
 
-	FTransform DropTransform = FTransform::Identity;
-
-	if (APawn* OwningPawn = GetPawn())
+	AActor* DropSourceActor = GetPawn();
+	if (DropSourceActor == nullptr)
 	{
-		DropTransform = FTransform(
-			OwningPawn->GetActorRotation(),
-			OwningPawn->GetActorLocation(),
-			FVector::OneVector);
+		DropSourceActor = GetViewTarget();
 	}
+
+	if (DropSourceActor == nullptr)
+	{
+		DropSourceActor = this;
+	}
+
+	FRotator DropRotation = GetControlRotation();
+	DropRotation.Pitch = 0.0f;
+	DropRotation.Roll = 0.0f;
+
+	if (DropRotation.IsNearlyZero())
+	{
+		DropRotation = DropSourceActor->GetActorRotation();
+		DropRotation.Pitch = 0.0f;
+		DropRotation.Roll = 0.0f;
+	}
+
+	const FVector DropLocation =
+		DropSourceActor->GetActorLocation() +
+		(DropRotation.Vector() * 150.0f) +
+		FVector(0.0f, 0.0f, 30.0f);
+
+	const FTransform DropTransform(DropRotation, DropLocation, FVector::OneVector);
 
 	InventoryComponent->DropItem(InItemInstanceId, DropTransform);
 }

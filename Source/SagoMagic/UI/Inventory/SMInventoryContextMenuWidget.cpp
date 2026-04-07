@@ -1,18 +1,33 @@
 ﻿#include "UI/Inventory/SMInventoryContextMenuWidget.h"
 
-#include "GameFramework/Pawn.h"
-#include "GameFramework/PlayerController.h"
-
+#include "Character/SMPlayerController.h"
 #include "Inventory/Components/SMInventoryComponent.h"
+#include "Inventory/Core/SMItemInstanceTypes.h"
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
 USMInventoryContextMenuWidget::USMInventoryContextMenuWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	  , InventoryComponent(nullptr)
+	  , OwningPanelWidget(nullptr)
 	  , bCanOpenSkillInventory(false)
 	  , bCanDropItem(false)
 	  , bCanDeleteItem(false)
 {
+}
+
+bool USMInventoryContextMenuWidget::CanOpenSkillInventory() const
+{
+	return bCanOpenSkillInventory;
+}
+
+bool USMInventoryContextMenuWidget::CanDropItem() const
+{
+	return bCanDropItem;
+}
+
+bool USMInventoryContextMenuWidget::CanDeleteItem() const
+{
+	return bCanDeleteItem;
 }
 
 void USMInventoryContextMenuWidget::InitializeContextMenu(const FGuid& InItemInstanceId,
@@ -26,9 +41,10 @@ void USMInventoryContextMenuWidget::InitializeContextMenu(const FGuid& InItemIns
 
 	if (InventoryComponent != nullptr && ItemInstanceId.IsValid())
 	{
-		bCanOpenSkillInventory = InventoryComponent->FindSkill(ItemInstanceId) != nullptr;
-		bCanDropItem = true;
-		bCanDeleteItem = true;
+		FSMSkillItemInstanceData SkillData;
+		bCanOpenSkillInventory = InventoryComponent->GetSkillData(ItemInstanceId, SkillData);
+		bCanDropItem = InventoryComponent->CanDropItem(ItemInstanceId);
+		bCanDeleteItem = InventoryComponent->HasItem(ItemInstanceId);
 	}
 
 	BP_OnContextMenuUpdated();
@@ -41,33 +57,22 @@ void USMInventoryContextMenuWidget::RequestDropItem()
 		return;
 	}
 
-	FTransform DropTransform = FTransform::Identity;
-
-	if (APlayerController* OwningPlayerController = GetOwningPlayer())
-	{
-		if (APawn* OwningPawn = OwningPlayerController->GetPawn())
-		{
-			DropTransform = FTransform(
-				OwningPawn->GetActorRotation(),
-				OwningPawn->GetActorLocation(),
-				FVector::OneVector);
-		}
-	}
-
-	if (InventoryComponent->DropItem(ItemInstanceId, DropTransform) == false)
+	ASMPlayerController* OwningPlayerController = GetOwningPlayer<ASMPlayerController>();
+	if (OwningPlayerController == nullptr)
 	{
 		return;
 	}
+
+	OwningPlayerController->ServerRPCDropInventoryItem(ItemInstanceId);
 
 	ItemInstanceId.Invalidate();
 	bCanOpenSkillInventory = false;
 	bCanDropItem = false;
 	bCanDeleteItem = false;
 
-	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	if (OwningPanelWidget != nullptr)
 	{
-		OwningPanel->CloseContextMenu();
-		OwningPanel->RefreshPanel();
+		OwningPanelWidget->CloseContextMenu();
 		return;
 	}
 
@@ -81,10 +86,17 @@ void USMInventoryContextMenuWidget::RequestOpenSkillInventory()
 		return;
 	}
 
-	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	FSMSkillItemInstanceData SkillData;
+	if (InventoryComponent->GetSkillData(ItemInstanceId, SkillData) == false)
 	{
-		OwningPanel->OpenSkillInventory(ItemInstanceId);
-		OwningPanel->CloseContextMenu();
+		return;
+	}
+
+	if (OwningPanelWidget != nullptr)
+	{
+		OwningPanelWidget->OpenSkillInventory(ItemInstanceId);
+		OwningPanelWidget->CloseContextMenu();
+		return;
 	}
 }
 
@@ -95,20 +107,22 @@ void USMInventoryContextMenuWidget::RequestDeleteItem()
 		return;
 	}
 
-	if (InventoryComponent->RemoveItem(ItemInstanceId) == false)
+	ASMPlayerController* OwningPlayerController = GetOwningPlayer<ASMPlayerController>();
+	if (OwningPlayerController == nullptr)
 	{
 		return;
 	}
+
+	OwningPlayerController->ServerRPCRemoveInventoryItem(ItemInstanceId);
 
 	ItemInstanceId.Invalidate();
 	bCanOpenSkillInventory = false;
 	bCanDropItem = false;
 	bCanDeleteItem = false;
 
-	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	if (OwningPanelWidget != nullptr)
 	{
-		OwningPanel->CloseContextMenu();
-		OwningPanel->RefreshPanel();
+		OwningPanelWidget->CloseContextMenu();
 		return;
 	}
 
@@ -122,17 +136,23 @@ void USMInventoryContextMenuWidget::RequestDetachEmbeddedItem()
 		return;
 	}
 
-	if (InventoryComponent->DetachEmbeddedItem(ItemInstanceId) == false)
+	ASMPlayerController* OwningPlayerController = GetOwningPlayer<ASMPlayerController>();
+	if (OwningPlayerController == nullptr)
 	{
 		return;
 	}
 
-	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	OwningPlayerController->ServerRPCDetachEmbeddedItem(ItemInstanceId);
+
+	if (OwningPanelWidget != nullptr)
 	{
-		OwningPanel->CloseContextMenu();
-		OwningPanel->RefreshPanel();
+		OwningPanelWidget->CloseContextMenu();
 		return;
 	}
 
+	ItemInstanceId.Invalidate();
+	bCanOpenSkillInventory = false;
+	bCanDropItem = false;
+	bCanDeleteItem = false;
 	BP_OnContextMenuUpdated();
 }

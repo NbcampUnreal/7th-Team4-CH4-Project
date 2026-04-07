@@ -1,8 +1,10 @@
 ﻿#include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
+#include "GameFramework/PlayerController.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Inventory/Core/SMItemInstanceTypes.h"
 #include "Inventory/Core/SMContainerTypes.h"
+#include "GameplayTags/Message/SMMessageTag.h"
 
 #include "UI/Inventory/SMInventoryGridWidget.h"
 #include "UI/Inventory/SMSkillInventoryWidget.h"
@@ -27,10 +29,87 @@ void USMPlayerInventoryPanelWidget::NativeConstruct()
 	Super::NativeConstruct();
 }
 
+void USMPlayerInventoryPanelWidget::NativeDestruct()
+{
+	UnregisterInventoryMessageListeners();
+	Super::NativeDestruct();
+}
+
 void USMPlayerInventoryPanelWidget::InitializePanelWidget(USMInventoryComponent* InInventoryComponent)
 {
+	UnregisterInventoryMessageListeners();
 	InventoryComponent = InInventoryComponent;
 	InitializeChildWidgets();
+	RegisterInventoryMessageListeners();
+	RefreshPanel();
+}
+
+void USMPlayerInventoryPanelWidget::RegisterInventoryMessageListeners()
+{
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
+	InventoryUpdatedListenerHandle = MessageSubsystem.RegisterListener<FSMInventoryUpdatedMessage>(
+		SMMessageTag::Inventory_Updated,
+		this,
+		&ThisClass::HandleInventoryUpdatedMessage);
+	SkillSummaryUpdatedListenerHandle = MessageSubsystem.RegisterListener<FSMSkillSummaryUpdatedMessage>(
+		SMMessageTag::Inventory_SkillSummaryUpdated,
+		this,
+		&ThisClass::HandleSkillSummaryUpdatedMessage);
+}
+
+void USMPlayerInventoryPanelWidget::UnregisterInventoryMessageListeners()
+{
+	if (InventoryUpdatedListenerHandle.IsValid())
+	{
+		InventoryUpdatedListenerHandle.Unregister();
+	}
+
+	if (SkillSummaryUpdatedListenerHandle.IsValid())
+	{
+		SkillSummaryUpdatedListenerHandle.Unregister();
+	}
+}
+
+void USMPlayerInventoryPanelWidget::HandleInventoryUpdatedMessage(
+	FGameplayTag InChannel,
+	const FSMInventoryUpdatedMessage& InMessage)
+{
+	APlayerController* OwningPlayerController = GetOwningPlayer();
+	if (OwningPlayerController == nullptr)
+	{
+		return;
+	}
+
+	APlayerState* OwningPlayerState = OwningPlayerController->GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr || InMessage.GetOwningPlayerState() != OwningPlayerState)
+	{
+		return;
+	}
+
+	RefreshPanel();
+}
+
+void USMPlayerInventoryPanelWidget::HandleSkillSummaryUpdatedMessage(
+	FGameplayTag InChannel,
+	const FSMSkillSummaryUpdatedMessage& InMessage)
+{
+	APlayerController* OwningPlayerController = GetOwningPlayer();
+	if (OwningPlayerController == nullptr)
+	{
+		return;
+	}
+
+	APlayerState* OwningPlayerState = OwningPlayerController->GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr || InMessage.GetOwningPlayerState() != OwningPlayerState)
+	{
+		return;
+	}
+
 	RefreshPanel();
 }
 
@@ -289,6 +368,7 @@ void USMPlayerInventoryPanelWidget::InitializeChildWidgets()
 	if (ContextMenuWidget != nullptr)
 	{
 		ContextMenuWidget->SetInventoryComponent(InventoryComponent);
+		ContextMenuWidget->SetOwningPanelWidget(this);
 		ContextMenuWidget->SetItemInstanceId(FGuid());
 	}
 

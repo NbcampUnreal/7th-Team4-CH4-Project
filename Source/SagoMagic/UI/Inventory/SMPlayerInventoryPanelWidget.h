@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
+#include "Inventory/Core/SMInventoryMessageTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "SMPlayerInventoryPanelWidget.generated.h"
 
@@ -40,6 +42,9 @@ public:
 
 	/** NativeConstruct 오버라이드 */
 	virtual void NativeConstruct() override;
+
+	/** NativeDestruct 오버라이드 */
+	virtual void NativeDestruct() override;
 
 	/** 인벤토리 컴포넌트 Getter */
 	USMInventoryComponent* GetInventoryComponent() const
@@ -150,6 +155,18 @@ public:
 	void HideHoveredItemInfo();
 
 protected:
+	/** 인벤토리 메시지 리스너 등록 */
+	void RegisterInventoryMessageListeners();
+
+	/** 인벤토리 메시지 리스너 해제 */
+	void UnregisterInventoryMessageListeners();
+
+	/** 인벤토리 갱신 메시지 수신 */
+	void HandleInventoryUpdatedMessage(FGameplayTag InChannel, const FSMInventoryUpdatedMessage& InMessage);
+
+	/** 스킬 요약 갱신 메시지 수신 */
+	void HandleSkillSummaryUpdatedMessage(FGameplayTag InChannel, const FSMSkillSummaryUpdatedMessage& InMessage);
+
 	/** 내부 위젯 초기화 */
 	void InitializeChildWidgets();
 
@@ -207,4 +224,6 @@ protected:
 	FVector2D ContextMenuScreenPosition;
 
 private:
+	FGameplayMessageListenerHandle InventoryUpdatedListenerHandle;
+	FGameplayMessageListenerHandle SkillSummaryUpdatedListenerHandle;
 };

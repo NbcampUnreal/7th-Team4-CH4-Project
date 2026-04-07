@@ -4,7 +4,15 @@
 #include "SMPlayerController.h"
 #include "Core/SMPlayerState.h"
 #include "Core/SessionSubsystem/SMLobbyGameMode.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "Engine/LocalPlayer.h"
+#include "Inventory/Components/SMInventoryComponent.h"
+#include "GameFramework/Pawn.h"
+#include "InputAction.h"
 #include "Kismet/GameplayStatics.h"
+#include "UI/Inventory/SMInventoryRootWidget.h"
+#include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 #include "UI/SessionUI/SMLobbyWidget.h"
 
 void ASMPlayerController::BeginPlay()
@@ -25,6 +33,8 @@ void ASMPlayerController::BeginPlay()
 	//네트워크 관련 initialize
 	if (IsLocalController() == false) return;
 
+	ApplyControllerMappingContext();
+
 	UWorld* World = GetWorld();
 	if (IsValid(World) == false) return;
 
@@ -36,18 +46,83 @@ void ASMPlayerController::BeginPlay()
 	}
 }
 
+void ASMPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	if (IsLocalPlayerController() == false)
+	{
+		return;
+	}
+
+	ApplyControllerMappingContext();
+
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent))
+	{
+		if (ToggleInventoryAction != nullptr)
+		{
+			EnhancedInputComponent->BindAction(
+				ToggleInventoryAction,
+				ETriggerEvent::Started,
+				this,
+				&ThisClass::ToggleInventory);
+		}
+
+		if (RotateInventoryItemAction != nullptr)
+		{
+			EnhancedInputComponent->BindAction(
+				RotateInventoryItemAction,
+				ETriggerEvent::Started,
+				this,
+				&ThisClass::RotateDraggedInventoryItem);
+		}
+	}
+}
+
+void ASMPlayerController::ApplyControllerMappingContext()
+{
+	if (IsLocalPlayerController() == false)
+	{
+		return;
+	}
+
+	ULocalPlayer* LocalPlayer = GetLocalPlayer();
+	if (LocalPlayer == nullptr)
+	{
+		return;
+	}
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer);
+	if (Subsystem == nullptr)
+	{
+		return;
+	}
+
+	if (ControllerMappingContext == nullptr)
+	{
+		return;
+	}
+
+	Subsystem->RemoveMappingContext(ControllerMappingContext);
+	Subsystem->AddMappingContext(ControllerMappingContext, 0);
+}
+
 void ASMPlayerController::ClientRPCArrivedAtGameLevel_Implementation()
 {
 	//입력 모드 전환 (기존 OnArrivedAtGameLevel 로직)
 	FInputModeGameAndUI InputMode;
 	SetInputMode(InputMode);
 	SetShowMouseCursor(true);
-	
+
+	ApplyControllerMappingContext();
+
 	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
 	if (!PS) return;
-	
+
 	UE_LOG(LogTemp, Log, TEXT("[GameLevel] 플레이어 도착 - 이름:%s / Host:%d"),
 		*PS->GetPlayerName(), PS->GetIsHost());
+
 	//TODO 현 : 게임 HUD 생성, 캐릭터 선택 등 여기서 처리
 }
 
@@ -70,6 +145,152 @@ void ASMPlayerController::ServerRPCRequestStartGame_Implementation()
 	GM->TryStartGame();
 }
 
+void ASMPlayerController::ServerRPCMoveInventoryItem_Implementation(
+	const FGuid& InItemInstanceId,
+	const FGuid& InTargetContainerId,
+	int32 InGridX,
+	int32 InGridY,
+	ESMGridRotation InRotation)
+{
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	InventoryComponent->MoveItem(InItemInstanceId, InTargetContainerId, InGridX, InGridY, InRotation);
+}
+
+void ASMPlayerController::ServerRPCDropInventoryItem_Implementation(const FGuid& InItemInstanceId)
+{
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	AActor* DropSourceActor = GetPawn();
+	if (DropSourceActor == nullptr)
+	{
+		DropSourceActor = GetViewTarget();
+	}
+
+	if (DropSourceActor == nullptr)
+	{
+		DropSourceActor = this;
+	}
+
+	FRotator DropRotation = GetControlRotation();
+	DropRotation.Pitch = 0.0f;
+	DropRotation.Roll = 0.0f;
+
+	if (DropRotation.IsNearlyZero())
+	{
+		DropRotation = DropSourceActor->GetActorRotation();
+		DropRotation.Pitch = 0.0f;
+		DropRotation.Roll = 0.0f;
+	}
+
+	const FVector DropLocation =
+		DropSourceActor->GetActorLocation() +
+		(DropRotation.Vector() * 150.0f) +
+		FVector(0.0f, 0.0f, 30.0f);
+
+	const FTransform DropTransform(DropRotation, DropLocation, FVector::OneVector);
+
+	InventoryComponent->DropItem(InItemInstanceId, DropTransform);
+}
+
+void ASMPlayerController::ServerRPCRemoveInventoryItem_Implementation(const FGuid& InItemInstanceId)
+{
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	InventoryComponent->RemoveItem(InItemInstanceId);
+}
+
+void ASMPlayerController::ServerRPCDetachEmbeddedItem_Implementation(const FGuid& InItemInstanceId)
+{
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	InventoryComponent->DetachEmbeddedItem(InItemInstanceId);
+}
+
+void ASMPlayerController::ToggleInventory()
+{
+	if (IsLocalController() == false)
+	{
+		return;
+	}
+
+	InitializeInventoryWidget();
+
+	if (InventoryRootWidgetInstance == nullptr)
+	{
+		return;
+	}
+
+	if (bIsInventoryVisible)
+	{
+		HideInventoryWidget();
+		return;
+	}
+
+	ShowInventoryWidget();
+}
+
+void ASMPlayerController::RotateDraggedInventoryItem()
+{
+	if (IsLocalController() == false)
+	{
+		return;
+	}
+
+	if (bIsInventoryVisible == false || InventoryRootWidgetInstance == nullptr)
+	{
+		return;
+	}
+
+	USMPlayerInventoryPanelWidget* CurrentPanelWidget = InventoryRootWidgetInstance->GetCurrentPanelWidget();
+	if (CurrentPanelWidget == nullptr)
+	{
+		return;
+	}
+
+	CurrentPanelWidget->RequestRotateCurrentDraggedItem();
+}
+
 void ASMPlayerController::ShowLobbyWidget()
 {
 	if (IsValid(LobbyWidgetClass) == false) return;
@@ -85,4 +306,97 @@ void ASMPlayerController::ShowLobbyWidget()
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	SetInputMode(InputMode);
 	SetShowMouseCursor(true);
+}
+
+void ASMPlayerController::InitializeInventoryWidget()
+{
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	if (InventoryRootWidgetInstance == nullptr)
+	{
+		if (InventoryRootWidgetClass == nullptr)
+		{
+			return;
+		}
+
+		InventoryRootWidgetInstance = CreateWidget<USMInventoryRootWidget>(this, InventoryRootWidgetClass);
+		if (InventoryRootWidgetInstance == nullptr)
+		{
+			return;
+		}
+
+		InventoryRootWidgetInstance->AddToViewport();
+		InventoryRootWidgetInstance->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	if (InventoryRootWidgetInstance->GetInventoryComponent() != InventoryComponent)
+	{
+		InventoryRootWidgetInstance->InitializeRootWidget(InventoryComponent);
+	}
+}
+
+void ASMPlayerController::ShowInventoryWidget()
+{
+	if (InventoryRootWidgetInstance == nullptr)
+	{
+		return;
+	}
+
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	USMInventoryComponent* InventoryComponent = nullptr;
+	if (OwningPlayerState != nullptr)
+	{
+		InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
+	}
+
+	if (InventoryComponent != nullptr)
+	{
+		if (InventoryRootWidgetInstance->GetInventoryComponent() != InventoryComponent)
+		{
+			InventoryRootWidgetInstance->InitializeRootWidget(InventoryComponent);
+		}
+		else
+		{
+			InventoryRootWidgetInstance->RefreshRootWidget();
+		}
+	}
+
+	InventoryRootWidgetInstance->SetVisibility(ESlateVisibility::Visible);
+
+	FInputModeGameAndUI InputMode;
+	InputMode.SetWidgetToFocus(InventoryRootWidgetInstance->TakeWidget());
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
+	SetShowMouseCursor(true);
+
+	bIsInventoryVisible = true;
+}
+
+void ASMPlayerController::HideInventoryWidget()
+{
+	if (InventoryRootWidgetInstance == nullptr)
+	{
+		return;
+	}
+
+	InventoryRootWidgetInstance->SetVisibility(ESlateVisibility::Collapsed);
+
+	FInputModeGameAndUI InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
+	SetShowMouseCursor(true);
+
+	bIsInventoryVisible = false;
 }

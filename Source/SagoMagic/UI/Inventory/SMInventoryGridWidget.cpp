@@ -4,6 +4,7 @@
 #include "Components/PanelWidget.h"
 #include "Blueprint/DragDropOperation.h"
 
+#include "Character/SMPlayerController.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Inventory/Core/SMContainerTypes.h"
 #include "Inventory/Core/SMItemInstanceTypes.h"
@@ -64,7 +65,17 @@ bool USMInventoryGridWidget::NativeOnDragOver(
 		return true;
 	}
 
-	SetHoveredCell(GridX, GridY);
+	int32 PlacementGridX = GridX;
+	int32 PlacementGridY = GridY;
+	int32 PivotOffsetX = 0;
+	int32 PivotOffsetY = 0;
+	if (InventoryOperation->CalculateCurrentPivotOffset(PivotOffsetX, PivotOffsetY))
+	{
+		PlacementGridX -= PivotOffsetX;
+		PlacementGridY -= PivotOffsetY;
+	}
+
+	SetHoveredCell(PlacementGridX, PlacementGridY);
 
 	bool bCanPlace = false;
 	if (InventoryComponent != nullptr)
@@ -72,8 +83,8 @@ bool USMInventoryGridWidget::NativeOnDragOver(
 		bCanPlace = InventoryComponent->CanPlaceItem(
 			InventoryOperation->GetItemInstanceId(),
 			ContainerId,
-			GridX,
-			GridY,
+			PlacementGridX,
+			PlacementGridY,
 			InventoryOperation->GetCurrentRotation());
 	}
 
@@ -141,11 +152,57 @@ bool USMInventoryGridWidget::NativeOnDrop(
 		return false;
 	}
 
-	const bool bMoveSucceeded = InventoryComponent->MoveItem(
+	int32 PlacementGridX = GridX;
+	int32 PlacementGridY = GridY;
+	int32 PivotOffsetX = 0;
+	int32 PivotOffsetY = 0;
+	if (InventoryOperation->CalculateCurrentPivotOffset(PivotOffsetX, PivotOffsetY))
+	{
+		PlacementGridX -= PivotOffsetX;
+		PlacementGridY -= PivotOffsetY;
+	}
+
+	const bool bCanPlace = InventoryComponent->CanPlaceItem(
 		InventoryOperation->GetItemInstanceId(),
 		ContainerId,
-		GridX,
-		GridY,
+		PlacementGridX,
+		PlacementGridY,
+		InventoryOperation->GetCurrentRotation());
+
+	if (bCanPlace == false)
+	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->ClearActiveDragState();
+		}
+		else
+		{
+			ClearActiveDragState();
+		}
+
+		return false;
+	}
+
+	ASMPlayerController* OwningPlayerController = GetOwningPlayer<ASMPlayerController>();
+	if (OwningPlayerController == nullptr)
+	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->ClearActiveDragState();
+		}
+		else
+		{
+			ClearActiveDragState();
+		}
+
+		return false;
+	}
+
+	OwningPlayerController->ServerRPCMoveInventoryItem(
+		InventoryOperation->GetItemInstanceId(),
+		ContainerId,
+		PlacementGridX,
+		PlacementGridY,
 		InventoryOperation->GetCurrentRotation());
 
 	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
@@ -157,19 +214,7 @@ bool USMInventoryGridWidget::NativeOnDrop(
 		ClearActiveDragState();
 	}
 
-	if (bMoveSucceeded)
-	{
-		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
-		{
-			OwningPanel->RefreshPanel();
-		}
-		else
-		{
-			RefreshGrid();
-		}
-	}
-
-	return bMoveSucceeded;
+	return true;
 }
 
 void USMInventoryGridWidget::InitializeGridWidget(const FGuid& InContainerId,
@@ -263,7 +308,11 @@ void USMInventoryGridWidget::SetActiveDragOperation(USMInventoryDragDropOperatio
 	ActiveDragDropOperation = InActiveDragDropOperation;
 }
 
-USMInventoryDragDropOperation* USMInventoryGridWidget::CreateDragDropOperationForItem(const FGuid& InItemInstanceId)
+USMInventoryDragDropOperation* USMInventoryGridWidget::CreateDragDropOperationForItem(
+	const FGuid& InItemInstanceId,
+	int32 InPivotGridX,
+	int32 InPivotGridY,
+	FVector2D InPivotCellFraction)
 {
 	if (InventoryComponent == nullptr || InItemInstanceId.IsValid() == false)
 	{
@@ -301,12 +350,69 @@ USMInventoryDragDropOperation* USMInventoryGridWidget::CreateDragDropOperationFo
 		}
 	}
 
+	int32 ShapeWidth = 1;
+	int32 ShapeHeight = 1;
+	if (const USMItemDefinition* ItemDefinition = InventoryComponent->ResolveItemDefinition(BaseItemData))
+	{
+		if (const USMGridShapeFragment* GridShapeFragment = ItemDefinition->FindFragmentByClass<USMGridShapeFragment>())
+		{
+			if (GridShapeFragment->GetShapeMask().IsValidMaskData())
+			{
+				ShapeWidth = GridShapeFragment->GetShapeMask().Width;
+				ShapeHeight = GridShapeFragment->GetShapeMask().Height;
+			}
+		}
+	}
+
+	int32 PivotRotatedLocalX = 0;
+	int32 PivotRotatedLocalY = 0;
+	if (InPivotGridX != INDEX_NONE && InPivotGridY != INDEX_NONE)
+	{
+		PivotRotatedLocalX = FMath::Max(0, InPivotGridX - BaseItemData.GridX);
+		PivotRotatedLocalY = FMath::Max(0, InPivotGridY - BaseItemData.GridY);
+	}
+
+	int32 PivotShapeLocalX = PivotRotatedLocalX;
+	int32 PivotShapeLocalY = PivotRotatedLocalY;
+
+	switch (BaseItemData.Rotation)
+	{
+	case ESMGridRotation::Rot0:
+		break;
+
+	case ESMGridRotation::Rot90:
+		PivotShapeLocalX = PivotRotatedLocalY;
+		PivotShapeLocalY = ShapeHeight - 1 - PivotRotatedLocalX;
+		break;
+
+	case ESMGridRotation::Rot180:
+		PivotShapeLocalX = ShapeWidth - 1 - PivotRotatedLocalX;
+		PivotShapeLocalY = ShapeHeight - 1 - PivotRotatedLocalY;
+		break;
+
+	case ESMGridRotation::Rot270:
+		PivotShapeLocalX = ShapeWidth - 1 - PivotRotatedLocalY;
+		PivotShapeLocalY = PivotRotatedLocalX;
+		break;
+
+	default:
+		break;
+	}
+
+	PivotShapeLocalX = FMath::Clamp(PivotShapeLocalX, 0, FMath::Max(0, ShapeWidth - 1));
+	PivotShapeLocalY = FMath::Clamp(PivotShapeLocalY, 0, FMath::Max(0, ShapeHeight - 1));
+
 	NewOperation->InitializeOperation(
 		BaseItemData.InstanceId,
 		BaseItemData.ParentContainerId,
 		BaseItemData.GridX,
 		BaseItemData.GridY,
 		BaseItemData.Rotation,
+		PivotShapeLocalX,
+		PivotShapeLocalY,
+		ShapeWidth,
+		ShapeHeight,
+		InPivotCellFraction,
 		PreviewWidget);
 
 	NewOperation->DefaultDragVisual = PreviewWidget;

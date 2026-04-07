@@ -146,6 +146,11 @@ USMInventoryDragDropOperation* USMItemWidget::CreateDragDropOperation()
 		GridX,
 		GridY,
 		DisplayRotation,
+		0,
+		0,
+		1,
+		1,
+		FVector2D(0.5f, 0.5f),
 		PreviewWidget);
 
 	NewOperation->DefaultDragVisual = PreviewWidget;

@@ -51,11 +51,12 @@ void USMInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(USMInventoryComponent, MainInventory);
-	DOREPLIFETIME(USMInventoryComponent, QuickSlots);
-	DOREPLIFETIME(USMInventoryComponent, ItemEntries);
-	DOREPLIFETIME(USMInventoryComponent, SkillEntries);
-	DOREPLIFETIME(USMInventoryComponent, SkillInternalContainers);
+	// PlayerState에 붙어있지만 실제 인벤토리 상태는 소유 클라이언트에게만 보냄
+	DOREPLIFETIME_CONDITION(USMInventoryComponent, MainInventory, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(USMInventoryComponent, QuickSlots, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(USMInventoryComponent, ItemEntries, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(USMInventoryComponent, SkillEntries, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(USMInventoryComponent, SkillInternalContainers, COND_OwnerOnly);
 }
 
 FGuid USMInventoryComponent::AddItemFromDefinition(const TSoftObjectPtr<USMItemDefinition>& InItemDefinition)
@@ -876,6 +877,11 @@ bool USMInventoryComponent::GetSkillData(const FGuid& InSkillInstanceId, FSMSkil
 
 	OutSkillData = *SkillData;
 	return true;
+}
+
+bool USMInventoryComponent::CanDropItem(const FGuid& InItemInstanceId) const
+{
+	return CanDropItemInternal(InItemInstanceId);
 }
 
 bool USMInventoryComponent::GetSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const

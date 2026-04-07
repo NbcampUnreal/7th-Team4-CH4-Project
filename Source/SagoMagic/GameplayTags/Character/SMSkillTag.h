@@ -14,6 +14,7 @@ namespace SMSkillTag
     //태그명 추천받습니다.
 
     //스킬 태그들
+    UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Skill)
     //투사체
     UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Skill_Projectile)
     //장판

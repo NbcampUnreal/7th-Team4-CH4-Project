@@ -111,7 +111,7 @@ void ASMPlayerCharacter::Attack()
 {
 	if (!SMAbilitySystemComponent) return;
 	
-	FGameplayTag AttackTag = SMSkillTag::Ability_Skill_Projectile;
+	FGameplayTag AttackTag = SMSkillTag::Ability_Skill;
 	SMAbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
 }
 

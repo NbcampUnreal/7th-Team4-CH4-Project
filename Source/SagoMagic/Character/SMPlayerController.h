@@ -40,6 +40,12 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerRPCRequestStartGame();
 	
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_ShowDeathUI();
+	
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_HideDeathUI();
+	
 private:
 	UPROPERTY(EditDefaultsOnly,Category = "UI")
 	TSubclassOf<USMLobbyWidget> LobbyWidgetClass;

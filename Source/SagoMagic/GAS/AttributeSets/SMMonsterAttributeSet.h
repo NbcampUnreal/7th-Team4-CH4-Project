@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "AttributeSet.h"
-#include "SagoMagic.h"
+#include "SMAttributeSetMacros.h"
 #include "SMMonsterAttributeSet.generated.h"
 
 // 몬스터 사망 시 외부(MonsterBase)에 알리기 위한 델리게이트

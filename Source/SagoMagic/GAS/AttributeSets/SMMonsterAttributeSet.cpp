@@ -35,20 +35,36 @@ void USMMonsterAttributeSet::PreAttributeChange(const FGameplayAttribute& Attrib
 void USMMonsterAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
 	Super::PostGameplayEffectExecute(Data);
-	UE_LOG(LogTemp, Warning, TEXT("PostGameplayEffectExecute"));
-	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
-	{
-		SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
+    if (Data.EvaluatedData.Attribute == GetHealthAttribute())
+    {
+        SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
 
-		UE_LOG(LogTemp, Warning, TEXT("[MonsterHP] HP 변경됨: %.1f / %.1f"),
-			GetHealth(), GetMaxHealth());
-		if (GetHealth() <= 0.0f)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[Monster] HP가 0이 되었습니다. 사망 처리를 시작합니다."));
-			// MonsterBase가 바인딩한 HandleDeath()를 호출
-			OnMonsterDied.Broadcast();
-		}
-	}
+        if (GetHealth() <= 0.0f)
+        {
+            // 데미지를 준 Instigator에서 Controller 추출
+            AController* KillerController = nullptr;
+
+            AActor* Instigator = Data.EffectSpec.GetEffectContext().GetInstigator();
+            if (Instigator)
+            {
+                // 플레이어 폰인 경우
+                if (APawn* InstigatorPawn = Cast<APawn>(Instigator))
+                {
+                    KillerController = InstigatorPawn->GetController();
+                }
+                // 컨트롤러 자체인 경우
+                else if (AController* InstigatorController = Cast<AController>(Instigator))
+                {
+                    KillerController = InstigatorController;
+                }
+            }
+
+            UE_LOG(LogTemp, Warning, TEXT("[Monster] 처치한 플레이어: %s"),
+                KillerController ? *KillerController->GetName() : TEXT("Unknown"));
+
+            OnMonsterDied.Broadcast(KillerController);
+        }
+    }
 }
 
 void USMMonsterAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth) 

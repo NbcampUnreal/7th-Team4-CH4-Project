@@ -1,7 +1,11 @@
 #include "Enemy/SMMonsterBase.h"
 #include "Enemy/SMMonsterAIController.h"
 #include "AbilitySystemComponent.h"
-
+#include "UI/SMEnemyHPBarComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "../GAS/AttributeSets/SMMonsterAttributeSet.h"
+#include "../GAS/AttributeSets/SMPlayerAttributeSet.h"
+#include "../Data/SMMonsterData.h"
 
 ASMMonsterBase::ASMMonsterBase()
 {
@@ -22,12 +26,30 @@ ASMMonsterBase::ASMMonsterBase()
     // AttributeSet 생성
     MonsterAttributeSet = CreateDefaultSubobject<USMMonsterAttributeSet>(TEXT("AttributeSet"));
 
+    MonsterType = EMonsterType::None;
+
 }
 
 UAbilitySystemComponent* ASMMonsterBase::GetAbilitySystemComponent() const
 {
     return MonsterAbilitySystemComponent;
 }
+
+void ASMMonsterBase::ResetMonster()
+{
+    SetActorEnableCollision(false);
+    SetActorHiddenInGame(true);
+    SetActorTickEnabled(false);
+}
+
+//void ASMMonsterBase::MulticastHandleDeath_Implementation()
+//{
+//    SetActorHiddenInGame(true);
+//    SetActorEnableCollision(false);
+//    SetActorTickEnabled(false);
+//}
+
+
 
 void ASMMonsterBase::BeginPlay()
 {
@@ -50,11 +72,19 @@ void ASMMonsterBase::PossessedBy(AController* NewController)
     {
         MonsterAbilitySystemComponent->InitAbilityActorInfo(this, this);
 
+
+        if (!MonsterAttributeSet)
+        {
+            MonsterAttributeSet = const_cast<USMMonsterAttributeSet*>(
+                MonsterAbilitySystemComponent->GetSet<USMMonsterAttributeSet>());
+            UE_LOG(LogTemp, Warning, TEXT("[Monster] AttributeSet 재취득: %s"),
+                MonsterAttributeSet ? TEXT("성공") : TEXT("실패"));
+        }
+
         if (HasAuthority() && MonsterAttributeSet)
         {
             MonsterAttributeSet->OnMonsterDied.AddUObject(this, &ASMMonsterBase::HandleDeath);
         }
-
         GiveDefaultAbilities();
 
         if (ASMMonsterAIController* MonsterAI = Cast<ASMMonsterAIController>(NewController))
@@ -92,31 +122,66 @@ void ASMMonsterBase::GiveDefaultAbilities()
 }
 
 
-void ASMMonsterBase::HandleDeath()
+void ASMMonsterBase::HandleDeath(AController* KillerController)
 {
-    if (MonsterAttributeSet)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[MonsterHP] %s / HP: %.1f"),
-            *GetName(),
-            MonsterAttributeSet->GetHealth());
-    }
+   
     // 이미 죽었거나 유효하지 않으면 무시
-    if (!IsValid(this) || !HasAuthority())
+    if (!IsValid(this) || !HasAuthority()) return;
+
+
+    // 막타 친 플레이어에게 골드 지급
+    if (KillerController)
     {
-        return;
+        if (APawn* KillerPawn = KillerController->GetPawn())
+        {
+            if (IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(KillerPawn))
+            {
+                UAbilitySystemComponent* ASC = ASCInterface->GetAbilitySystemComponent();
+                if (ASC)
+                {
+                    const USMPlayerAttributeSet* PlayerAttr =
+                        ASC->GetSet<USMPlayerAttributeSet>();
+                    if (PlayerAttr)
+                    {
+                        USMPlayerAttributeSet* MutableAttr =
+                            const_cast<USMPlayerAttributeSet*>(PlayerAttr);
+                        float NewGold = FMath::Clamp(
+                            MutableAttr->GetGold() + GoldReward,
+                            0.0f,
+                            MutableAttr->GetMaxGold()
+                        );
+                        MutableAttr->SetGold(NewGold);
+
+                        UE_LOG(LogTemp, Log, TEXT("[Gold] %s에게 %.0f Gold 지급 (총 %.0f)"),
+                            *KillerController->GetName(), GoldReward, NewGold);
+                    }
+                }
+            }
+        }
     }
 
-    UE_LOG(LogTemp, Warning, TEXT("[Monster] %s 사망. 3초 후 제거됩니다."), *GetName());
+    //UE_LOG(LogTemp, Warning, TEXT("[Monster] %s 사망. 3초 후 제거됩니다."), *GetName());
 
     // AI 정지
     if (AController* MyController = GetController())
     {
         MyController->UnPossess();
     }
+    // 이동 즉시 정지
+    if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+    {
+        MoveComp->StopMovementImmediately();
+        MoveComp->DisableMovement(); // 이후 이동 입력 차단
+    }
 
     // 충돌·이동 비활성화
-    SetActorEnableCollision(false);
+    ResetMonster();
+    //MulticastHandleDeath();
+    // SetActorEnableCollision(false);
 
     // 3초 후 액터 제거 (애니메이션 붙일 자리)
-    SetLifeSpan(3.0f);
+    //SetLifeSpan(3.0f);
+   
+
+    //UE_LOG(LogTemp, Warning, TEXT("[Monster] HandleDeath 완료 - Destroy 호출 없음"));
 }

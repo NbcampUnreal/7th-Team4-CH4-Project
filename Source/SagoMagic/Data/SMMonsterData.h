@@ -1,9 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "Enemy/SMMonsterBase.h"
 #include "SMMonsterData.generated.h"
+
+class ASMMonsterBase;
 
 UENUM()
 enum class EMonsterType : uint8

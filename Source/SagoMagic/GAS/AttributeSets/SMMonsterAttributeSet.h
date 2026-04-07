@@ -6,7 +6,7 @@
 #include "SMMonsterAttributeSet.generated.h"
 
 // 몬스터 사망 시 외부(MonsterBase)에 알리기 위한 델리게이트
-DECLARE_MULTICAST_DELEGATE(FOnMonsterDied);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnMonsterDied, AController*);
 
 UCLASS()
 class SAGOMAGIC_API USMMonsterAttributeSet : public UAttributeSet

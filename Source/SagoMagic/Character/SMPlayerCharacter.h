@@ -7,13 +7,14 @@
 #include "GameFramework/Character.h"
 #include "SMPlayerCharacter.generated.h"
 
+struct FOnAttributeChangeData;
+struct FInputActionValue;
 class USMInteractionScannerComponent;
 class USMAbilitySystemComponent;
 class UGameplayAbility;
 class USMPlayerAttributeSet;
 class UAbilitySystemComponent;
 class UInputMappingContext;
-struct FInputActionValue;
 class UInputAction;
 class USpringArmComponent;
 class UCameraComponent;
@@ -77,13 +78,15 @@ public:
 	virtual void OnConstruction(const FTransform& Transform) override;
 	
 	virtual void BeginPlay() override;
+	
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void Tick(float DeltaTime) override;
 	
 	virtual void PossessedBy(AController* NewController) override;
 	
 	virtual void OnRep_PlayerState() override;
-	
+
 protected:
 	virtual void InitializeAbilitySystem();
 	
@@ -99,6 +102,20 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilities;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Death", ReplicatedUsing = OnRep_IsDead)
+	bool bIsDead = false;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Death")
+	float DeathLifeSpan = 5.0f;
+	
+	/** */
+	UFUNCTION()
+	virtual void OnRep_IsDead();
+	
+	void OnHealthChanged(const FOnAttributeChangeData& Data);
+	
+	void HandleDeath();
 
 public:
 	/** Adds inputs bindings */

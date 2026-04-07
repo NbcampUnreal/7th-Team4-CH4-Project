@@ -116,7 +116,21 @@ void USMInventoryCellWidget::NativeOnDragDetected(const FGeometry& InGeometry, c
 
 	if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
 	{
-		OutOperation = OwningGrid->CreateDragDropOperationForItem(OwnerItemInstanceId);
+		const FVector2D LocalMousePosition = InGeometry.AbsoluteToLocal(InMouseEvent.GetScreenSpacePosition());
+		const FVector2D LocalSize = InGeometry.GetLocalSize();
+
+		FVector2D PivotCellFraction(0.5f, 0.5f);
+		if (LocalSize.X > 0.0f && LocalSize.Y > 0.0f)
+		{
+			PivotCellFraction.X = FMath::Clamp(LocalMousePosition.X / LocalSize.X, 0.0f, 1.0f);
+			PivotCellFraction.Y = FMath::Clamp(LocalMousePosition.Y / LocalSize.Y, 0.0f, 1.0f);
+		}
+
+		OutOperation = OwningGrid->CreateDragDropOperationForItem(
+			OwnerItemInstanceId,
+			GridX,
+			GridY,
+			PivotCellFraction);
 	}
 }
 

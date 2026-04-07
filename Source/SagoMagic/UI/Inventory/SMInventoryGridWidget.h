@@ -123,7 +123,11 @@ public:
 	void ClearActiveDragState();
 
 	/** 특정 아이템 기준 드래그 드롭 오퍼레이션 생성 */
-	USMInventoryDragDropOperation* CreateDragDropOperationForItem(const FGuid& InItemInstanceId);
+	USMInventoryDragDropOperation* CreateDragDropOperationForItem(
+		const FGuid& InItemInstanceId,
+		int32 InPivotGridX = INDEX_NONE,
+		int32 InPivotGridY = INDEX_NONE,
+		FVector2D InPivotCellFraction = FVector2D(0.5f, 0.5f));
 
 	/** 현재 활성 드래그 오퍼레이션 설정 */
 	void SetActiveDragOperation(USMInventoryDragDropOperation* InActiveDragDropOperation);

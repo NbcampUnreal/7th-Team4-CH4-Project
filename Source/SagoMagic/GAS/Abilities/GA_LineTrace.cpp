@@ -18,13 +18,13 @@ void UGA_LineTrace::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 
 	if (IsValid(Avatar) == false || Avatar->HasAuthority() == false)
 	{
-		//클라이언트 -> 코스메틱 처리 후 종료
-		//TODO: 이펙트 연결
+		// 클라이언트는 코스메틱만 처리하고, 종료를 서버로 전파하지 않는다.
+		// TODO: 이펙트 연결
 		EndAbility(
 			GetCurrentAbilitySpecHandle(),
 			GetCurrentActorInfo(),
 			GetCurrentActivationInfo(),
-			true,
+			false,
 			false
 		);
 

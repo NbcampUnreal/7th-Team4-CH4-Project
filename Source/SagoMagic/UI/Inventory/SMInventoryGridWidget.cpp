@@ -4,6 +4,7 @@
 #include "Components/PanelWidget.h"
 #include "Blueprint/DragDropOperation.h"
 
+#include "Character/SMPlayerController.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Inventory/Core/SMContainerTypes.h"
 #include "Inventory/Core/SMItemInstanceTypes.h"
@@ -141,7 +142,43 @@ bool USMInventoryGridWidget::NativeOnDrop(
 		return false;
 	}
 
-	const bool bMoveSucceeded = InventoryComponent->MoveItem(
+	const bool bCanPlace = InventoryComponent->CanPlaceItem(
+		InventoryOperation->GetItemInstanceId(),
+		ContainerId,
+		GridX,
+		GridY,
+		InventoryOperation->GetCurrentRotation());
+
+	if (bCanPlace == false)
+	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->ClearActiveDragState();
+		}
+		else
+		{
+			ClearActiveDragState();
+		}
+
+		return false;
+	}
+
+	ASMPlayerController* OwningPlayerController = GetOwningPlayer<ASMPlayerController>();
+	if (OwningPlayerController == nullptr)
+	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->ClearActiveDragState();
+		}
+		else
+		{
+			ClearActiveDragState();
+		}
+
+		return false;
+	}
+
+	OwningPlayerController->ServerRPCMoveInventoryItem(
 		InventoryOperation->GetItemInstanceId(),
 		ContainerId,
 		GridX,
@@ -157,19 +194,7 @@ bool USMInventoryGridWidget::NativeOnDrop(
 		ClearActiveDragState();
 	}
 
-	if (bMoveSucceeded)
-	{
-		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
-		{
-			OwningPanel->RefreshPanel();
-		}
-		else
-		{
-			RefreshGrid();
-		}
-	}
-
-	return bMoveSucceeded;
+	return true;
 }
 
 void USMInventoryGridWidget::InitializeGridWidget(const FGuid& InContainerId,

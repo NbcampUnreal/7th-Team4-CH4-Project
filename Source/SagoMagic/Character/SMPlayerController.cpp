@@ -80,13 +80,13 @@ void ASMPlayerController::ServerRPCMoveInventoryItem_Implementation(
 	int32 InGridY,
 	ESMGridRotation InRotation)
 {
-	APlayerState* PlayerState = GetPlayerState<APlayerState>();
-	if (PlayerState == nullptr)
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr)
 	{
 		return;
 	}
 
-	USMInventoryComponent* InventoryComponent = PlayerState->FindComponentByClass<USMInventoryComponent>();
+	USMInventoryComponent* InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
 	if (InventoryComponent == nullptr)
 	{
 		return;
@@ -97,13 +97,13 @@ void ASMPlayerController::ServerRPCMoveInventoryItem_Implementation(
 
 void ASMPlayerController::ServerRPCDropInventoryItem_Implementation(const FGuid& InItemInstanceId)
 {
-	APlayerState* PlayerState = GetPlayerState<APlayerState>();
-	if (PlayerState == nullptr)
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr)
 	{
 		return;
 	}
 
-	USMInventoryComponent* InventoryComponent = PlayerState->FindComponentByClass<USMInventoryComponent>();
+	USMInventoryComponent* InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
 	if (InventoryComponent == nullptr)
 	{
 		return;
@@ -124,13 +124,13 @@ void ASMPlayerController::ServerRPCDropInventoryItem_Implementation(const FGuid&
 
 void ASMPlayerController::ServerRPCRemoveInventoryItem_Implementation(const FGuid& InItemInstanceId)
 {
-	APlayerState* PlayerState = GetPlayerState<APlayerState>();
-	if (PlayerState == nullptr)
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr)
 	{
 		return;
 	}
 
-	USMInventoryComponent* InventoryComponent = PlayerState->FindComponentByClass<USMInventoryComponent>();
+	USMInventoryComponent* InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
 	if (InventoryComponent == nullptr)
 	{
 		return;
@@ -141,13 +141,13 @@ void ASMPlayerController::ServerRPCRemoveInventoryItem_Implementation(const FGui
 
 void ASMPlayerController::ServerRPCDetachEmbeddedItem_Implementation(const FGuid& InItemInstanceId)
 {
-	APlayerState* PlayerState = GetPlayerState<APlayerState>();
-	if (PlayerState == nullptr)
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr)
 	{
 		return;
 	}
 
-	USMInventoryComponent* InventoryComponent = PlayerState->FindComponentByClass<USMInventoryComponent>();
+	USMInventoryComponent* InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
 	if (InventoryComponent == nullptr)
 	{
 		return;
@@ -198,13 +198,13 @@ void ASMPlayerController::ShowLobbyWidget()
 
 void ASMPlayerController::InitializeInventoryWidget()
 {
-	APlayerState* PlayerState = GetPlayerState<APlayerState>();
-	if (PlayerState == nullptr)
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr)
 	{
 		return;
 	}
 
-	USMInventoryComponent* InventoryComponent = PlayerState->FindComponentByClass<USMInventoryComponent>();
+	USMInventoryComponent* InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
 	if (InventoryComponent == nullptr)
 	{
 		return;
@@ -240,11 +240,11 @@ void ASMPlayerController::ShowInventoryWidget()
 		return;
 	}
 
-	APlayerState* PlayerState = GetPlayerState<APlayerState>();
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
 	USMInventoryComponent* InventoryComponent = nullptr;
-	if (PlayerState != nullptr)
+	if (OwningPlayerState != nullptr)
 	{
-		InventoryComponent = PlayerState->FindComponentByClass<USMInventoryComponent>();
+		InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
 	}
 
 	if (InventoryComponent != nullptr)

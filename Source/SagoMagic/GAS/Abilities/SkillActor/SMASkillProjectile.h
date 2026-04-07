@@ -1,14 +1,14 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "GameplayEffectTypes.h"
 #include "SMASkillProjectile.generated.h"
 
 class USphereComponent;
 class UProjectileMovementComponent;
 class UNiagaraComponent;
 class UNiagaraSystem;
-class UGameplayEffect;
 
 UCLASS()
 class SAGOMAGIC_API ASMASkillProjectile : public AActor
@@ -18,7 +18,9 @@ class SAGOMAGIC_API ASMASkillProjectile : public AActor
 public:
     ASMASkillProjectile();
 
-    void InitProjectile(float InDamage, float InRangeCm, const FVector& InDirection, AActor* InInstigatorActor, AController* InController, TSubclassOf<UGameplayEffect> InDamageEffectClass);
+    // GA에서 미리 만든 GE Spec을 받아 보관, 충돌 시 TargetASC에 직접 적용
+    void InitProjectile(FGameplayEffectSpecHandle InSpecHandle, float InRangeCm,
+        const FVector& InDirection, AActor* InInstigatorActor);
 
 protected:
     virtual void BeginPlay() override;
@@ -41,19 +43,20 @@ protected:
     float ProjectileSpeed = 1000.f;
 
 private:
-
-    float Damage = 0.f;
+    
+    UFUNCTION()
+    void OnProjectileOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+        UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex,
+        bool bFromSweep, const FHitResult& SweepResult);
+    
+    void OnMaxRangeReached();
+    
+    // Spec핸들로 관리
+    FGameplayEffectSpecHandle DamageSpecHandle;
     float RangeCm = 0.f;
     FVector SpawnLocation = FVector::ZeroVector;
-    TSubclassOf<UGameplayEffect> DamageEffectClass;
 
     TWeakObjectPtr<AActor> InstigatorActor;
-    TWeakObjectPtr<AController> InstigatorController;
 
-    UFUNCTION()
-    void OnProjectileOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-    //최대사거리 타이머 핸들러
     FTimerHandle TimerHandleMaxRange;
-    void OnMaxRangeReached();
 };

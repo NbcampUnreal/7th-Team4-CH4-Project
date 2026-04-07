@@ -1,10 +1,13 @@
-﻿#include "SMASkillProjectile.h"
+#include "SMASkillProjectile.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
-#include "GAS/SMAbilitySystemComponent.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "GameplayTags/Character/SMSkillTag.h"
+#include "Character/SMPlayerCharacter.h"
 
 
 ASMASkillProjectile::ASMASkillProjectile()
@@ -19,7 +22,7 @@ ASMASkillProjectile::ASMASkillProjectile()
     CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &ASMASkillProjectile::OnProjectileOverlap);
     SetRootComponent(CollisionComponent);
 
-    //낭라가는 이펙트
+    //날아가는 이펙트
     FlyingEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("FlyingEffect"));
     FlyingEffect->SetupAttachment(CollisionComponent);
     FlyingEffect->SetAutoActivate(true);
@@ -34,15 +37,13 @@ ASMASkillProjectile::ASMASkillProjectile()
     ProjectileMovement->ProjectileGravityScale = 0.f;
 }
 
-void ASMASkillProjectile::InitProjectile(float InDamage, float InRangeCm, const FVector& InDirection, AActor* InInstigatorActor, AController* InController, TSubclassOf<UGameplayEffect> InDamageEffectClass)
+void ASMASkillProjectile::InitProjectile(FGameplayEffectSpecHandle InSpecHandle, float InRangeCm,
+    const FVector& InDirection, AActor* InInstigatorActor)
 {
-    //충돌 시 ApplySkillDamage에 전달 -> GE의 IncomingDamage -> AttributeSet(체력 차감)
-    Damage = InDamage;
+    DamageSpecHandle = InSpecHandle;
     RangeCm = InRangeCm;
     SpawnLocation = GetActorLocation();
     InstigatorActor = InInstigatorActor;
-    InstigatorController = InController;
-    DamageEffectClass = InDamageEffectClass;
 
     //발사방향 -> 커서방향 값
     ProjectileMovement->Velocity = InDirection.GetSafeNormal() * ProjectileSpeed;
@@ -51,18 +52,18 @@ void ASMASkillProjectile::InitProjectile(float InDamage, float InRangeCm, const 
     if (RangeCm > 0.f && ProjectileSpeed > 0.f)
     {
         const float FlightTime = RangeCm / ProjectileSpeed;
-        GetWorldTimerManager().SetTimer(TimerHandleMaxRange, this, &ASMASkillProjectile::OnMaxRangeReached, FlightTime, false);
+        GetWorldTimerManager().SetTimer(TimerHandleMaxRange, this,
+            &ASMASkillProjectile::OnMaxRangeReached, FlightTime, false);
     }
 }
-
 
 void ASMASkillProjectile::BeginPlay()
 {
     Super::BeginPlay();
 }
 
-void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-    UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex,
+void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedComponent,
+    AActor* OtherActor, UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex,
     bool bFromSweep, const FHitResult& SweepResult)
 {
     if (!HasAuthority()) return;
@@ -73,22 +74,28 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
     if (OtherActor == this) return;
     if (OtherActor == InstigatorActor.Get()) return;
 
-    UE_LOG(LogTemp, Warning, TEXT("[Projectile] Overlap: %s, IsPawn: %d, DamageEffectClass: %s"),
-        *OtherActor->GetName(),
-        OtherActor->IsA<APawn>(),
-        DamageEffectClass ? *DamageEffectClass->GetName() : TEXT("NULL"));
+    // 플레이어 캐릭터는 통과
+    if (OtherActor->IsA<ASMPlayerCharacter>()) return;
+
+    // 팀 태그 보유 액터 통과
+    UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor);
+    if (TargetASC && TargetASC->HasMatchingGameplayTag(SMSkillTag::Team)) return;
+
+    UE_LOG(LogTemp, Warning, TEXT("[Projectile] Hit: %s"), *OtherActor->GetName());
 
     //히트 이펙트 재생
     if (HitEffect)
     {
-        UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitEffect, SweepResult.ImpactPoint, SweepResult.ImpactNormal.Rotation());
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitEffect,
+            SweepResult.ImpactPoint, SweepResult.ImpactNormal.Rotation());
     }
 
-    //액터에 닿으면 데미지 주고 사라지게
-    if (OtherActor->IsA<APawn>())
+    // GA에서 미리 만든 Spec을 TargetASC에 직접 적용
+    if (TargetASC && DamageSpecHandle.IsValid())
     {
-        USMAbilitySystemComponent::ApplySkillDamage(OtherActor, Damage, InstigatorActor.Get(), InstigatorController.Get(), DamageEffectClass);
+        TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data.Get());
     }
+
     Destroy();
 }
 
@@ -96,5 +103,3 @@ void ASMASkillProjectile::OnMaxRangeReached()
 {
     Destroy();
 }
-
-

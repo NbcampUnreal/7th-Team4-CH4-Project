@@ -34,7 +34,10 @@ protected:
     void GiveDefaultAbilities();
 
     /** HP가 0이 됐을 때 AttributeSet의 델리게이트로 호출 (서버 전용) **/
-    void HandleDeath();
+    void HandleDeath(AController* KillerController);
+
+    UPROPERTY(EditAnywhere, Category = "Reward")
+    float GoldReward = 10.0f;
 public:
     /** 몬스터가 기본적으로 가질 어빌리티 목록 **/
     UPROPERTY(EditAnywhere, Category = "GAS")

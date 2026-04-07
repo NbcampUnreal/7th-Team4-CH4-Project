@@ -4,6 +4,7 @@
 #include "UI/SMEnemyHPBarComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "../GAS/AttributeSets/SMMonsterAttributeSet.h"
+#include "../GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "../Data/SMMonsterData.h"
 
 ASMMonsterBase::ASMMonsterBase()
@@ -121,18 +122,42 @@ void ASMMonsterBase::GiveDefaultAbilities()
 }
 
 
-void ASMMonsterBase::HandleDeath()
+void ASMMonsterBase::HandleDeath(AController* KillerController)
 {
-    if (MonsterAttributeSet)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[MonsterHP] %s / HP: %.1f"),
-            *GetName(),
-            MonsterAttributeSet->GetHealth());
-    }
+   
     // 이미 죽었거나 유효하지 않으면 무시
-    if (!IsValid(this) || !HasAuthority())
+    if (!IsValid(this) || !HasAuthority()) return;
+
+
+    // 막타 친 플레이어에게 골드 지급
+    if (KillerController)
     {
-        return;
+        if (APawn* KillerPawn = KillerController->GetPawn())
+        {
+            if (IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(KillerPawn))
+            {
+                UAbilitySystemComponent* ASC = ASCInterface->GetAbilitySystemComponent();
+                if (ASC)
+                {
+                    const USMPlayerAttributeSet* PlayerAttr =
+                        ASC->GetSet<USMPlayerAttributeSet>();
+                    if (PlayerAttr)
+                    {
+                        USMPlayerAttributeSet* MutableAttr =
+                            const_cast<USMPlayerAttributeSet*>(PlayerAttr);
+                        float NewGold = FMath::Clamp(
+                            MutableAttr->GetGold() + GoldReward,
+                            0.0f,
+                            MutableAttr->GetMaxGold()
+                        );
+                        MutableAttr->SetGold(NewGold);
+
+                        UE_LOG(LogTemp, Log, TEXT("[Gold] %s에게 %.0f Gold 지급 (총 %.0f)"),
+                            *KillerController->GetName(), GoldReward, NewGold);
+                    }
+                }
+            }
+        }
     }
 
     //UE_LOG(LogTemp, Warning, TEXT("[Monster] %s 사망. 3초 후 제거됩니다."), *GetName());

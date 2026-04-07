@@ -30,4 +30,11 @@ protected:
 
 	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="HUD")
 	TObjectPtr<USMPlayerStatusWidget> WBP_PlayerStatus;
+	
+private:
+	/** ASC를 안전하게 가져오기 위해 재시도 */
+	void TryInitASC();
+	
+	/** 재시도 타이머를 관리할 타이머 핸들 */
+	FTimerHandle ASC_InitTimerHandle;
 };

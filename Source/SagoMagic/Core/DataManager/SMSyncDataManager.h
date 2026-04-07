@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Data/SMMonsterData.h"
 #include "Data/SMWaveData.h"
+#include "Data/SMSkillData.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "SMSyncDataManager.generated.h"
 
@@ -36,6 +37,10 @@ public:
 	/** Wave 데이터 조회 - WaveLevel 키 */
 	UFUNCTION(BlueprintCallable, Category = "Data")
 	FSMWaveData GetWaveData(int32 WaveLevel) const;
+	
+	/** Skill 데이터 조회 - SkillTag 키 */
+	UFUNCTION(BlueprintCallable, Category = "Data")
+	FSMSkillData GetSkillData(FGameplayTag SkillTag) const;
 
 public:
  	template<typename RowType, typename KeyType>
@@ -50,10 +55,15 @@ private:
 	UPROPERTY()
 	TMap<EMonsterType, FSMMonsterData> MonsterCache;
 	
+	UPROPERTY()
+	TMap<FGameplayTag, FSMSkillData> SkillCache;
+	
 	/** Monster DT 실제 경로 */
 	FString MonsterDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/MonsterData/DT_Monster.DT_Monster");
 	/** Wave DT 실제 경로 */
 	FString WaveDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/WaveData/DT_Wave.DT_Wave");
+	/** Skill DT 실제 경로 */
+	FString SkillDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/Skill_GemData/DT_Skill.DT_Skill");
 };
 
 template <typename RowType, typename KeyType>

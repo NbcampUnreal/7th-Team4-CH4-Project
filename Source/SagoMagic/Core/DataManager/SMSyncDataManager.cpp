@@ -1,5 +1,7 @@
 #include "SMSyncDataManager.h"
 
+#include "GameplayTags/Character/SMSkillTag.h"
+
 bool USMSyncDataManager::ShouldCreateSubsystem(UObject* Outer) const
 {
 	UWorld* World = Cast<UWorld>(Outer);
@@ -23,6 +25,12 @@ void USMSyncDataManager::Initialize(FSubsystemCollectionBase& Collection)
 	WaveCache,
 	[](const FSMWaveData* Row) {return Row->WaveLevel;}
 	);
+	
+	LoadAndCacheTable<FSMSkillData, FGameplayTag>(
+		*SkillDataTablePath,
+		SkillCache,
+		[](const FSMSkillData* Row){return Row->SkillTag;}
+		);
 	
 }
 
@@ -53,6 +61,17 @@ FSMWaveData USMSyncDataManager::GetWaveData(int32 WaveLevel) const
 	{
 		UE_LOG(LogTemp, Error, TEXT("[SMSyncDataManager] WaveLevel %d 없음"),(int32)WaveLevel);
 		return FSMWaveData();
+	}
+	return *Found;
+}
+
+FSMSkillData USMSyncDataManager::GetSkillData(FGameplayTag SkillTag) const
+{
+	const FSMSkillData* Found = SkillCache.Find(SkillTag);
+	if (!Found)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[SMSyncDataManager] SkillTag %s 없음"),*SkillTag.ToString());
+		return FSMSkillData();
 	}
 	return *Found;
 }

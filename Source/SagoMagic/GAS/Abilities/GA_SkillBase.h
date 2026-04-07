@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "GameplayEffectTypes.h"
 #include "Abilities/GameplayAbility.h"
 #include "Engine/DataTable.h"
 #include "GA_SkillBase.generated.h"
@@ -45,6 +46,12 @@ public:
 protected:
 	//스킬효과 서버
 	virtual void OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo){}
+	
+	// 마우스 정보
+	void ExtractAimData(const FGameplayAbilityActorInfo* ActorInfo);
+	
+	//OnSkillEffect 내에서 호출. 유효하지 않으면 Invalid Handle 반환.
+	FGameplayEffectSpecHandle MakeDamageSpec(const FGameplayAbilityActorInfo* ActorInfo) const;
 
 	/** 쿨다운중 쿨다운 재발동 차단용 ex) Cooldown.Skill.Projectile */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
@@ -64,9 +71,6 @@ protected:
 
 	FVector CurrentAimOrigin = FVector::ZeroVector;
 	FVector CurrentAimDirection = FVector::ForwardVector;
-
-	// 마우스 정보
-	void ExtractAimData(const FGameplayAbilityActorInfo* ActorInfo);
 
 private:
 	// DT에서 스킬 수치 로드 ActivateAbility 시작 시 호출

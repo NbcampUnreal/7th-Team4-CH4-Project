@@ -39,9 +39,9 @@ private:
 	
 protected:
 	UPROPERTY(meta=(BindWidget))
-	UProgressBar* ProgressBar_PlayerHP;
+	TObjectPtr<class UProgressBar> ProgressBar_PlayerHP;
 	UPROPERTY(meta=(BindWidget))
-	UTextBlock* TextBlock_PlayerHP;
+	TObjectPtr<class UTextBlock> TextBlock_PlayerHP;
 	UPROPERTY(EditAnywhere, Category = "UI Settings")
 	float InterpSpeed = 15.0f;
 	

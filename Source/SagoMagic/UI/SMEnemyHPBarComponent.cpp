@@ -1,6 +1,8 @@
 ﻿#include "SMEnemyHPBarComponent.h"
 #include "UI/SMEnemyHPBarWidget.h"
+#include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"
+#include "TimerManager.h"
 #include "GAS/AttributeSets/SMMonsterAttributeSet.h"
 
 
@@ -16,8 +18,34 @@ void USMEnemyHPBarComponent::BeginPlay()
     Super::BeginPlay();
     
     SetVisibility(false);
+    TryInitASC();
 }
 
+void USMEnemyHPBarComponent::TryInitASC()
+{
+    if (AActor* OwnerActor = GetOwner())
+    {
+        // ASC 가지고 있는지 인터페이스로 확인
+        if (IAbilitySystemInterface* ASI = Cast<IAbilitySystemInterface>(OwnerActor))
+        {
+            if (UAbilitySystemComponent* OwnerASC = ASI->GetAbilitySystemComponent())
+            {
+                if (GetUserWidgetObject())
+                {
+                    InitializeHPBar(OwnerASC);
+                    GetWorld()->GetTimerManager().ClearTimer(ASC_InitTimerHandle);
+ 
+                    return;
+                }
+            }
+        }
+    }
+    if (GetWorld())
+    {
+        GetWorld()->GetTimerManager().SetTimer(
+            ASC_InitTimerHandle, this, &USMEnemyHPBarComponent::TryInitASC, 0.1f, false);
+    }
+}
 
 void USMEnemyHPBarComponent::InitializeHPBar(UAbilitySystemComponent* InASC)
 {
@@ -53,19 +81,21 @@ void USMEnemyHPBarComponent::OnHPChanged(const FOnAttributeChangeData& Data)
 {
     SetVisibility(true);
     
-    USMEnemyHPBarWidget* HPWidget = Cast<USMEnemyHPBarWidget>(GetUserWidgetObject());
-    if (HPWidget && ASC)
+    if (USMEnemyHPBarWidget* HPWidget = Cast<USMEnemyHPBarWidget>(GetUserWidgetObject()))
     {
-        float CurrentHP = Data.NewValue;
-        float MaxHealth = ASC->GetNumericAttribute(USMMonsterAttributeSet::GetMaxHealthAttribute());
-        float HPPercent = (MaxHealth > 0.0f) ? (CurrentHP / MaxHealth) : 0.0f;
+        if (ASC)
+        {
+            float CurrentHP = Data.NewValue;
+            float MaxHealth = ASC->GetNumericAttribute(USMMonsterAttributeSet::GetMaxHealthAttribute());
+            float HPPercent = (MaxHealth > 0.0f) ? (CurrentHP / MaxHealth) : 0.0f;
         
-        HPWidget->UpdateHPBar(HPPercent);
-    }
-    if (GetWorld())
-    {
-        GetWorld()->GetTimerManager().SetTimer(HideTimerHandle, this, &USMEnemyHPBarComponent::HideHPBar,
-            DisplayDuration, false);
+            HPWidget->UpdateHPBar(HPPercent);
+        }
+        if (GetWorld())
+        {
+            GetWorld()->GetTimerManager().SetTimer(HideTimerHandle, this, &USMEnemyHPBarComponent::HideHPBar,
+                DisplayDuration, false);
+        }
     }
 }
 
@@ -87,6 +117,7 @@ void USMEnemyHPBarComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
     if (GetWorld())
     {
         GetWorld()->GetTimerManager().ClearTimer(HideTimerHandle);
+        GetWorld()->GetTimerManager().ClearTimer(ASC_InitTimerHandle);
     }
     
     Super::EndPlay(EndPlayReason);

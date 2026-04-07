@@ -23,10 +23,10 @@ void USMPlayerHPBarWidget::InitializeWithASC(UAbilitySystemComponent* InASC)
 	BoundASC = InASC;
 	
 	// GAS Attribute 변경 시 호출될 델리게이트 연결
-	HealthChangedHandle = BoundASC->GetGameplayAttributeValueChangeDelegate(USMPlayerAttributeSet::GetHealthAttribute())
-	.AddUObject(this, &USMPlayerHPBarWidget::OnHealthChanged);
-	MaxHealthChangedHandle = BoundASC->GetGameplayAttributeValueChangeDelegate(USMPlayerAttributeSet::GetMaxHealthAttribute())
-	.AddUObject(this, &USMPlayerHPBarWidget::OnMaxHealthChanged);
+	HealthChangedHandle = BoundASC->GetGameplayAttributeValueChangeDelegate(
+		USMPlayerAttributeSet::GetHealthAttribute()).AddUObject(this, &USMPlayerHPBarWidget::OnHealthChanged);
+	MaxHealthChangedHandle = BoundASC->GetGameplayAttributeValueChangeDelegate(
+		USMPlayerAttributeSet::GetMaxHealthAttribute()).AddUObject(this, &USMPlayerHPBarWidget::OnMaxHealthChanged);
 			
 	// 초기값 캐싱
 	CachedMaxHP = BoundASC->GetNumericAttribute(USMPlayerAttributeSet::GetMaxHealthAttribute());
@@ -47,10 +47,10 @@ void USMPlayerHPBarWidget::UnbindASC()
 {
 	if (!BoundASC) return;
 
-	BoundASC->GetGameplayAttributeValueChangeDelegate(USMPlayerAttributeSet::GetHealthAttribute())
-	.Remove(HealthChangedHandle);
-	BoundASC->GetGameplayAttributeValueChangeDelegate(USMPlayerAttributeSet::GetMaxHealthAttribute())
-	.Remove(MaxHealthChangedHandle);
+	BoundASC->GetGameplayAttributeValueChangeDelegate(
+		USMPlayerAttributeSet::GetHealthAttribute()).Remove(HealthChangedHandle);
+	BoundASC->GetGameplayAttributeValueChangeDelegate(
+		USMPlayerAttributeSet::GetMaxHealthAttribute()).Remove(MaxHealthChangedHandle);
 
 	BoundASC = nullptr;
 }

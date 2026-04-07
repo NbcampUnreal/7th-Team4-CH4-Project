@@ -4,10 +4,15 @@
 #include "SMPlayerController.h"
 #include "Core/SMPlayerState.h"
 #include "Core/SessionSubsystem/SMLobbyGameMode.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "Engine/LocalPlayer.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "GameFramework/Pawn.h"
+#include "InputAction.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/Inventory/SMInventoryRootWidget.h"
+#include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 #include "UI/SessionUI/SMLobbyWidget.h"
 
 void ASMPlayerController::BeginPlay()
@@ -28,6 +33,8 @@ void ASMPlayerController::BeginPlay()
 	//네트워크 관련 initialize
 	if (IsLocalController() == false) return;
 
+	ApplyControllerMappingContext();
+
 	UWorld* World = GetWorld();
 	if (IsValid(World) == false) return;
 
@@ -39,12 +46,76 @@ void ASMPlayerController::BeginPlay()
 	}
 }
 
+void ASMPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	if (IsLocalPlayerController() == false)
+	{
+		return;
+	}
+
+	ApplyControllerMappingContext();
+
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent))
+	{
+		if (ToggleInventoryAction != nullptr)
+		{
+			EnhancedInputComponent->BindAction(
+				ToggleInventoryAction,
+				ETriggerEvent::Started,
+				this,
+				&ThisClass::ToggleInventory);
+		}
+
+		if (RotateInventoryItemAction != nullptr)
+		{
+			EnhancedInputComponent->BindAction(
+				RotateInventoryItemAction,
+				ETriggerEvent::Started,
+				this,
+				&ThisClass::RotateDraggedInventoryItem);
+		}
+	}
+}
+
+void ASMPlayerController::ApplyControllerMappingContext()
+{
+	if (IsLocalPlayerController() == false)
+	{
+		return;
+	}
+
+	ULocalPlayer* LocalPlayer = GetLocalPlayer();
+	if (LocalPlayer == nullptr)
+	{
+		return;
+	}
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer);
+	if (Subsystem == nullptr)
+	{
+		return;
+	}
+
+	if (ControllerMappingContext == nullptr)
+	{
+		return;
+	}
+
+	Subsystem->RemoveMappingContext(ControllerMappingContext);
+	Subsystem->AddMappingContext(ControllerMappingContext, 0);
+}
+
 void ASMPlayerController::ClientRPCArrivedAtGameLevel_Implementation()
 {
 	//입력 모드 전환 (기존 OnArrivedAtGameLevel 로직)
 	FInputModeGameAndUI InputMode;
 	SetInputMode(InputMode);
 	SetShowMouseCursor(true);
+
+	ApplyControllerMappingContext();
 	
 	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
 	if (!PS) return;
@@ -177,6 +248,27 @@ void ASMPlayerController::ToggleInventory()
 	}
 
 	ShowInventoryWidget();
+}
+
+void ASMPlayerController::RotateDraggedInventoryItem()
+{
+	if (IsLocalController() == false)
+	{
+		return;
+	}
+
+	if (bIsInventoryVisible == false || InventoryRootWidgetInstance == nullptr)
+	{
+		return;
+	}
+
+	USMPlayerInventoryPanelWidget* CurrentPanelWidget = InventoryRootWidgetInstance->GetCurrentPanelWidget();
+	if (CurrentPanelWidget == nullptr)
+	{
+		return;
+	}
+
+	CurrentPanelWidget->RequestRotateCurrentDraggedItem();
 }
 
 void ASMPlayerController::ShowLobbyWidget()

@@ -11,6 +11,8 @@ class USMSessionSubsystem;
 class USMTitleWidget;
 class USMLobbyWidget;
 class USMInventoryRootWidget;
+class UInputAction;
+class UInputMappingContext;
 /**
  * UI 조작 및 캐릭터에 빙의 후 조작할 컨트롤러
  * Controller는 항상 하나의 클라이언트와 서버만 갖고 있다.
@@ -22,6 +24,7 @@ class SAGOMAGIC_API ASMPlayerController : public APlayerController
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void SetupInputComponent() override;
 	
 	//================================
 	// 네트워크 이동 기능
@@ -69,6 +72,24 @@ public:
 	void ToggleInventory();
 	
 private:
+	/** 컨트롤러 입력 매핑 컨텍스트 적용 */
+	void ApplyControllerMappingContext();
+
+	/** 현재 드래그 중인 인벤토리 아이템 회전 */
+	void RotateDraggedInventoryItem();
+
+	/** 컨트롤러 전용 입력 매핑 컨텍스트 */
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	TObjectPtr<UInputMappingContext> ControllerMappingContext;
+
+	/** 인벤토리 토글 입력 액션 */
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	TObjectPtr<UInputAction> ToggleInventoryAction;
+
+	/** 인벤토리 드래그 회전 입력 액션 */
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	TObjectPtr<UInputAction> RotateInventoryItemAction;
+
 	UPROPERTY(EditDefaultsOnly,Category = "UI")
 	TSubclassOf<USMLobbyWidget> LobbyWidgetClass;
 

@@ -71,6 +71,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category="UI|Inventory")
 	void ToggleInventory();
 	
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_ShowDeathUI();
+	
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_HideDeathUI();
+	
 private:
 	/** 컨트롤러 입력 매핑 컨텍스트 적용 */
 	void ApplyControllerMappingContext();

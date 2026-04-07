@@ -145,7 +145,7 @@ void ASMPlayerCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// 로컬만 틱에서 실행
-	if (IsLocallyControlled() && Controller)
+	if (!bIsDead && IsLocallyControlled() && Controller)
 	{
 		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 		{
@@ -288,6 +288,14 @@ void ASMPlayerCharacter::HandleDeath()
 	{
 		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 		{
+			// TODO: PC에서 사망 시 UI 띄우게 하기 
+			PC->ClientRPC_ShowDeathUI();
+			
+			if (ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>())
+			{
+				// TODO: GM에게 사망시 처리 함수 호출하게 하기
+				// GM->OnPlayerDied(PC)
+			}
 			
 			PC->UnPossess();
 		}

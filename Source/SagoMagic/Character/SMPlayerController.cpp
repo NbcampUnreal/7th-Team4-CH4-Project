@@ -2,6 +2,8 @@
 
 
 #include "SMPlayerController.h"
+
+#include "SagoMagic.h"
 #include "Core/SMPlayerState.h"
 #include "Core/SessionSubsystem/SMLobbyGameMode.h"
 #include "EnhancedInputComponent.h"
@@ -44,6 +46,24 @@ void ASMPlayerController::BeginPlay()
 	{
 		ShowLobbyWidget();
 	}
+}
+
+void ASMPlayerController::ClientRPC_ShowDeathUI_Implementation()
+{
+	
+	// TODO: 현님이 UI완성하면 호출
+	SetInputMode(FInputModeGameAndUI());
+	
+	SM_LOG(this, LogSM, Log, TEXT("사망 UI"));
+}
+
+void ASMPlayerController::ClientRPC_HideDeathUI_Implementation()
+{
+	
+	// TODO: 현님이 UI완성하면 호출
+	SetInputMode(FInputModeGameOnly());
+	
+	SM_LOG(this, LogSM, Log, TEXT("부활시 사망 UI 숨김"));
 }
 
 void ASMPlayerController::SetupInputComponent()

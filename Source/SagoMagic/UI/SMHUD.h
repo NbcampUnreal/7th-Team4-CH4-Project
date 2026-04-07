@@ -5,10 +5,15 @@
 #include "SMHUD.generated.h"
 
 
+class USMHUDManager;
+
 UCLASS()
 class SAGOMAGIC_API ASMHUD : public AHUD
 {
 	GENERATED_BODY()
+	
+public:
+	USMHUDManager* GetHUDManager() const;
 	
 protected:
 	virtual void BeginPlay() override;

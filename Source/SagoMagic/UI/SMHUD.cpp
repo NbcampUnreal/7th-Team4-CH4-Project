@@ -2,6 +2,11 @@
 #include "Blueprint/UserWidget.h"
 #include "UI/SMHUDManager.h"
 
+USMHUDManager* ASMHUD::GetHUDManager() const
+{
+	return HUDManager;
+}
+
 void ASMHUD::BeginPlay()
 {
 	Super::BeginPlay();

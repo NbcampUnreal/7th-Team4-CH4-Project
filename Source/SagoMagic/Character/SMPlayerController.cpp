@@ -4,7 +4,9 @@
 #include "SMPlayerController.h"
 #include "Core/SMPlayerState.h"
 #include "Core/SessionSubsystem/SMLobbyGameMode.h"
+#include "Inventory/Components/SMInventoryComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "UI/Inventory/SMInventoryRootWidget.h"
 #include "UI/SessionUI/SMLobbyWidget.h"
 
 void ASMPlayerController::BeginPlay()
@@ -70,6 +72,29 @@ void ASMPlayerController::ServerRPCRequestStartGame_Implementation()
 	GM->TryStartGame();
 }
 
+void ASMPlayerController::ToggleInventory()
+{
+	if (IsLocalController() == false)
+	{
+		return;
+	}
+
+	InitializeInventoryWidget();
+
+	if (InventoryRootWidgetInstance == nullptr)
+	{
+		return;
+	}
+
+	if (bIsInventoryVisible)
+	{
+		HideInventoryWidget();
+		return;
+	}
+
+	ShowInventoryWidget();
+}
+
 void ASMPlayerController::ShowLobbyWidget()
 {
 	if (IsValid(LobbyWidgetClass) == false) return;
@@ -85,4 +110,97 @@ void ASMPlayerController::ShowLobbyWidget()
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	SetInputMode(InputMode);
 	SetShowMouseCursor(true);
+}
+
+void ASMPlayerController::InitializeInventoryWidget()
+{
+	APlayerState* PlayerState = GetPlayerState<APlayerState>();
+	if (PlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = PlayerState->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	if (InventoryRootWidgetInstance == nullptr)
+	{
+		if (InventoryRootWidgetClass == nullptr)
+		{
+			return;
+		}
+
+		InventoryRootWidgetInstance = CreateWidget<USMInventoryRootWidget>(this, InventoryRootWidgetClass);
+		if (InventoryRootWidgetInstance == nullptr)
+		{
+			return;
+		}
+
+		InventoryRootWidgetInstance->AddToViewport();
+		InventoryRootWidgetInstance->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	if (InventoryRootWidgetInstance->GetInventoryComponent() != InventoryComponent)
+	{
+		InventoryRootWidgetInstance->InitializeRootWidget(InventoryComponent);
+	}
+}
+
+void ASMPlayerController::ShowInventoryWidget()
+{
+	if (InventoryRootWidgetInstance == nullptr)
+	{
+		return;
+	}
+
+	APlayerState* PlayerState = GetPlayerState<APlayerState>();
+	USMInventoryComponent* InventoryComponent = nullptr;
+	if (PlayerState != nullptr)
+	{
+		InventoryComponent = PlayerState->FindComponentByClass<USMInventoryComponent>();
+	}
+
+	if (InventoryComponent != nullptr)
+	{
+		if (InventoryRootWidgetInstance->GetInventoryComponent() != InventoryComponent)
+		{
+			InventoryRootWidgetInstance->InitializeRootWidget(InventoryComponent);
+		}
+		else
+		{
+			InventoryRootWidgetInstance->RefreshRootWidget();
+		}
+	}
+
+	InventoryRootWidgetInstance->SetVisibility(ESlateVisibility::Visible);
+
+	FInputModeGameAndUI InputMode;
+	InputMode.SetWidgetToFocus(InventoryRootWidgetInstance->TakeWidget());
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
+	SetShowMouseCursor(true);
+
+	bIsInventoryVisible = true;
+}
+
+void ASMPlayerController::HideInventoryWidget()
+{
+	if (InventoryRootWidgetInstance == nullptr)
+	{
+		return;
+	}
+
+	InventoryRootWidgetInstance->SetVisibility(ESlateVisibility::Collapsed);
+
+	FInputModeGameAndUI InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
+	SetShowMouseCursor(true);
+
+	bIsInventoryVisible = false;
 }

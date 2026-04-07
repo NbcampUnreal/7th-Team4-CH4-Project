@@ -90,6 +90,11 @@ USMPlayerAttributeSet* ASMPlayerCharacter::GetAttributeSet() const
 	return nullptr;
 }
 
+UStaticMeshComponent* ASMPlayerCharacter::GetStaticMeshComponent() const
+{
+	return WeaponMesh;
+}
+
 void ASMPlayerCharacter::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
@@ -294,10 +299,10 @@ void ASMPlayerCharacter::HandleDeath()
 			if (ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>())
 			{
 				// TODO: GM에게 사망시 처리 함수 호출하게 하기
-				// GM->OnPlayerDied(PC)
+				GM->OnPlayerDead(PC);
 			}
 			
-			PC->UnPossess();
+			
 		}
 		
 		// TODO: DeathLifeSpan후 시체 처리(부활 타이머랑 타이밍 논의 필요)

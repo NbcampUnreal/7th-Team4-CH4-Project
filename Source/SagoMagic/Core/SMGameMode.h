@@ -59,9 +59,9 @@ private:
 	
 private:
 	// 관전모드 진입
-	void EnterSpectatorMode(ASMPlayerController* InPlayerController);
+	void EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController);
 	
 	// 리스폰
-	void RespawnPlayer(ASMPlayerController* InPlayerController);
+	void RespawnPlayer(TWeakObjectPtr<ASMPlayerController> InPlayerController);
 	
 };

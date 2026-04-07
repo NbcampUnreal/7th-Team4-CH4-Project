@@ -72,6 +72,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Attributes")
 	USMPlayerAttributeSet* GetAttributeSet() const;
 	
+	// UFUNCTION(BlueprintCallable, Category = "Weapon")
+	// UStaticMeshComponent* GetStaticMeshComponent() const;
+	
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	USMInteractionScannerComponent* GetInteractionScanner() const { return InteractionScannerComp; }
 

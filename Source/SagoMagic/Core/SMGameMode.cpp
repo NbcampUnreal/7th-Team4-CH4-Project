@@ -52,21 +52,23 @@ void ASMGameMode::OnPlayerDead(ASMPlayerController* InPlayerController)
 {
 	if (!InPlayerController) return;
 	
-	SM_LOG(this, LogSM, Error, TEXT("[GameMode] 플레이어 사망. 관전모드 및 부활 타이머 시작"))
+	SM_LOG(this, LogSM, Error, TEXT("[GameMode] 플레이어 사망. 관전모드 및 부활 타이머 시작"));
+	
+	TWeakObjectPtr<ASMPlayerController> WeakPC = InPlayerController;
 	
 	FTimerHandle SpectatorTimerHandle;
 	FTimerDelegate SpectatorDelegate = 
-		FTimerDelegate::CreateUObject(this, &ThisClass::EnterSpectatorMode, InPlayerController);
+		FTimerDelegate::CreateUObject(this, &ThisClass::EnterSpectatorMode, WeakPC);
 	GetWorldTimerManager().SetTimer(SpectatorTimerHandle, SpectatorDelegate, SpectatorTime, false);
 	
 	FTimerHandle RespawnTimerHandle;
-	FTimerDelegate RespawnDelegate = FTimerDelegate::CreateUObject(this, &ThisClass::RespawnPlayer, InPlayerController);
+	FTimerDelegate RespawnDelegate = FTimerDelegate::CreateUObject(this, &ThisClass::RespawnPlayer, WeakPC);
 	GetWorldTimerManager().SetTimer(RespawnTimerHandle, RespawnDelegate, RespawnTime, false);
 }
 
-void ASMGameMode::EnterSpectatorMode(ASMPlayerController* InPlayerController)
+void ASMGameMode::EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController)
 {
-	if (!InPlayerController) return;
+	if (!InPlayerController.IsValid()) return;
 	
 	InPlayerController->UnPossess();
 	
@@ -77,9 +79,11 @@ void ASMGameMode::EnterSpectatorMode(ASMPlayerController* InPlayerController)
 	SM_LOG(this, LogSM, Error, TEXT("[GameMode] %f초 뒤 관전 모드 진입"), SpectatorTime);
 }
 
-void ASMGameMode::RespawnPlayer(ASMPlayerController* InPlayerController)
+void ASMGameMode::RespawnPlayer(TWeakObjectPtr<ASMPlayerController> InPlayerController)
 {
-	if (!InPlayerController) return;
+	if (!InPlayerController.IsValid()) return;
+	
+	ASMPlayerController* PC = InPlayerController.Get();
 	
 	if (ASMPlayerState* PS = InPlayerController->GetPlayerState<ASMPlayerState>())
 	{
@@ -87,8 +91,8 @@ void ASMGameMode::RespawnPlayer(ASMPlayerController* InPlayerController)
 	}
 	
 	// 스폰 포인트 지정 후 리스폰
-	AActor* SpawnPoint = ChoosePlayerStart(InPlayerController);
-	RestartPlayerAtPlayerStart(InPlayerController, SpawnPoint);
+	AActor* SpawnPoint = ChoosePlayerStart(PC);
+	RestartPlayerAtPlayerStart(PC, SpawnPoint);
 	
 	InPlayerController->ClientRPC_HideDeathUI();
 	

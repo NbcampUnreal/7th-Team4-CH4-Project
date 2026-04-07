@@ -90,10 +90,10 @@ USMPlayerAttributeSet* ASMPlayerCharacter::GetAttributeSet() const
 	return nullptr;
 }
 
-UStaticMeshComponent* ASMPlayerCharacter::GetStaticMeshComponent() const
-{
-	return WeaponMesh;
-}
+// UStaticMeshComponent* ASMPlayerCharacter::GetStaticMeshComponent() const
+// {
+// 	return WeaponMesh;
+// }
 
 void ASMPlayerCharacter::OnConstruction(const FTransform& Transform)
 {
@@ -209,6 +209,9 @@ void ASMPlayerCharacter::InitializeAbilitySystem()
 	{
 		// Owner는 PlayerState
 		SMAbilitySystemComponent->InitAbilityActorInfo(PS, this);
+		
+		SMAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+			AttributeSet->GetHealthAttribute()).RemoveAll(this);
 		
 		// SMASC로부터 플레이어의 체력변화 구독
 		SMAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(

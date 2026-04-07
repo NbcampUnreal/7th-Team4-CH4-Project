@@ -7,13 +7,6 @@
 class ASMPlayerController;
 class USMStateMachine;
 
-//TODO List
-// L_Play에서 GameMode 세팅
-// PlayerSTate에 있는 이름값
-// Player1, Player2 찍히는지 확인
-// bUseSeamlessTravel = true;
-// void ASMGameMode::HandleSeamlessTravelPlayer(AController*& C)
-
 /**
  * 서버 전용 - 플레이어 관리 + StateMachine 소유
 */

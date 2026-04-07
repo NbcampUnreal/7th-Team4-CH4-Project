@@ -13,12 +13,13 @@ UGA_LineTrace::UGA_LineTrace()
 
 void UGA_LineTrace::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 {
-	UE_LOG(LogTemp, Warning, TEXT("[LineTrace] Skill effect is active"));
+	//UE_LOG(LogTemp, Warning, TEXT("[LineTrace] Skill effect is active"));
 	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
 
 	if (IsValid(Avatar) == false || Avatar->HasAuthority() == false)
 	{
 		//클라이언트 -> 코스메틱 처리 후 종료
+		//TODO: 이펙트 연결
 		EndAbility(
 			GetCurrentAbilitySpecHandle(),
 			GetCurrentActorInfo(),
@@ -90,7 +91,7 @@ void UGA_LineTrace::ApplyDamageToActor(AActor* HitActor)
 	}
 
 	// Damage Effect 적용
-	UE_LOG(LogTemp, Warning, TEXT("[LineTrace] Apply damage to %s, %s"),*HitActor->GetName(), *TargetASC->GetName());
+	//UE_LOG(LogTemp, Warning, TEXT("[LineTrace] Apply damage to %s, %s"),*HitActor->GetName(), *TargetASC->GetName());
 	FGameplayEffectContextHandle EffectContext = GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
 	EffectContext.AddSourceObject(GetAvatarActorFromActorInfo());
 
@@ -151,7 +152,7 @@ bool UGA_LineTrace::HasAnyTeamTag(AActor* Actor) const
 
 void UGA_LineTrace::ApplyDamageTick()
 {
-	UE_LOG(LogTemp, Warning, TEXT("[LineTrace] Apply tick damage"));
+	//UE_LOG(LogTemp, Warning, TEXT("[LineTrace] Apply tick damage"));
 	const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
 	if (!ActorInfo) return;
 
@@ -180,21 +181,14 @@ void UGA_LineTrace::ApplyDamageTick()
 
 	if (bHit)
 	{
-		UE_LOG(LogTemp, Warning,
-		       TEXT("[LineTrace] HitActor: %s | ImpactPoint: %s | Distance: %.1f | BoneName: %s"),
-		       *OutHit.GetActor()->GetName(), // 맞은 액터 이름
-		       *OutHit.ImpactPoint.ToString(), // 월드 히트 좌표 (X, Y, Z)
-		       OutHit.Distance, // 시작점에서 히트까지 거리 (cm)
-		       *OutHit.BoneName.ToString() // 맞은 본 이름 (스켈레탈 메시일 경우)
-		);
-
-		APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
-		AController* Controller = Avatar ? Avatar->GetController() : nullptr;
-
-		//TODO: ExecCal 기반 GE 클래스로 DamageEffectClass로 교체 예정
-		//현재는 BP_GE_InstantDamage (단순 SetByCaller) 사용
-		// USMAbilitySystemComponent::ApplySkillDamage(
-		// 	OutHit.GetActor(), BaseDamage, Avatar, Controller, DamageEffectClass);
+		// UE_LOG(LogTemp, Warning,
+		//        TEXT("[LineTrace] HitActor: %s | ImpactPoint: %s | Distance: %.1f | BoneName: %s"),
+		//        *OutHit.GetActor()->GetName(), // 맞은 액터 이름
+		//        *OutHit.ImpactPoint.ToString(), // 월드 히트 좌표 (X, Y, Z)
+		//        OutHit.Distance, // 시작점에서 히트까지 거리 (cm)
+		//        *OutHit.BoneName.ToString() // 맞은 본 이름 (스켈레탈 메시일 경우)
+		// );
+		
 		if (AActor* HitActor = OutHit.GetActor())
 		{
 			ApplyDamageToActor(HitActor);

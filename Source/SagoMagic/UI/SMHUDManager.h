@@ -27,6 +27,7 @@ public:
 	
 protected:
 	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
 
 	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="HUD")
 	TObjectPtr<USMPlayerStatusWidget> WBP_PlayerStatus;

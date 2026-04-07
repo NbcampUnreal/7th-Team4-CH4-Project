@@ -11,6 +11,16 @@ void USMHUDManager::NativeConstruct()
 	TryInitASC();
 }
 
+void USMHUDManager::NativeDestruct()
+{
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(ASC_InitTimerHandle);
+	}
+	
+	Super::NativeDestruct();
+}
+
 void USMHUDManager::TryInitASC()
 {
 	/** HUD가 플레이어 폰을 찾아 ASC 연동 시도 */

@@ -5,5 +5,8 @@
 
 IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, SagoMagic, "SagoMagic" );
 
-DEFINE_LOG_CATEGORY(LogSagoMagic)
- 
+#pragma region NetLogging
+
+DEFINE_LOG_CATEGORY(LogSM)
+
+# pragma endregion  

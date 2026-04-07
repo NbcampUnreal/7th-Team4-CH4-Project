@@ -2,7 +2,7 @@
 
 
 #include "GA_LineTrace.h"
-
+#include "DrawDebugHelpers.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GAS/SMAbilitySystemComponent.h"
@@ -13,6 +13,7 @@ UGA_LineTrace::UGA_LineTrace()
 
 void UGA_LineTrace::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[LineTrace] Skill effect is active"));
 	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
 
 	if (IsValid(Avatar) == false || Avatar->HasAuthority() == false)
@@ -35,11 +36,11 @@ void UGA_LineTrace::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 	//DT_Skill로 부터 SkillDuration, DamageInterval 로드
 	//if (const FSMSkillData* Row = SkillStatRow.GetRow<FSMSkillData>(TEXT("GA_LineTrace")))
 	//{
-		////TODO: DT_Skill에 두 Row 추가 후 연결
-		////근데 다른 스킬들은 이 항목을 사용하지 않는데 이렇게 Row를 추가하는 형식이 맞느지 의문
-		//추후 팀원들과 논의를 통해 구조를 계선하던지 할 필요가 있음
-		// SkillDuration = Row->SkillDuration;
-		// DamageInterval = Row->DamageInterval;		
+	////TODO: DT_Skill에 두 Row 추가 후 연결
+	////근데 다른 스킬들은 이 항목을 사용하지 않는데 이렇게 Row를 추가하는 형식이 맞느지 의문
+	//추후 팀원들과 논의를 통해 구조를 계선하던지 할 필요가 있음
+	// SkillDuration = Row->SkillDuration;
+	// DamageInterval = Row->DamageInterval;		
 	//}
 
 	//반복 데미지 타이머 - 매 Tick마다 LineTrace발사
@@ -74,9 +75,46 @@ void UGA_LineTrace::EndAbility(const FGameplayAbilitySpecHandle Handle, const FG
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
-AActor* UGA_LineTrace::FindFirstEnemy(UWorld* World, const FGameplayAbilityActorInfo* ActorInfo) const
+void UGA_LineTrace::ApplyDamageToActor(AActor* HitActor)
 {
-	if (IsValid(World) == false) return nullptr;
+	if (!HitActor)
+	{
+		return;
+	}
+
+	// Hit Actor의 ASC 가져오기
+	UAbilitySystemComponent* TargetASC = HitActor->FindComponentByClass<UAbilitySystemComponent>();
+	if (!TargetASC)
+	{
+		return;
+	}
+
+	// Damage Effect 적용
+	UE_LOG(LogTemp, Warning, TEXT("[LineTrace] Apply damage to %s, %s"),*HitActor->GetName(), *TargetASC->GetName());
+	FGameplayEffectContextHandle EffectContext = GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
+	EffectContext.AddSourceObject(GetAvatarActorFromActorInfo());
+
+	FGameplayEffectSpecHandle SpecHandle = GetAbilitySystemComponentFromActorInfo()->MakeOutgoingSpec(
+		DamageEffectClass,
+		1.0f, // Level
+		EffectContext
+	);
+
+	if (SpecHandle.IsValid())
+	{
+		// SetByCaller로 데미지 수치 전달
+		SpecHandle.Data->SetSetByCallerMagnitude(SMSkillTag::Data_Damage_Amount, BaseDamage);
+		
+		GetAbilitySystemComponentFromActorInfo()->ApplyGameplayEffectSpecToTarget(
+			*SpecHandle.Data.Get(),
+			TargetASC
+		);
+	}
+}
+
+bool UGA_LineTrace::FindFirstEnemy(UWorld* World, const FGameplayAbilityActorInfo* ActorInfo, FHitResult& OutHit) const
+{
+	if (IsValid(World) == false) return false;
 
 	const FVector Start = CurrentAimOrigin;
 	const FVector End = Start + CurrentAimDirection.GetSafeNormal() * RangeCm;
@@ -95,9 +133,10 @@ AActor* UGA_LineTrace::FindFirstEnemy(UWorld* World, const FGameplayAbilityActor
 		AActor* HitActor = HitResult.GetActor();
 		if (IsValid(HitActor) == false) continue;
 		if (HasAnyTeamTag(HitActor) == true) continue;
-		return HitActor;
+		OutHit = HitResult;
+		return true;
 	}
-	return nullptr;
+	return false;
 }
 
 bool UGA_LineTrace::HasAnyTeamTag(AActor* Actor) const
@@ -112,28 +151,61 @@ bool UGA_LineTrace::HasAnyTeamTag(AActor* Actor) const
 
 void UGA_LineTrace::ApplyDamageTick()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[LineTrace] Apply tick damage"));
 	const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
 	if (!ActorInfo) return;
 
 	//매 틱마다 현재 커서 방향으로 AimData 갱신
 	ExtractAimData(ActorInfo);
+	
+	FHitResult OutHit;
+	const bool bHit = FindFirstEnemy(GetWorld(), ActorInfo, OutHit);
 
-	AActor* HitEnemy = FindFirstEnemy(GetWorld(), ActorInfo);
-	if (IsValid(HitEnemy) == false) return; //적 없으면 데미지 없이 틱 스킵 (빔은 유지)
+	if (bShowDebugTrace)
+	{
+		const FVector Start = CurrentAimOrigin;
+		const FVector End = Start + CurrentAimDirection.GetSafeNormal() * RangeCm;
 
-	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
-	AController* Ctrl = Avatar ? Avatar->GetController() : nullptr;
+		// 빔 라인: 맞으면 빨간색, 빗나가면 초록색
+		const FColor LineColor = bHit ? FColor::Red : FColor::Green;
+		DrawDebugLine(GetWorld(), Start, End, LineColor, false, DamageInterval, 0, 2.0f);
 
-	//TODO: ExecCal 기반 GE 클래스로 DamageEffectClass로 교체 예정
-	//현재는 BP_GE_InstantDamage (단순 SetByCaller) 사용
-	USMAbilitySystemComponent::ApplySkillDamage(
-		HitEnemy, BaseDamage, Avatar, Ctrl, DamageEffectClass);
+		if (bHit)
+		{
+			// 히트 지점에 구체 표시
+			DrawDebugSphere(GetWorld(), OutHit.ImpactPoint, 15.f, 8, FColor::Orange,
+			                false, DamageInterval);
+		}
+	}
+
+	if (bHit)
+	{
+		UE_LOG(LogTemp, Warning,
+		       TEXT("[LineTrace] HitActor: %s | ImpactPoint: %s | Distance: %.1f | BoneName: %s"),
+		       *OutHit.GetActor()->GetName(), // 맞은 액터 이름
+		       *OutHit.ImpactPoint.ToString(), // 월드 히트 좌표 (X, Y, Z)
+		       OutHit.Distance, // 시작점에서 히트까지 거리 (cm)
+		       *OutHit.BoneName.ToString() // 맞은 본 이름 (스켈레탈 메시일 경우)
+		);
+
+		APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
+		AController* Controller = Avatar ? Avatar->GetController() : nullptr;
+
+		//TODO: ExecCal 기반 GE 클래스로 DamageEffectClass로 교체 예정
+		//현재는 BP_GE_InstantDamage (단순 SetByCaller) 사용
+		// USMAbilitySystemComponent::ApplySkillDamage(
+		// 	OutHit.GetActor(), BaseDamage, Avatar, Controller, DamageEffectClass);
+		if (AActor* HitActor = OutHit.GetActor())
+		{
+			ApplyDamageToActor(HitActor);
+		}
+	}
 }
 
 void UGA_LineTrace::OnDurationExpired()
 {
 	if (IsActive() == false) return;
-	
+
 	EndAbility(
 		GetCurrentAbilitySpecHandle(),
 		GetCurrentActorInfo(),

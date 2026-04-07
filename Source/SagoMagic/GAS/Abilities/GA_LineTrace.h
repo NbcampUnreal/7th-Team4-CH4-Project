@@ -23,10 +23,18 @@ protected:
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 	                        const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility,
 	                        bool bWasCancelled) override;
-
+	
+	/** 히트된 대상에 데미지 적용 */
+	virtual void ApplyDamageToActor(AActor* HitActor);
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|Debug")
+	bool bShowDebugTrace = true;
+	
 private:
-	//LineTrace에 맞는 첫 번째 적 반환 (Team태그 보유 액터는 관통)
-	AActor* FindFirstEnemy(UWorld* World, const FGameplayAbilityActorInfo* ActorInfo) const;
+	// LineTrace 결과를 OutHit으로 반환. 적 발견 시 true, 아니면 false.
+	// (Team 태그 보유 액터는 관통하며 계속 탐색)
+	bool FindFirstEnemy(UWorld* World, const FGameplayAbilityActorInfo* ActorInfo,
+						FHitResult& OutHit) const;
 
 	//ASC에서 Team태그 확인
 	bool HasAnyTeamTag(AActor* Actor) const;

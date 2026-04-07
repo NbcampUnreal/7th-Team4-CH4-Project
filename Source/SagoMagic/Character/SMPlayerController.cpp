@@ -5,6 +5,7 @@
 #include "Core/SMPlayerState.h"
 #include "Core/SessionSubsystem/SMLobbyGameMode.h"
 #include "Inventory/Components/SMInventoryComponent.h"
+#include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/Inventory/SMInventoryRootWidget.h"
 #include "UI/SessionUI/SMLobbyWidget.h"
@@ -70,6 +71,89 @@ void ASMPlayerController::ServerRPCRequestStartGame_Implementation()
 	if (IsValid(GM) == false) return;
 
 	GM->TryStartGame();
+}
+
+void ASMPlayerController::ServerRPCMoveInventoryItem_Implementation(
+	const FGuid& InItemInstanceId,
+	const FGuid& InTargetContainerId,
+	int32 InGridX,
+	int32 InGridY,
+	ESMGridRotation InRotation)
+{
+	APlayerState* PlayerState = GetPlayerState<APlayerState>();
+	if (PlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = PlayerState->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	InventoryComponent->MoveItem(InItemInstanceId, InTargetContainerId, InGridX, InGridY, InRotation);
+}
+
+void ASMPlayerController::ServerRPCDropInventoryItem_Implementation(const FGuid& InItemInstanceId)
+{
+	APlayerState* PlayerState = GetPlayerState<APlayerState>();
+	if (PlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = PlayerState->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	FTransform DropTransform = FTransform::Identity;
+
+	if (APawn* OwningPawn = GetPawn())
+	{
+		DropTransform = FTransform(
+			OwningPawn->GetActorRotation(),
+			OwningPawn->GetActorLocation(),
+			FVector::OneVector);
+	}
+
+	InventoryComponent->DropItem(InItemInstanceId, DropTransform);
+}
+
+void ASMPlayerController::ServerRPCRemoveInventoryItem_Implementation(const FGuid& InItemInstanceId)
+{
+	APlayerState* PlayerState = GetPlayerState<APlayerState>();
+	if (PlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = PlayerState->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	InventoryComponent->RemoveItem(InItemInstanceId);
+}
+
+void ASMPlayerController::ServerRPCDetachEmbeddedItem_Implementation(const FGuid& InItemInstanceId)
+{
+	APlayerState* PlayerState = GetPlayerState<APlayerState>();
+	if (PlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = PlayerState->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	InventoryComponent->DetachEmbeddedItem(InItemInstanceId);
 }
 
 void ASMPlayerController::ToggleInventory()

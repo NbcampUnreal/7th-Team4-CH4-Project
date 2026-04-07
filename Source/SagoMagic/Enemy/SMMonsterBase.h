@@ -4,19 +4,28 @@
 #include "GameFramework/Character.h"
 #include "Net/UnrealNetwork.h"
 #include "AbilitySystemInterface.h"
-#include "../GAS//AttributeSets/SMMonsterAttributeSet.h"
+//#include "../GAS/AttributeSets/SMMonsterAttributeSet.h"
+
 #include "SMMonsterBase.generated.h"
+
+class USMMonsterAttributeSet;
+enum class EMonsterType : uint8;
 
 UCLASS()
 class SAGOMAGIC_API ASMMonsterBase : public ACharacter, public IAbilitySystemInterface
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
 	ASMMonsterBase();
 
     // IAbilitySystemInterface 구현(외부에서 ASC를 찾을 때 사용)
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+
+    void ResetMonster();
+
+    //UFUNCTION(NetMulticast, Reliable)
+    //void MulticastHandleDeath();
 protected:
     virtual void BeginPlay() override;
     virtual void PossessedBy(AController* NewController) override;
@@ -38,5 +47,8 @@ public:
     /** 몬스터.능력치 세트(HP, MaxHP등등)**/
     UPROPERTY()
     TObjectPtr<USMMonsterAttributeSet> MonsterAttributeSet;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
+    EMonsterType MonsterType;
 };
 

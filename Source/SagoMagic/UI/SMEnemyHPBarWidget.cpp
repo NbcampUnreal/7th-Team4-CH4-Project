@@ -12,11 +12,17 @@ void USMEnemyHPBarWidget::NativeTick(const FGeometry& Geometry, float DeltaTime)
     if (!FMath::IsNearlyEqual(CurrentPercent, TargetPercent, 0.001f))
     {
         CurrentPercent = FMath::FInterpTo(CurrentPercent, TargetPercent, DeltaTime, InterpSpeed);
-        if (EnemyHPBar) { EnemyHPBar->SetPercent(CurrentPercent); }
+        if (EnemyHPBar)
+        {
+            EnemyHPBar->SetPercent(CurrentPercent);
+        }
     }
     else
     {
         CurrentPercent = TargetPercent;
-        if (EnemyHPBar) { EnemyHPBar->SetPercent(CurrentPercent); }
+        if (EnemyHPBar)
+        {
+            EnemyHPBar->SetPercent(CurrentPercent);
+        }
     }
 }

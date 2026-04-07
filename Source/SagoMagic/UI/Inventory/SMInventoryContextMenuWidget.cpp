@@ -4,11 +4,13 @@
 #include "GameFramework/PlayerController.h"
 
 #include "Inventory/Components/SMInventoryComponent.h"
+#include "Inventory/Core/SMItemInstanceTypes.h"
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
 USMInventoryContextMenuWidget::USMInventoryContextMenuWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	  , InventoryComponent(nullptr)
+	  , OwningPanelWidget(nullptr)
 	  , bCanOpenSkillInventory(false)
 	  , bCanDropItem(false)
 	  , bCanDeleteItem(false)
@@ -26,7 +28,8 @@ void USMInventoryContextMenuWidget::InitializeContextMenu(const FGuid& InItemIns
 
 	if (InventoryComponent != nullptr && ItemInstanceId.IsValid())
 	{
-		bCanOpenSkillInventory = InventoryComponent->FindSkill(ItemInstanceId) != nullptr;
+		FSMSkillItemInstanceData SkillData;
+		bCanOpenSkillInventory = InventoryComponent->GetSkillData(ItemInstanceId, SkillData);
 		bCanDropItem = true;
 		bCanDeleteItem = true;
 	}
@@ -64,10 +67,10 @@ void USMInventoryContextMenuWidget::RequestDropItem()
 	bCanDropItem = false;
 	bCanDeleteItem = false;
 
-	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	if (OwningPanelWidget != nullptr)
 	{
-		OwningPanel->CloseContextMenu();
-		OwningPanel->RefreshPanel();
+		OwningPanelWidget->CloseContextMenu();
+		OwningPanelWidget->RefreshPanel();
 		return;
 	}
 
@@ -81,10 +84,17 @@ void USMInventoryContextMenuWidget::RequestOpenSkillInventory()
 		return;
 	}
 
-	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	FSMSkillItemInstanceData SkillData;
+	if (InventoryComponent->GetSkillData(ItemInstanceId, SkillData) == false)
 	{
-		OwningPanel->OpenSkillInventory(ItemInstanceId);
-		OwningPanel->CloseContextMenu();
+		return;
+	}
+
+	if (OwningPanelWidget != nullptr)
+	{
+		OwningPanelWidget->OpenSkillInventory(ItemInstanceId);
+		OwningPanelWidget->CloseContextMenu();
+		return;
 	}
 }
 
@@ -105,10 +115,10 @@ void USMInventoryContextMenuWidget::RequestDeleteItem()
 	bCanDropItem = false;
 	bCanDeleteItem = false;
 
-	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	if (OwningPanelWidget != nullptr)
 	{
-		OwningPanel->CloseContextMenu();
-		OwningPanel->RefreshPanel();
+		OwningPanelWidget->CloseContextMenu();
+		OwningPanelWidget->RefreshPanel();
 		return;
 	}
 
@@ -127,10 +137,10 @@ void USMInventoryContextMenuWidget::RequestDetachEmbeddedItem()
 		return;
 	}
 
-	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	if (OwningPanelWidget != nullptr)
 	{
-		OwningPanel->CloseContextMenu();
-		OwningPanel->RefreshPanel();
+		OwningPanelWidget->CloseContextMenu();
+		OwningPanelWidget->RefreshPanel();
 		return;
 	}
 

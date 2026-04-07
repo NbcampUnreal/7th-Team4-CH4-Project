@@ -289,6 +289,7 @@ void USMPlayerInventoryPanelWidget::InitializeChildWidgets()
 	if (ContextMenuWidget != nullptr)
 	{
 		ContextMenuWidget->SetInventoryComponent(InventoryComponent);
+		ContextMenuWidget->SetOwningPanelWidget(this);
 		ContextMenuWidget->SetItemInstanceId(FGuid());
 	}
 

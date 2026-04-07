@@ -5,6 +5,7 @@
 #include "SMInventoryContextMenuWidget.generated.h"
 
 class USMInventoryComponent;
+class USMPlayerInventoryPanelWidget;
 
 
 /**
@@ -72,6 +73,12 @@ public:
 		InventoryComponent = InInventoryComponent;
 	}
 
+	/** 소유 패널 위젯 Setter */
+	void SetOwningPanelWidget(USMPlayerInventoryPanelWidget* InOwningPanelWidget)
+	{
+		OwningPanelWidget = InOwningPanelWidget;
+	}
+
 public:
 	/** 컨텍스트 메뉴 초기화 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Context Menu Widget")
@@ -110,6 +117,10 @@ protected:
 	/** 인벤토리 컴포넌트 참조 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Context Menu Widget")
 	TObjectPtr<USMInventoryComponent> InventoryComponent;
+
+	/** 소유 패널 위젯 참조 */
+	UPROPERTY(BlueprintReadOnly, Category="Inventory Context Menu Widget")
+	TObjectPtr<USMPlayerInventoryPanelWidget> OwningPanelWidget;
 
 	/** 스킬 인벤토리 열기 가능 여부 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Context Menu Widget")

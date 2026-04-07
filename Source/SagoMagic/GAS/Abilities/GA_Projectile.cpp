@@ -1,6 +1,5 @@
 #include "GA_Projectile.h"
 #include "SkillActor/SMASkillProjectile.h"
-#include "AbilitySystemComponent.h"
 
 
 UGA_Projectile::UGA_Projectile()
@@ -25,25 +24,12 @@ void UGA_Projectile::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
         return;
     }
 
-    // GA 내부에서 GE Spec 생성 (BaseDamage SetByCaller 주입)
-    UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
-    if (!SourceASC || !DamageEffectClass)
-    {
-        EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
-        return;
-    }
-
-    FGameplayEffectContextHandle ContextHandle = SourceASC->MakeEffectContext();
-    ContextHandle.AddInstigator(Avatar, Avatar->GetController());
-
-    FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, 1.f, ContextHandle);
+    FGameplayEffectSpecHandle SpecHandle = MakeDamageSpec(ActorInfo);
     if (!SpecHandle.IsValid())
     {
         EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
         return;
     }
-    SpecHandle.Data->SetSetByCallerMagnitude(
-        FGameplayTag::RequestGameplayTag(TEXT("Data.Damage.Amount")), -BaseDamage);
 
     // 캐릭터 앞 30cm 에서 발사
     const FVector SpawnLocation = CurrentAimOrigin + CurrentAimDirection * 30.f;
@@ -58,7 +44,6 @@ void UGA_Projectile::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 
     if (Proj)
     {
-        // 완성된 Spec을 투사체에 전달
         Proj->InitProjectile(SpecHandle, RangeCm, CurrentAimDirection, Avatar);
     }
 

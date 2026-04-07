@@ -6,6 +6,7 @@
 
 
 class USMPlayerHPBarWidget;
+class USMPlayerGoldWidget;
 class UAbilitySystemComponent;
 
 /**
@@ -26,6 +27,6 @@ protected:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<USMPlayerHPBarWidget> WBP_PlayerBar;
 	
-	/*UPROPERTY(meta=(BindWidget))
-	TObjectPtr<USMPlayerGoldWidget> WBP_GoldDisplay;*/
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<USMPlayerGoldWidget> WBP_GoldDisplay;
 };

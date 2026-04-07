@@ -1,5 +1,7 @@
 ﻿#include "SMPlayerStatusWidget.h"
 #include "SMPlayerHPBarWidget.h"
+#include "SMPlayerGoldWidget.h"
+
 
 void USMPlayerStatusWidget::InitializeStatus(UAbilitySystemComponent* InASC)
 {
@@ -10,8 +12,8 @@ void USMPlayerStatusWidget::InitializeStatus(UAbilitySystemComponent* InASC)
 		WBP_PlayerBar->InitializeWithASC(InASC);
 	}
 	
-	/*if (WBP_GoldDisplay)
+	if (WBP_GoldDisplay)
 	{
 		WBP_GoldDisplay->InitializeWithASC(InASC);
-	}*/
+	}
 }

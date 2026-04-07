@@ -52,6 +52,8 @@ public:
 
 	bool GetIsHost() const { return bIsHost; }
 	bool GetIsReady() const { return bIsReady; }
+	
+	void ResetForRespawn();
 
 	//ServerRPC -> USMLobbyWidget -> ASMPlayerController -> 여기로 연결
 	//ASMPlayerController.ServerSetReady() 에서 LobbyGameMode.SetPlayerReady() 호출

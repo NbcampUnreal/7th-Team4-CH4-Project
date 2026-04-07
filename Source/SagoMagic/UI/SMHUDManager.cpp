@@ -18,16 +18,19 @@ void USMHUDManager::TryInitASC()
 	{
 		if (APlayerState* PS = PC->PlayerState) // 폰이 죽어도 살아있어서 더 안정!
 		{
-			// 캐릭터가 IAbilitySystemInterface를 상속받았는지 확인 후 ASC 가져옴
-			if (IAbilitySystemInterface* ASI = Cast<IAbilitySystemInterface>(PS))
+			if (APawn* OwningPawn = PC->GetPawn())
 			{
-				UAbilitySystemComponent* ASC = ASI->GetAbilitySystemComponent();
-				if (ASC)
+				// 캐릭터가 IAbilitySystemInterface를 상속받았는지 확인 후 ASC 가져옴
+				if (IAbilitySystemInterface* ASI = Cast<IAbilitySystemInterface>(OwningPawn))
 				{
-					InitializeHUD(ASC);
-					// 연동 성공 -> 타이머 해제
-					GetWorld()->GetTimerManager().ClearTimer(ASC_InitTimerHandle);
-					return;
+					UAbilitySystemComponent* ASC = ASI->GetAbilitySystemComponent();
+					if (ASC && ASC->GetAvatarActor() == OwningPawn)
+					{
+						InitializeHUD(ASC);
+						// 연동 성공 -> 타이머 해제
+						GetWorld()->GetTimerManager().ClearTimer(ASC_InitTimerHandle);
+						return;
+					}
 				}
 			}
 		}

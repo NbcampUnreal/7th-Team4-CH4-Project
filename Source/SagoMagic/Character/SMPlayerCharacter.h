@@ -38,7 +38,13 @@ class SAGOMAGIC_API ASMPlayerCharacter : public ACharacter, public IAbilitySyste
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<UInputMappingContext> DefaultMappingContext;
+	TObjectPtr<UInputMappingContext> DefaultIMC;
+	
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Place")
+	TObjectPtr<UInputMappingContext> BuildPlaceIMC;
+	
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
+	TObjectPtr<UInputMappingContext> BuildEditIMC;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
@@ -48,6 +54,15 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> InteractAction;
+	
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Place")
+	TObjectPtr<UInputAction> BuildPlaceAction;
+	
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
+	TObjectPtr<UInputAction> BuildEditAction;
+	
+	UPROPERTY(EditAnywhere, Category = "Input|Quickslot")
+	TObjectPtr<UInputAction> QuickSlotAction;
 
 	/** Pitch(상하 각도) 조정용 */
 	UPROPERTY(EditAnywhere,
@@ -127,4 +142,10 @@ protected:
 	void Attack();
 	
 	void Interact();
+	
+	void UseQuickSlot(const FInputActionValue& InValue);
+	
+	void OnBuildPlace();
+	
+	void OnBuildEdit();
 };

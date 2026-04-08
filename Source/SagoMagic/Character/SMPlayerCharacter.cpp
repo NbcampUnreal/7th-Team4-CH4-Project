@@ -128,6 +128,30 @@ void ASMPlayerCharacter::Interact()
 	SMAbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(InteractTag));
 }
 
+void ASMPlayerCharacter::UseQuickSlot(const FInputActionValue& InValue)
+{
+	const int32 SlotIndex = FMath::RoundToInt(InValue.Get<float>());
+	
+	SM_LOG(this, LogSM, Log, TEXT("입력된 퀵슬롯 번호: %d"), SlotIndex);
+	
+	if (!SMAbilitySystemComponent) return;
+	
+	if (SlotIndex < 3)
+	{
+		// TODO: QuickSlotComponent 구현 후 교환 로직 작성
+	}
+}
+
+void ASMPlayerCharacter::OnBuildPlace()
+{
+	
+}
+
+void ASMPlayerCharacter::OnBuildEdit()
+{
+	
+}
+
 void ASMPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -291,12 +315,10 @@ void ASMPlayerCharacter::HandleDeath()
 	{
 		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 		{
-			// TODO: PC에서 사망 시 UI 띄우게 하기 
 			PC->ClientRPC_ShowDeathUI();
 			
 			if (ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>())
 			{
-				// TODO: GM에게 사망시 처리 함수 호출하게 하기
 				GM->OnPlayerDead(PC);
 			}
 			
@@ -321,15 +343,15 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	{
 		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 		{
-			if (PC->IsLocalController() && DefaultMappingContext)
+			if (PC->IsLocalController() && DefaultIMC)
 			{
 				if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
 				{
 					if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
 							ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
 					{
-						Subsystem->RemoveMappingContext(DefaultMappingContext);
-						Subsystem->AddMappingContext(DefaultMappingContext, 0);
+						Subsystem->RemoveMappingContext(DefaultIMC);
+						Subsystem->AddMappingContext(DefaultIMC, 0);
 					}
 				}
 			}
@@ -348,6 +370,21 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		if (InteractAction)
 		{
 			EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &ThisClass::Interact);
+		}
+		
+		if (QuickSlotAction)
+		{
+			EIC->BindAction(QuickSlotAction, ETriggerEvent::Started, this, &ThisClass::UseQuickSlot);
+		}
+		
+		if (BuildPlaceAction)
+		{
+			EIC->BindAction(BuildPlaceAction, ETriggerEvent::Started, this, &ThisClass::OnBuildPlace);
+		}
+		
+		if (BuildEditAction)
+		{
+			EIC->BindAction(BuildEditAction, ETriggerEvent::Started, this, &ThisClass::OnBuildEdit);
 		}
 	}
 }

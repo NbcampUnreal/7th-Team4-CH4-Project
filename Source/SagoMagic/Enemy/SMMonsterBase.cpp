@@ -190,8 +190,8 @@ void ASMMonsterBase::HandleDeath(AController* KillerController)
                         float NewGold = MutableAttr->GetGold() + GoldReward;
                         MutableAttr->SetGold(NewGold);
                        
-                        UE_LOG(LogTemp, Log, TEXT("[Gold] %s에게 %.0f Gold 지급 (총 %.0f)"),
-                            *KillerController->GetName(), GoldReward, NewGold);
+                        /*UE_LOG(LogTemp, Log, TEXT("[Gold] %s에게 %.0f Gold 지급 (총 %.0f)"),
+                            *KillerController->GetName(), GoldReward, NewGold);*/
                     }
                 }
             }

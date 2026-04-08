@@ -206,10 +206,28 @@ void ASMPlayerCharacter::ToggleEditMode()
 	}
 	else
 	{
-		Subsystem->RemoveMappingContext(BuildPlaceIMC);
+		Subsystem->RemoveMappingContext(BuildEditIMC);
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 		SM_LOG(this, LogSM, Log, TEXT("편집 모드 OFF"));
 	}
+}
+
+void ASMPlayerCharacter::OnBuildPlace()
+{
+	if (!SMAbilitySystemComponent) return;
+	
+	// TODO: 추후에 GA_BuildPlace 구현 후 주석 제거
+	// SMAbilitySystemComponent->TryActivateAbilitiesByTag(SMCharacterTag::Ability_Build_Place);
+	SM_LOG(this, LogSM, Log, TEXT("건축 GA실행"));
+}
+
+void ASMPlayerCharacter::OnEditSelect()
+{
+	if (!SMAbilitySystemComponent) return;
+	
+	// TODO: 추후에 GA_BuildEdit 구현 후 주석 제거
+	// SMAbilitySystemComponent->TryActivateAbilitiesByTag(SMCharacterTag::Ability_Build_Edit);
+	SM_LOG(this, LogSM, Log, TEXT("편집 GA 실행"));
 }
 
 void ASMPlayerCharacter::BeginPlay()
@@ -445,6 +463,16 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		if (EditAction)
 		{
 			EIC->BindAction(EditAction, ETriggerEvent::Started, this, &ThisClass::ToggleEditMode);
+		}
+		
+		if (BuildPlaceAction)
+		{
+			EIC->BindAction(BuildPlaceAction, ETriggerEvent::Started, this, &ThisClass::OnBuildPlace);
+		}
+		
+		if (EditSelectAction)
+		{
+			EIC->BindAction(EditSelectAction, ETriggerEvent::Started, this, &ThisClass::OnEditSelect);
 		}
 	}
 }

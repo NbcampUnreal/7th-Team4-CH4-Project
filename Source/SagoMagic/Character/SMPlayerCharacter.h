@@ -61,6 +61,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
 	TObjectPtr<UInputAction> EditAction;
 	
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Build")
+	TObjectPtr<UInputAction> BuildPlaceAction;
+	
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
+	TObjectPtr<UInputAction> EditSelectAction;
+	
 	UPROPERTY(EditAnywhere, Category = "Input|Quickslot")
 	TObjectPtr<UInputAction> QuickSlotAction;
 
@@ -146,6 +152,8 @@ protected:
 	void UseQuickSlot(const FInputActionValue& InValue);
 	
 	void ToggleBuildMode();
-	
 	void ToggleEditMode();
+	
+	void OnBuildPlace();
+	void OnEditSelect();
 };

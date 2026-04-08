@@ -100,7 +100,19 @@ void USMPlayerInventoryPanelWidget::HandleInventoryUpdatedMessage(
 		return;
 	}
 
-	RefreshPanel();
+	if (InChannel == SMMessageTag::Inventory_MainContainerUpdated)
+	{
+		RefreshMainInventoryWidget();
+		return;
+	}
+
+	if (InChannel == SMMessageTag::Inventory_SkillContainerUpdated &&
+		SkillInventoryWidget != nullptr &&
+		SkillInventoryWidget->GetContainerId().IsValid() &&
+		SkillInventoryWidget->GetContainerId() == InMessage.GetContainerId())
+	{
+		RefreshSkillInventoryWidget();
+	}
 }
 
 void USMPlayerInventoryPanelWidget::HandleSkillSummaryUpdatedMessage(
@@ -119,7 +131,8 @@ void USMPlayerInventoryPanelWidget::HandleSkillSummaryUpdatedMessage(
 		return;
 	}
 
-	RefreshPanel();
+	ApplySelectedSkillState();
+	RefreshMainInventoryWidget();
 }
 
 void USMPlayerInventoryPanelWidget::RefreshPanel()
@@ -179,6 +192,25 @@ void USMPlayerInventoryPanelWidget::CloseSkillInventory()
 
 void USMPlayerInventoryPanelWidget::RefreshMainInventoryWidget()
 {
+	if (HoveredItemInstanceId.IsValid() && (InventoryComponent == nullptr || InventoryComponent->HasItem(HoveredItemInstanceId) == false))
+	{
+		HideHoveredItemInfo();
+	}
+	else if (ItemHoverInfoWidget != nullptr && HoveredItemInstanceId.IsValid())
+	{
+		ItemHoverInfoWidget->RefreshItemInfo();
+	}
+
+	if (ContextMenuWidget != nullptr)
+	{
+		const FGuid& ContextMenuItemInstanceId = ContextMenuWidget->GetItemInstanceId();
+		if (ContextMenuItemInstanceId.IsValid() &&
+			(InventoryComponent == nullptr || InventoryComponent->HasItem(ContextMenuItemInstanceId) == false))
+		{
+			CloseContextMenu();
+		}
+	}
+
 	if (MainInventoryGridWidget == nullptr)
 	{
 		return;

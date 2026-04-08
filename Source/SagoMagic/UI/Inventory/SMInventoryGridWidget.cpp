@@ -605,15 +605,26 @@ void USMInventoryGridWidget::SyncItemWidgets()
 			ItemLayerPanel->AddChild(ItemWidget);
 		}
 
-		ItemWidget->InitializeItemWidget(
-			InBaseItemData.InstanceId,
-			InBaseItemData.ParentContainerId,
-			InBaseItemData.GridX,
-			InBaseItemData.GridY,
-			InBaseItemData.Rotation,
-			InventoryComponent);
-		ItemWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
-		ApplyItemWidgetLayout(ItemWidget, InBaseItemData.GridX, InBaseItemData.GridY);
+		const bool bNeedsVisualRefresh =
+			ItemWidget->GetOwningContainerId() != InBaseItemData.ParentContainerId ||
+			ItemWidget->GetGridX() != InBaseItemData.GridX ||
+			ItemWidget->GetGridY() != InBaseItemData.GridY ||
+			ItemWidget->GetDisplayRotation() != InBaseItemData.Rotation ||
+			ItemWidget->GetInventoryComponent() != InventoryComponent;
+
+		if (bNeedsVisualRefresh)
+		{
+			ItemWidget->InitializeItemWidget(
+				InBaseItemData.InstanceId,
+				InBaseItemData.ParentContainerId,
+				InBaseItemData.GridX,
+				InBaseItemData.GridY,
+				InBaseItemData.Rotation,
+				InventoryComponent);
+			ItemWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+			ApplyItemWidgetLayout(ItemWidget, InBaseItemData.GridX, InBaseItemData.GridY);
+		}
+
 		ApplyItemOwnershipToCells(InBaseItemData);
 	};
 

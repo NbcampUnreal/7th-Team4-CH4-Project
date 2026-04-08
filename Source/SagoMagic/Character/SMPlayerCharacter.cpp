@@ -142,12 +142,12 @@ void ASMPlayerCharacter::UseQuickSlot(const FInputActionValue& InValue)
 	}
 }
 
-void ASMPlayerCharacter::OnBuildPlace()
+void ASMPlayerCharacter::ToggleBuildMode()
 {
 	
 }
 
-void ASMPlayerCharacter::OnBuildEdit()
+void ASMPlayerCharacter::ToggleEditMode()
 {
 	
 }
@@ -377,14 +377,14 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 			EIC->BindAction(QuickSlotAction, ETriggerEvent::Started, this, &ThisClass::UseQuickSlot);
 		}
 		
-		if (BuildPlaceAction)
+		if (BuildAction)
 		{
-			EIC->BindAction(BuildPlaceAction, ETriggerEvent::Started, this, &ThisClass::OnBuildPlace);
+			EIC->BindAction(BuildAction, ETriggerEvent::Started, this, &ThisClass::ToggleBuildMode);
 		}
 		
-		if (BuildEditAction)
+		if (EditAction)
 		{
-			EIC->BindAction(BuildEditAction, ETriggerEvent::Started, this, &ThisClass::OnBuildEdit);
+			EIC->BindAction(EditAction, ETriggerEvent::Started, this, &ThisClass::ToggleEditMode);
 		}
 	}
 }

@@ -1457,12 +1457,25 @@ void USMInventoryComponent::PublishInventoryUpdatedMessage(const FGuid& InContai
 		return;
 	}
 
+	const FSMGridContainerState* ContainerState = FindContainer(InContainerId);
+	if (ContainerState == nullptr)
+	{
+		return;
+	}
+
 	FSMInventoryUpdatedMessage Message;
 	Message.SetOwningPlayerState(OwningPlayerState);
 	Message.SetContainerId(InContainerId);
 
 	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
-	MessageSubsystem.BroadcastMessage(SMMessageTag::Inventory_Updated, Message);
+
+	if (ContainerState->ContainerType == ESMContainerType::SkillInternal)
+	{
+		MessageSubsystem.BroadcastMessage(SMMessageTag::Inventory_SkillContainerUpdated, Message);
+		return;
+	}
+
+	MessageSubsystem.BroadcastMessage(SMMessageTag::Inventory_MainContainerUpdated, Message);
 }
 
 void USMInventoryComponent::PublishSkillSummaryUpdatedMessage(const FGuid& InSkillInstanceId) const

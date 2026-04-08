@@ -52,8 +52,12 @@ void USMPlayerInventoryPanelWidget::RegisterInventoryMessageListeners()
 	}
 
 	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
-	InventoryUpdatedListenerHandle = MessageSubsystem.RegisterListener<FSMInventoryUpdatedMessage>(
-		SMMessageTag::Inventory_Updated,
+	MainInventoryUpdatedListenerHandle = MessageSubsystem.RegisterListener<FSMInventoryUpdatedMessage>(
+		SMMessageTag::Inventory_MainContainerUpdated,
+		this,
+		&ThisClass::HandleInventoryUpdatedMessage);
+	SkillContainerUpdatedListenerHandle = MessageSubsystem.RegisterListener<FSMInventoryUpdatedMessage>(
+		SMMessageTag::Inventory_SkillContainerUpdated,
 		this,
 		&ThisClass::HandleInventoryUpdatedMessage);
 	SkillSummaryUpdatedListenerHandle = MessageSubsystem.RegisterListener<FSMSkillSummaryUpdatedMessage>(
@@ -64,9 +68,14 @@ void USMPlayerInventoryPanelWidget::RegisterInventoryMessageListeners()
 
 void USMPlayerInventoryPanelWidget::UnregisterInventoryMessageListeners()
 {
-	if (InventoryUpdatedListenerHandle.IsValid())
+	if (MainInventoryUpdatedListenerHandle.IsValid())
 	{
-		InventoryUpdatedListenerHandle.Unregister();
+		MainInventoryUpdatedListenerHandle.Unregister();
+	}
+
+	if (SkillContainerUpdatedListenerHandle.IsValid())
+	{
+		SkillContainerUpdatedListenerHandle.Unregister();
 	}
 
 	if (SkillSummaryUpdatedListenerHandle.IsValid())

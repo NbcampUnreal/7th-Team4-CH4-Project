@@ -12,6 +12,12 @@ namespace SMMessageTag
     /** 인벤토리 갱신 메시지 채널 태그 정의 */
     UE_DEFINE_GAMEPLAY_TAG(Inventory_Updated, "SM.Message.Inventory.Updated");
 
+    /** 메인 인벤토리 갱신 메시지 채널 태그 정의 */
+    UE_DEFINE_GAMEPLAY_TAG(Inventory_MainContainerUpdated, "SM.Message.Inventory.MainContainerUpdated");
+
+    /** 스킬 내부 인벤토리 갱신 메시지 채널 태그 정의 */
+    UE_DEFINE_GAMEPLAY_TAG(Inventory_SkillContainerUpdated, "SM.Message.Inventory.SkillContainerUpdated");
+
     /** 스킬 요약 갱신 메시지 채널 태그 정의 */
     UE_DEFINE_GAMEPLAY_TAG(Inventory_SkillSummaryUpdated, "SM.Message.Inventory.SkillSummaryUpdated");
 

@@ -224,6 +224,7 @@ protected:
 	FVector2D ContextMenuScreenPosition;
 
 private:
-	FGameplayMessageListenerHandle InventoryUpdatedListenerHandle;
+	FGameplayMessageListenerHandle MainInventoryUpdatedListenerHandle;
+	FGameplayMessageListenerHandle SkillContainerUpdatedListenerHandle;
 	FGameplayMessageListenerHandle SkillSummaryUpdatedListenerHandle;
 };

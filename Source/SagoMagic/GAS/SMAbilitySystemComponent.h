@@ -13,8 +13,6 @@ class SAGOMAGIC_API USMAbilitySystemComponent : public UAbilitySystemComponent
 public:
 
     USMAbilitySystemComponent();
-    
-    static void ApplySkillDamage(AActor* TargetActor, float DamageAmount,AActor* InstigatorActor, AController* InstigatorController,TSubclassOf<UGameplayEffect> DamageEffectClass = nullptr);
 
 protected:
     
@@ -22,7 +20,5 @@ protected:
 
 public:
 
-    virtual void TickComponent(float DeltaTime,
-                               ELevelTick TickType,
-                               FActorComponentTickFunction* ThisTickFunction) override;
+
 };

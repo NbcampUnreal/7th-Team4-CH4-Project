@@ -7,15 +7,15 @@
 UCLASS()
 class SAGOMAGIC_API UGA_Projectile : public UGA_SkillBase
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    UGA_Projectile();
+	UGA_Projectile();
 
 protected:
-    virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+	virtual void OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo) override;
 
-   
-    UPROPERTY(EditDefaultsOnly, Category = "Skill")
-    TSubclassOf<ASMASkillProjectile> ProjectileClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Skill")
+	TSubclassOf<ASMASkillProjectile> ProjectileClass;
 };

@@ -1,6 +1,5 @@
-﻿#include "GA_Projectile.h"
+#include "GA_Projectile.h"
 #include "SkillActor/SMASkillProjectile.h"
-
 
 
 UGA_Projectile::UGA_Projectile()
@@ -8,23 +7,27 @@ UGA_Projectile::UGA_Projectile()
     ProjectileClass = ASMASkillProjectile::StaticClass();
 }
 
-void UGA_Projectile::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
+void UGA_Projectile::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 {
-    // 부모(GA_SkillBase)의 ActivateAbility 호출 - DT 로드, AimData 추출, CommitAbility 처리
-    Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-
     APawn* Avatar = ActorInfo && ActorInfo->AvatarActor.IsValid()
         ? Cast<APawn>(ActorInfo->AvatarActor.Get()) : nullptr;
     if (!Avatar || !Avatar->HasAuthority())
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
         return;
     }
 
     UWorld* World = GetWorld();
     if (!World || !ProjectileClass)
     {
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
+        return;
+    }
+
+    FGameplayEffectSpecHandle SpecHandle = MakeDamageSpec(ActorInfo);
+    if (!SpecHandle.IsValid())
+    {
+        EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
         return;
     }
 
@@ -36,12 +39,13 @@ void UGA_Projectile::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     Params.Instigator = Avatar;
     Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-    ASMASkillProjectile* Proj = World->SpawnActor<ASMASkillProjectile>(ProjectileClass, SpawnLocation, CurrentAimDirection.Rotation(), Params);
+    ASMASkillProjectile* Proj = World->SpawnActor<ASMASkillProjectile>(
+        ProjectileClass, SpawnLocation, CurrentAimDirection.Rotation(), Params);
 
     if (Proj)
     {
-        Proj->InitProjectile(BaseDamage, RangeCm, CurrentAimDirection, Avatar, Avatar->GetController(), DamageEffectClass);
+        Proj->InitProjectile(SpecHandle, RangeCm, CurrentAimDirection, Avatar);
     }
 
-    EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+    EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, false);
 }

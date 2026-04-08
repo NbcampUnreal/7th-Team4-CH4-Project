@@ -5,6 +5,7 @@
 
 #include "SagoMagic.h"
 #include "Core/SMPlayerState.h"
+#include "Core/Wave/SMWaveManagerSubsystem.h"
 #include "Core/SessionSubsystem/SMLobbyGameMode.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -144,6 +145,14 @@ void ASMPlayerController::ClientRPCArrivedAtGameLevel_Implementation()
 		*PS->GetPlayerName(), PS->GetIsHost());
 
 	//TODO 현 : 게임 HUD 생성, 캐릭터 선택 등 여기서 처리
+}
+
+void ASMPlayerController::ServerNotifyClientLoadComplete_Implementation()
+{
+	if (USMWaveManagerSubsystem* WM = USMWaveManagerSubsystem::Get(this))
+	{
+		WM->OnClientLoadComplete();
+	}
 }
 
 void ASMPlayerController::ServerRPCSetReady_Implementation(bool bReady)

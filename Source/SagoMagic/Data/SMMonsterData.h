@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SMMonsterDataAsset.h"
 #include "Engine/DataTable.h"
 #include "SMMonsterData.generated.h"
 
@@ -45,5 +46,5 @@ struct FSMMonsterData : public FTableRowBase
     int32 DropGold = 20;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster|Asset")
-    TSoftClassPtr<ASMMonsterBase> MonsterClass;
+    TSoftObjectPtr<USMMonsterDataAsset> MonsterDataAssetRef;
 };

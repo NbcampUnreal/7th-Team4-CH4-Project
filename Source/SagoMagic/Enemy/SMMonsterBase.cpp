@@ -6,12 +6,19 @@
 #include "../GAS/AttributeSets/SMMonsterAttributeSet.h"
 #include "../GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "../Data/SMMonsterData.h"
+#include "Core/DataManager/SMAsyncDataManager.h"
+#include "Core/Wave/SMWaveManagerSubsystem.h"
+#include "Engine/AssetManager.h"
+#include "Net/UnrealNetwork.h"
 
 ASMMonsterBase::ASMMonsterBase()
 {
     PrimaryActorTick.bCanEverTick = false;
     AIControllerClass = ASMMonsterAIController::StaticClass();
-    AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+    
+    //PreSpawn 시 AI가 즉시 시작되는 것을 방지
+    //TickActivation에서 활성화할 때 SpawnDefaultController()로 수동 시작
+    AutoPossessAI = EAutoPossessAI::Disabled;
 
     // 서버 통신 활성화
     bReplicates = true;
@@ -42,14 +49,42 @@ void ASMMonsterBase::ResetMonster()
     SetActorTickEnabled(false);
 }
 
+void ASMMonsterBase::ApplyVisuals(USMMonsterDataAsset* DataAsset)
+{
+    if (!DataAsset) return;
+    UE_LOG(LogTemp, Log, TEXT("[ApplyVisuals] DataAsset: %s"), *DataAsset->GetName());
+    //TODO 은서 / 영택 : 추가적으로 넣어야 할 변수 넣어줘야함 
+    if (USkeletalMeshComponent* MeshComp = GetMesh())
+    {
+        if (!DataAsset->SkeletalMesh.IsNull())
+            MeshComp->SetSkeletalMesh(DataAsset->SkeletalMesh.LoadSynchronous());
+        if (!DataAsset->AnimClass.IsNull())
+            MeshComp->SetAnimInstanceClass(DataAsset->AnimClass.LoadSynchronous());
+    }
+}
+
+void ASMMonsterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(ASMMonsterBase, MonsterAssetId);
+}
+
+void ASMMonsterBase::OnRep_MonsterAssetId()
+{
+    USMAsyncDataManager* AM = USMAsyncDataManager::Get(this);
+    if (!AM) return;
+
+    USMMonsterDataAsset* DataAsset = Cast<USMMonsterDataAsset>(AM->GetLoadAsset(MonsterAssetId));
+    if (DataAsset)
+        ApplyVisuals(DataAsset);
+}
+
 //void ASMMonsterBase::MulticastHandleDeath_Implementation()
 //{
 //    SetActorHiddenInGame(true);
 //    SetActorEnableCollision(false);
 //    SetActorTickEnabled(false);
 //}
-
-
 
 void ASMMonsterBase::BeginPlay()
 {
@@ -161,11 +196,16 @@ void ASMMonsterBase::HandleDeath(AController* KillerController)
     }
 
     //UE_LOG(LogTemp, Warning, TEXT("[Monster] %s 사망. 3초 후 제거됩니다."), *GetName());
-
-    // AI 정지
-    if (AController* MyController = GetController())
+    
+    if (USMWaveManagerSubsystem* WM = USMWaveManagerSubsystem::Get(this))
     {
-        MyController->UnPossess();
+        WM->OnMonsterDied(this);
+    }
+    
+    // AI 정지
+    if (ASMMonsterAIController* AICtl = Cast<ASMMonsterAIController>(GetController()))
+    {
+        AICtl->StopMovement();
     }
     // 이동 즉시 정지
     if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
@@ -181,7 +221,7 @@ void ASMMonsterBase::HandleDeath(AController* KillerController)
 
     // 3초 후 액터 제거 (애니메이션 붙일 자리)
     //SetLifeSpan(3.0f);
-   
+    
 
     //UE_LOG(LogTemp, Warning, TEXT("[Monster] HandleDeath 완료 - Destroy 호출 없음"));
 }

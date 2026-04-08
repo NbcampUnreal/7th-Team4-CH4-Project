@@ -18,6 +18,7 @@ void ASMGameMode::HandleSeamlessTravelPlayer(AController*& C)
     {
         AllPlayerController.Add(PC);
         PC->ClientRPCArrivedAtGameLevel();
+        TryStartGame();
     }
 }
 
@@ -35,9 +36,8 @@ void ASMGameMode::Logout(AController* Exiting)
 void ASMGameMode::BeginPlay()
 {
     Super::BeginPlay();
-
+    
     StateMachine = NewObject<USMStateMachine>(this);
-    StateMachine->Initialize(this);
 
 }
 
@@ -97,4 +97,12 @@ void ASMGameMode::RespawnPlayer(TWeakObjectPtr<ASMPlayerController> InPlayerCont
 	InPlayerController->ClientRPC_HideDeathUI();
 	
 	SM_LOG(this, LogSM, Error, TEXT("[GameMode] %f초 뒤 부활"), RespawnTime);
+}
+void ASMGameMode::TryStartGame()
+{
+	if (AllPlayerController.Num() >= MaxPlayers)
+	{
+		UE_LOG(LogTemp,Warning, TEXT("[GameMode] 모든 플레이어 도착 %d - 게임 시작"),MaxPlayers);
+		StateMachine->Initialize(this);
+	}
 }

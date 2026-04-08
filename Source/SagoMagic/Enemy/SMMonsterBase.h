@@ -8,6 +8,7 @@
 
 #include "SMMonsterBase.generated.h"
 
+class USMMonsterDataAsset;
 class USMMonsterAttributeSet;
 enum class EMonsterType : uint8;
 
@@ -21,11 +22,16 @@ public:
 
     // IAbilitySystemInterface 구현(외부에서 ASC를 찾을 때 사용)
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     void ResetMonster();
-
+    
+    void ApplyVisuals(USMMonsterDataAsset* DataAsset);
     //UFUNCTION(NetMulticast, Reliable)
     //void MulticastHandleDeath();
+
+    UFUNCTION()
+    void OnRep_MonsterAssetId();
 protected:
     virtual void BeginPlay() override;
     virtual void PossessedBy(AController* NewController) override;
@@ -39,6 +45,10 @@ protected:
     UPROPERTY(EditAnywhere, Category = "Reward")
     float GoldReward = 10.0f;
 public:
+    /** 테스트용 */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Mesh|Test")
+    TSoftObjectPtr<USkeletalMesh> TestMesh;
+    
     /** 몬스터가 기본적으로 가질 어빌리티 목록 **/
     UPROPERTY(EditAnywhere, Category = "GAS")
     TArray<TSubclassOf<class UGameplayAbility>> DefaultAbilities;
@@ -51,7 +61,11 @@ public:
     UPROPERTY()
     TObjectPtr<USMMonsterAttributeSet> MonsterAttributeSet;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MonsterType")
     EMonsterType MonsterType;
+
+    UPROPERTY(ReplicatedUsing = OnRep_MonsterAssetId)
+    FPrimaryAssetId MonsterAssetId;
+    
 };
 

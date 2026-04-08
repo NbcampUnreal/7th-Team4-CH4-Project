@@ -37,6 +37,10 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientRPCArrivedAtGameLevel();
 	
+	/** ServerRPC - 클라이언트 DataAsset 로드 완료 알림 */
+	UFUNCTION(Server, Reliable)
+	void ServerNotifyClientLoadComplete();
+
 	/** ServerRPC - USMLobbyWidget에서 호출 */
 	UFUNCTION(Server, Reliable)
 	void ServerRPCSetReady(bool bReady);

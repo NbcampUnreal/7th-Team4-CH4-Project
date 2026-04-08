@@ -30,6 +30,15 @@ public:
 	void LoadAssetsByID(const TArray<FPrimaryAssetId>& AssetIDs, FOnAssetLoadComplete OnComplete);
 	
 	/**
+	 * 특정 ID 목록을 번들 기반으로 비동기 로드
+	 * 이미 로드된 에셋은 스킵
+	 * @param AssetIDs : 로드할 PrimaryAssetId 목록
+	 * @param Bundles : 로드할 번들 이름 목록 (예: {"Client"}, {"Server"})
+	 * @param OnComplete : 전부 완료됐을 때 호출되는 콜백
+	 */
+	void LoadAssetsByIDWithBundles(const TArray<FPrimaryAssetId>& AssetIDs, const TArray<FName>& Bundles, FOnAssetLoadComplete OnComplete);
+
+	/**
 	 * 특정 타입의 에셋 언로드
 	*/
 	void UnloadAssetsByID(const TArray<FPrimaryAssetId>& AssetIDs);

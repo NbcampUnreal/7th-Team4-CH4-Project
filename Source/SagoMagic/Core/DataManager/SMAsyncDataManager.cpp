@@ -91,6 +91,60 @@ void USMAsyncDataManager::LoadAssetsByID(const TArray<FPrimaryAssetId>& AssetIDs
 	
 }
 
+void USMAsyncDataManager::LoadAssetsByIDWithBundles(const TArray<FPrimaryAssetId>& AssetIDs, const TArray<FName>& Bundles, FOnAssetLoadComplete OnComplete)
+{
+	TArray<FPrimaryAssetId> IDsToLoad;
+	for (const FPrimaryAssetId& ID : AssetIDs)
+	{
+		if (ID.IsValid() && !LoadedAssets.Contains(ID))
+		{
+			IDsToLoad.Add(ID);
+		}
+	}
+
+	if (IDsToLoad.IsEmpty())
+	{
+		if (OnComplete.IsBound())
+		{
+			OnComplete.Execute();
+		}
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[AsyncDataManager] %d개 에셋 번들 로드 시작"), IDsToLoad.Num());
+
+	UAssetManager& Manager = UAssetManager::Get();
+	TSharedPtr<FStreamableHandle> Handle = Manager.LoadPrimaryAssets(
+		IDsToLoad,
+		Bundles,
+		FStreamableDelegate::CreateLambda([this, IDsToLoad, OnComplete]()
+		{
+			UAssetManager& Mgr = UAssetManager::Get();
+			for (const FPrimaryAssetId& ID : IDsToLoad)
+			{
+				if (UPrimaryDataAsset* Asset = Cast<UPrimaryDataAsset>(Mgr.GetPrimaryAssetObject(ID)))
+				{
+					LoadedAssets.Add(ID, Asset);
+					UE_LOG(LogTemp, Log, TEXT("[AsyncDataManager] 번들 로드 완료: %s"), *ID.ToString());
+				}
+			}
+
+			if (OnComplete.IsBound())
+			{
+				OnComplete.Execute();
+			}
+		})
+	);
+
+	if (Handle.IsValid())
+	{
+		for (const FPrimaryAssetId& ID : IDsToLoad)
+		{
+			LoadHandles.Add(ID, Handle);
+		}
+	}
+}
+
 void USMAsyncDataManager::UnloadAssetsByID(const TArray<FPrimaryAssetId>& AssetIDs)
 {
 	for (const FPrimaryAssetId& ID : AssetIDs)

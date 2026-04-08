@@ -102,6 +102,7 @@ void USMPlayerInventoryPanelWidget::HandleInventoryUpdatedMessage(
 
 	if (InChannel == SMMessageTag::Inventory_MainContainerUpdated)
 	{
+		ApplySelectedSkillState();
 		RefreshMainInventoryWidget();
 		return;
 	}
@@ -458,6 +459,7 @@ void USMPlayerInventoryPanelWidget::ApplySelectedSkillState()
 	FSMSkillItemInstanceData SkillData;
 	if (InventoryComponent->GetSkillData(SelectedSkillInstanceId, SkillData) == false)
 	{
+		SelectedSkillInstanceId.Invalidate();
 		SkillInventoryWidget->ClearTargetSkill();
 		return;
 	}

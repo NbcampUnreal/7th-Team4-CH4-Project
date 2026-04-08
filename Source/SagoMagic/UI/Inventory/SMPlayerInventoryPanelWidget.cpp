@@ -176,6 +176,13 @@ void USMPlayerInventoryPanelWidget::ClearSelectedSkill()
 
 void USMPlayerInventoryPanelWidget::OpenSkillInventory(const FGuid& InSkillInstanceId)
 {
+	if (SelectedSkillInstanceId == InSkillInstanceId)
+	{
+		ApplySelectedSkillState();
+		BP_OnPanelRefreshed();
+		return;
+	}
+
 	SelectedSkillInstanceId = InSkillInstanceId;
 	ApplySelectedSkillState();
 	RefreshSkillInventoryWidget();
@@ -184,9 +191,15 @@ void USMPlayerInventoryPanelWidget::OpenSkillInventory(const FGuid& InSkillInsta
 
 void USMPlayerInventoryPanelWidget::CloseSkillInventory()
 {
+	if (SelectedSkillInstanceId.IsValid() == false)
+	{
+		ApplySelectedSkillState();
+		BP_OnPanelRefreshed();
+		return;
+	}
+
 	SelectedSkillInstanceId.Invalidate();
 	ApplySelectedSkillState();
-	RefreshSkillInventoryWidget();
 	BP_OnPanelRefreshed();
 }
 

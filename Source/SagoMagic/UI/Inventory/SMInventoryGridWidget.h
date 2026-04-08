@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Inventory/Core/SMContainerTypes.h"
 #include "Inventory/Core/SMItemInstanceTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "SMInventoryGridWidget.generated.h"
@@ -144,17 +143,11 @@ protected:
 	/** 드래그 드롭 오퍼레이션 변환 */
 	USMInventoryDragDropOperation* GetInventoryDragDropOperation(UDragDropOperation* InOperation) const;
 
-	/** 현재 컨테이너 데이터 조회 */
-	bool TryGetContainerData(FSMGridContainerState& OutContainerData) const;
-
-	/** 그리드 구조 갱신 */
-	void SyncGridStructure(const FSMGridContainerState& InContainerData);
-
 	/** 셀 위젯 생성 */
-	void RebuildCellWidgets(const FSMGridContainerState& InContainerData);
+	void RebuildCellWidgets();
 
-	/** 아이템 위젯 동기화 */
-	void SyncItemWidgets();
+	/** 아이템 위젯 생성 */
+	void RebuildItemWidgets();
 
 	/** 셀 위젯 제거 */
 	void ClearCellWidgets();
@@ -200,11 +193,8 @@ protected:
 	/** 베이스 아이템 데이터 기준 셀 점유 정보 반영 */
 	void ApplyItemOwnershipToCells(const FSMItemInstanceData& InBaseItemData);
 
-	/** 셀 점유 상태 전체 초기화 */
-	void ClearCellOccupancyState();
-
 	/** 컨테이너 크기 갱신 */
-	void RefreshContainerSize(const FSMGridContainerState& InContainerData);
+	void RefreshContainerSize();
 
 	/** 셀 위젯 위치 적용 */
 	void ApplyCellWidgetLayout(USMInventoryCellWidget* InCellWidget, int32 InGridX, int32 InGridY);
@@ -249,10 +239,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Grid Widget")
 	TArray<TObjectPtr<USMInventoryCellWidget>> CellWidgets;
 
-	/** 아이템 위젯 맵 */
-	UPROPERTY(Transient)
-	TMap<FGuid, TObjectPtr<USMItemWidget>> ItemWidgets;
-
 	/** 현재 컨테이너 가로 크기 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Grid Widget")
 	int32 GridWidth;
@@ -272,22 +258,6 @@ protected:
 	/** 현재 드래그 오퍼레이션 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Grid Widget")
 	TObjectPtr<USMInventoryDragDropOperation> ActiveDragDropOperation;
-
-	/** 마지막으로 구성한 그리드 구조 컨테이너 ID */
-	UPROPERTY(Transient)
-	FGuid CachedStructureContainerId;
-
-	/** 마지막으로 구성한 그리드 구조 가로 크기 */
-	UPROPERTY(Transient)
-	int32 CachedStructureWidth;
-
-	/** 마지막으로 구성한 그리드 구조 세로 크기 */
-	UPROPERTY(Transient)
-	int32 CachedStructureHeight;
-
-	/** 마지막으로 구성한 그리드 구조 비트마스크 */
-	UPROPERTY(Transient)
-	FString CachedStructureBitMask;
 
 private:
 };

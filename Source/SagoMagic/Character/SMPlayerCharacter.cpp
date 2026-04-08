@@ -42,7 +42,7 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	CameraComp->SetupAttachment(SpringArmComp);
-
+	
 	// 캐릭터의 움직임으로 몸 회전 금지
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
@@ -89,11 +89,6 @@ USMPlayerAttributeSet* ASMPlayerCharacter::GetAttributeSet() const
 	
 	return nullptr;
 }
-
-// UStaticMeshComponent* ASMPlayerCharacter::GetStaticMeshComponent() const
-// {
-// 	return WeaponMesh;
-// }
 
 void ASMPlayerCharacter::OnConstruction(const FTransform& Transform)
 {

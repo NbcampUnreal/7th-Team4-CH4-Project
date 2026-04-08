@@ -2,6 +2,8 @@
 
 #include "Blueprint/WidgetBlueprintLibrary.h"
 
+#include "Inventory/Components/SMInventoryComponent.h"
+#include "Inventory/Core/SMContainerTypes.h"
 #include "UI/Inventory/SMInventoryDragDropOperation.h"
 #include "UI/Inventory/SMInventoryGridWidget.h"
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
@@ -88,6 +90,18 @@ FReply USMInventoryCellWidget::NativeOnMouseButtonDown(const FGeometry& InGeomet
 	{
 		if (InMouseEvent.GetEffectingButton() == EKeys::RightMouseButton)
 		{
+			if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
+			{
+				FSMGridContainerState ContainerData;
+				if (OwningGrid->GetInventoryComponent() != nullptr &&
+					OwningGrid->GetInventoryComponent()->GetContainerData(OwningGrid->GetContainerId(), ContainerData) &&
+					ContainerData.ContainerType == ESMContainerType::SkillInternal)
+				{
+					OwningPanel->CloseContextMenu();
+					return FReply::Handled();
+				}
+			}
+
 			if (OwnerItemInstanceId.IsValid() == false)
 			{
 				OwningPanel->CloseContextMenu();

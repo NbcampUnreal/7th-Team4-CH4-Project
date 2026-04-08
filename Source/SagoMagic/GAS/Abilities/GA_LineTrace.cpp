@@ -38,7 +38,7 @@ void UGA_LineTrace::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 	CueParameters.RawMagnitude = RangeCm;
 	CueParameters.EffectContext = GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
 
-	UE_LOG(LogTemp, Warning, TEXT("[LineTrace] AddGameplayCue called -  RangeCm: %.1f"),RangeCm);
+	//UE_LOG(LogTemp, Warning, TEXT("[LineTrace] AddGameplayCue called -  RangeCm: %.1f"),RangeCm);
 	GetAbilitySystemComponentFromActorInfo()->AddGameplayCue(
 		SMSkillTag::GameplayCue_Skill_LineTrace_Beam, CueParameters);
 

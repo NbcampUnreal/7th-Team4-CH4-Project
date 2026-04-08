@@ -56,7 +56,7 @@ void AGCN_LineTraceBeam::Tick(float DeltaTime)
 
 void AGCN_LineTraceBeam::InitializeBeam(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
-	UE_LOG(LogTemp,Warning,TEXT("BeamNiagaraComponent::InitializeBeam()"));
+	//UE_LOG(LogTemp,Warning,TEXT("BeamNiagaraComponent::InitializeBeam()"));
 	if (IsValid(BeamNiagaraComponent) && BeamNiagaraComponent->IsActive())
 	{
 		return;

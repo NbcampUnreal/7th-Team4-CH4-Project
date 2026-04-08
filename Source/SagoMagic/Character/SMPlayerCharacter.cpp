@@ -185,7 +185,7 @@ void ASMPlayerCharacter::ToggleEditMode()
 	
 	UEnhancedInputLocalPlayerSubsystem* Subsystem =
 		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
-	if (!Subsystem || !BuildPlaceIMC || !SMAbilitySystemComponent) return;
+	if (!Subsystem || !BuildEditIMC || !SMAbilitySystemComponent) return;
 	
 	// 건축 모드가 켜져 있다면 종료
 	if (SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place))

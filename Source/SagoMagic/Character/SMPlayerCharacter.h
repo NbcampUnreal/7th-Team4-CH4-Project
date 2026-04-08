@@ -57,13 +57,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> InteractAction;
 	
-	UPROPERTY(EditAnywhere, Category = "Input|Build|Build")
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Place")
 	TObjectPtr<UInputAction> BuildAction;
 	
 	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
 	TObjectPtr<UInputAction> EditAction;
 	
-	UPROPERTY(EditAnywhere, Category = "Input|Build|Build")
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Place")
 	TObjectPtr<UInputAction> BuildPlaceAction;
 	
 	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
@@ -126,7 +126,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilities;
 	
-	/** 죽음 판정 함수 */
+	/** 죽음 판정 플래그 */
 	UPROPERTY(BlueprintReadOnly, Category = "Death", ReplicatedUsing = OnRep_IsDead)
 	bool bIsDead = false;
 	

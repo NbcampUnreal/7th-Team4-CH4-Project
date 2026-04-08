@@ -306,8 +306,20 @@ void USMInventoryGridWidget::RequestRotateDraggedItem()
 
 void USMInventoryGridWidget::ClearHoveredCellState()
 {
+	HoveredItemInstanceId.Invalidate();
 	HoveredGridX = -1;
 	HoveredGridY = -1;
+	UpdateCellStates();
+}
+
+void USMInventoryGridWidget::SetHoveredItemInstanceId(const FGuid& InItemInstanceId)
+{
+	if (HoveredItemInstanceId == InItemInstanceId)
+	{
+		return;
+	}
+
+	HoveredItemInstanceId = InItemInstanceId;
 	UpdateCellStates();
 }
 
@@ -796,8 +808,8 @@ void USMInventoryGridWidget::UpdateCellStates()
 		}
 
 		const bool bHovered =
-			CellWidget->GetGridX() == HoveredGridX &&
-			CellWidget->GetGridY() == HoveredGridY;
+			HoveredItemInstanceId.IsValid() &&
+			CellWidget->GetOwnerItemInstanceId() == HoveredItemInstanceId;
 
 		int32 CellArrayIndex = INDEX_NONE;
 		const bool bHighlighted =

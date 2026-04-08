@@ -32,6 +32,11 @@ void USMInventoryCellWidget::NativeOnMouseEnter(const FGeometry& InGeometry, con
 	{
 		OwningPanel->ShowHoveredItemInfo(OwnerItemInstanceId, InMouseEvent.GetScreenSpacePosition());
 	}
+
+	if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
+	{
+		OwningGrid->SetHoveredItemInstanceId(OwnerItemInstanceId);
+	}
 }
 
 FReply USMInventoryCellWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -44,6 +49,11 @@ FReply USMInventoryCellWidget::NativeOnMouseMove(const FGeometry& InGeometry, co
 	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 	{
 		OwningPanel->ShowHoveredItemInfo(OwnerItemInstanceId, InMouseEvent.GetScreenSpacePosition());
+	}
+
+	if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
+	{
+		OwningGrid->SetHoveredItemInstanceId(OwnerItemInstanceId);
 	}
 
 	return FReply::Handled();
@@ -64,6 +74,11 @@ void USMInventoryCellWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEven
 		{
 			OwningPanel->HideHoveredItemInfo();
 		}
+	}
+
+	if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
+	{
+		OwningGrid->SetHoveredItemInstanceId(FGuid());
 	}
 }
 
@@ -112,6 +127,11 @@ void USMInventoryCellWidget::NativeOnDragDetected(const FGeometry& InGeometry, c
 	{
 		OwningPanel->HideHoveredItemInfo();
 		OwningPanel->CloseContextMenu();
+	}
+
+	if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
+	{
+		OwningGrid->SetHoveredItemInstanceId(FGuid());
 	}
 
 	if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
@@ -165,10 +185,25 @@ void USMInventoryCellWidget::UpdateCellState(
 	bool bInPlaceableHighlighted,
 	bool bInBlockedHighlighted)
 {
+	const bool bShouldDisplayOccupiedState =
+		OwnerItemInstanceId.IsValid() &&
+		bInPlaceableHighlighted == false &&
+		bInBlockedHighlighted == false;
+
+	if (bCellEnabled == bInCellEnabled &&
+		bHoveredCell == bInHoveredCell &&
+		bPlaceableHighlighted == bInPlaceableHighlighted &&
+		bBlockedHighlighted == bInBlockedHighlighted &&
+		bOccupiedCell == bShouldDisplayOccupiedState)
+	{
+		return;
+	}
+
 	bCellEnabled = bInCellEnabled;
 	bHoveredCell = bInHoveredCell;
 	bPlaceableHighlighted = bInPlaceableHighlighted;
 	bBlockedHighlighted = bInBlockedHighlighted;
+	bOccupiedCell = bShouldDisplayOccupiedState;
 
 	BP_OnCellStateChanged();
 }

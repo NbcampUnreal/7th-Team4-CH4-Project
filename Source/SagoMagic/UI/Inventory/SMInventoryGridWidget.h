@@ -119,6 +119,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Inventory Grid Widget")
 	void ClearHoveredCellState();
 
+	/** 현재 호버 아이템 상태 설정 */
+	void SetHoveredItemInstanceId(const FGuid& InItemInstanceId);
+
 	/** 현재 드래그 상태 전체 초기화 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Grid Widget")
 	void ClearActiveDragState();
@@ -268,6 +271,10 @@ protected:
 	/** 현재 호버 셀 Y 좌표 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Grid Widget")
 	int32 HoveredGridY;
+
+	/** 현재 호버 중인 아이템 인스턴스 ID */
+	UPROPERTY(BlueprintReadOnly, Category="Inventory Grid Widget")
+	FGuid HoveredItemInstanceId;
 
 	/** 현재 드래그 오퍼레이션 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Grid Widget")

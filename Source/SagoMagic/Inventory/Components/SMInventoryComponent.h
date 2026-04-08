@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Containers/BitArray.h"
 #include "Components/ActorComponent.h"
 #include "Inventory/Core/SMItemInstanceTypes.h"
 #include "Inventory/Core/SMContainerTypes.h"
@@ -209,6 +210,10 @@ private:
 	/** 점유 셀 계산 */
 	bool BuildOccupiedCells(const FGuid& InItemInstanceId, int32 InGridX, int32 InGridY, ESMGridRotation InRotation,
 	                        TArray<FIntPoint>& OutOccupiedCells) const;
+
+	/** 특정 아이템의 점유 셀을 Bitset에 반영 */
+	void AddOccupiedBits(TBitArray<>& InOutOccupiedBits, const FSMGridContainerState& InTargetContainer,
+	                     const FGuid& InItemInstanceId, int32 InGridX, int32 InGridY, ESMGridRotation InRotation) const;
 
 	/** 컨테이너 충돌 여부 검사 */
 	bool HasPlacementConflict(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId, int32 InGridX,

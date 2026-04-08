@@ -36,12 +36,6 @@ namespace SMSkillTag
     //UGE_SkillCooldown - Duration
     UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Cooldown)
 
-    //아군 태그 - 아군의 공격이 아군이나 HQ, 아군의 구조물을 공격하지 못하게
-    UE_DECLARE_GAMEPLAY_TAG_EXTERN(Team)
-    UE_DECLARE_GAMEPLAY_TAG_EXTERN(Team_Player)
-    UE_DECLARE_GAMEPLAY_TAG_EXTERN(Team_HQ)
-    UE_DECLARE_GAMEPLAY_TAG_EXTERN(Team_Building)
-
     //코스메틱 태그
     UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Skill_Projectile_Hit)
     UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Skill_SpawnField_Tick)

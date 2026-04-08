@@ -6,8 +6,8 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
-#include "GameplayTags/Character/SMSkillTag.h"
 #include "Character/SMPlayerCharacter.h"
+#include "GameplayTags/GameFlow/SMGameFlowTag.h"
 
 
 ASMASkillProjectile::ASMASkillProjectile()
@@ -79,7 +79,7 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
 
     // 팀 태그 보유 액터 통과
     UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor);
-    if (TargetASC && TargetASC->HasMatchingGameplayTag(SMSkillTag::Team)) return;
+    if (TargetASC && TargetASC->HasMatchingGameplayTag(SMGameFlowTag::Team)) return;
 
     UE_LOG(LogTemp, Warning, TEXT("[Projectile] Hit: %s"), *OtherActor->GetName());
 

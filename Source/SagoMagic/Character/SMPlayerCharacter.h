@@ -40,9 +40,11 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> DefaultIMC;
 	
+	// TODO: 건설관련 논의 끝난 후 에디터에서 IMC 설정 필요
 	UPROPERTY(EditAnywhere, Category = "Input|Build|Place")
 	TObjectPtr<UInputMappingContext> BuildPlaceIMC;
 	
+	// TODO: 건설관련 논의 끝난 후 에디터에서 IMC 설정 필요
 	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
 	TObjectPtr<UInputMappingContext> BuildEditIMC;
 

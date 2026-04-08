@@ -6,9 +6,9 @@ USMMonsterAttributeSet::USMMonsterAttributeSet()
 {
     InitHealth(100.0f);
     InitMaxHealth(100.0f);
-    InitAttackPower(10.0f);
+    InitAttackPower(5.0f);
     InitDefense(5.0f);
-    InitMoveSpeed(300.0f);
+    InitMoveSpeed(100.0f);
     InitDropGold(20.0f);
 }
 

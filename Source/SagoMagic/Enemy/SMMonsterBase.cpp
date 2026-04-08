@@ -126,6 +126,11 @@ void ASMMonsterBase::PossessedBy(AController* NewController)
         {
             MonsterAI->StartAttackTimer();
         }
+
+        if (GetCharacterMovement())
+        {
+            GetCharacterMovement()->MaxWalkSpeed = MonsterAttributeSet->GetMoveSpeed();
+        }
     }
 }
 

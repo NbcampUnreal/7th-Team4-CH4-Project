@@ -15,8 +15,6 @@ AGCN_LineTraceBeam::AGCN_LineTraceBeam()
 
 	bAutoDestroyOnRemove = true; //OnRemove 후 자동 삭제
 
-	GameplayCueTag = SMSkillTag::GameplayCue_Skill_LineTrace_Beam;
-
 	BeamNiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("BeamNiagaraComponent"));
 	BeamNiagaraComponent->SetupAttachment(RootComponent);
 	BeamNiagaraComponent->SetAutoActivate(false);

@@ -124,13 +124,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilities;
 	
+	/** 죽음 판정 함수 */
 	UPROPERTY(BlueprintReadOnly, Category = "Death", ReplicatedUsing = OnRep_IsDead)
 	bool bIsDead = false;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Death")
 	float DeathLifeSpan = 5.0f;
 	
-	/** */
+	/** 서버에서 bIsDead가 바뀌면 클라에게 복제해줄 함수 */
 	UFUNCTION()
 	virtual void OnRep_IsDead();
 	
@@ -151,9 +152,11 @@ protected:
 	
 	void UseQuickSlot(const FInputActionValue& InValue);
 	
+	// B버튼 및 V버튼을 누르면 모드가 바뀌는 함수
 	void ToggleBuildMode();
 	void ToggleEditMode();
 	
+	// 건축모드나 편집 모드일시 좌클릭 누르면 실행될 함수
 	void OnBuildPlace();
 	void OnEditSelect();
 };

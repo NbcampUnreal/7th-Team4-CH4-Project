@@ -147,27 +147,15 @@ void ASMMonsterBase::GiveDefaultAbilities()
         {
             FGameplayAbilitySpec Spec(AbilityClass, 1);
             MonsterAbilitySystemComponent->GiveAbility(Spec);
-
-           /* UE_LOG(LogTemp, Warning, TEXT("[Monster] %s / ASC:%p / 어빌리티 부여: %s"),
-                *GetName(),
-                MonsterAbilitySystemComponent.Get(),
-                *AbilityClass->GetName());*/
         }
     }
-
-   /* UE_LOG(LogTemp, Warning, TEXT("[Monster] %s / ASC:%p / 실제 부여된 수: %d"),
-        *GetName(),
-        MonsterAbilitySystemComponent.Get(),
-        MonsterAbilitySystemComponent->GetActivatableAbilities().Num());*/
 }
-
 
 void ASMMonsterBase::HandleDeath(AController* KillerController)
 {
    
     // 이미 죽었거나 유효하지 않으면 무시
     if (!IsValid(this) || !HasAuthority()) return;
-
 
     // 막타 친 플레이어에게 골드 지급
     if (KillerController)
@@ -190,16 +178,14 @@ void ASMMonsterBase::HandleDeath(AController* KillerController)
                         float NewGold = MutableAttr->GetGold() + GoldReward;
                         MutableAttr->SetGold(NewGold);
                        
-                        /*UE_LOG(LogTemp, Log, TEXT("[Gold] %s에게 %.0f Gold 지급 (총 %.0f)"),
-                            *KillerController->GetName(), GoldReward, NewGold);*/
+                        //UE_LOG(LogTemp, Log, TEXT("[Gold] %s에게 %.0f Gold 지급 (총 %.0f)"),
+                        //    *KillerController->GetName(), GoldReward, NewGold);
                     }
                 }
             }
         }
     }
 
-    //UE_LOG(LogTemp, Warning, TEXT("[Monster] %s 사망. 3초 후 제거됩니다."), *GetName());
-    
     if (USMWaveManagerSubsystem* WM = USMWaveManagerSubsystem::Get(this))
     {
         WM->OnMonsterDied(this);
@@ -220,11 +206,8 @@ void ASMMonsterBase::HandleDeath(AController* KillerController)
     // 충돌·이동 비활성화
     ResetMonster();
     //MulticastHandleDeath();
-    // SetActorEnableCollision(false);
 
     // 3초 후 액터 제거 (애니메이션 붙일 자리)
     //SetLifeSpan(3.0f);
-    
 
-    //UE_LOG(LogTemp, Warning, TEXT("[Monster] HandleDeath 완료 - Destroy 호출 없음"));
 }

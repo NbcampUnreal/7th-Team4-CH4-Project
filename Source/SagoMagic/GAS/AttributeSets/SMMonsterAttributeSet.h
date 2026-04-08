@@ -48,7 +48,7 @@ public:
     /** HP가 0이 됐을 때 브로드캐스트 (서버에서만 발생) **/
     FOnMonsterDied OnMonsterDied;
 
-     UFUNCTION()
+    UFUNCTION()
     virtual void OnRep_Health(const FGameplayAttributeData& OldHealth);
     UFUNCTION() 
     virtual void OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth);

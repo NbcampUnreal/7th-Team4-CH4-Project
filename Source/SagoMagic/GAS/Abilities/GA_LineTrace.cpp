@@ -34,6 +34,14 @@ void UGA_LineTrace::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 	UWorld* World = GetWorld();
 	if (IsValid(World) == false) return;
 
+	FGameplayCueParameters CueParameters;
+	CueParameters.RawMagnitude = RangeCm;
+	CueParameters.EffectContext = GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
+
+	UE_LOG(LogTemp, Warning, TEXT("[LineTrace] AddGameplayCue called -  RangeCm: %.1f"),RangeCm);
+	GetAbilitySystemComponentFromActorInfo()->AddGameplayCue(
+		SMSkillTag::GameplayCue_Skill_LineTrace_Beam, CueParameters);
+
 	//DT_Skill로 부터 SkillDuration, DamageInterval 로드
 	//if (const FSMSkillData* Row = SkillStatRow.GetRow<FSMSkillData>(TEXT("GA_LineTrace")))
 	//{
@@ -73,6 +81,17 @@ void UGA_LineTrace::EndAbility(const FGameplayAbilitySpecHandle Handle, const FG
 		World->GetTimerManager().ClearTimer(DurationEndHandle);
 	}
 
+	if (ActorInfo)
+	{
+		APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
+		if (IsValid(Avatar) == true && Avatar->HasAuthority() == true)
+		{
+			GetAbilitySystemComponentFromActorInfo()->RemoveGameplayCue(
+				SMSkillTag::GameplayCue_Skill_LineTrace_Beam
+			);
+		}
+	}
+
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
@@ -105,7 +124,7 @@ void UGA_LineTrace::ApplyDamageToActor(AActor* HitActor)
 	{
 		// SetByCaller로 데미지 수치 전달
 		SpecHandle.Data->SetSetByCallerMagnitude(SMSkillTag::Data_Damage_Amount, BaseDamage);
-		
+
 		GetAbilitySystemComponentFromActorInfo()->ApplyGameplayEffectSpecToTarget(
 			*SpecHandle.Data.Get(),
 			TargetASC
@@ -158,7 +177,7 @@ void UGA_LineTrace::ApplyDamageTick()
 
 	//매 틱마다 현재 커서 방향으로 AimData 갱신
 	ExtractAimData(ActorInfo);
-	
+
 	FHitResult OutHit;
 	const bool bHit = FindFirstEnemy(GetWorld(), ActorInfo, OutHit);
 
@@ -188,7 +207,7 @@ void UGA_LineTrace::ApplyDamageTick()
 		//        OutHit.Distance, // 시작점에서 히트까지 거리 (cm)
 		//        *OutHit.BoneName.ToString() // 맞은 본 이름 (스켈레탈 메시일 경우)
 		// );
-		
+
 		if (AActor* HitActor = OutHit.GetActor())
 		{
 			ApplyDamageToActor(HitActor);

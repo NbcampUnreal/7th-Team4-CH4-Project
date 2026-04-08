@@ -579,11 +579,14 @@ void USMInventoryGridWidget::SyncItemWidgets()
 		return;
 	}
 
-	ClearCellOccupancyState();
-
 	TSet<FGuid> DesiredItemInstanceIds;
+	TArray<FGuid> DesiredOwnerItemInstanceIds;
+	TArray<FLinearColor> DesiredOccupiedAccentColors;
+	DesiredOwnerItemInstanceIds.Init(FGuid(), CellWidgets.Num());
+	DesiredOccupiedAccentColors.Init(FLinearColor::White, CellWidgets.Num());
 
-	auto SyncItemWidget = [this, &DesiredItemInstanceIds](const FSMItemInstanceData& InBaseItemData)
+	auto SyncItemWidget = [this, &DesiredItemInstanceIds, &DesiredOwnerItemInstanceIds, &DesiredOccupiedAccentColors](
+		const FSMItemInstanceData& InBaseItemData)
 	{
 		DesiredItemInstanceIds.Add(InBaseItemData.InstanceId);
 
@@ -625,7 +628,26 @@ void USMInventoryGridWidget::SyncItemWidgets()
 			ApplyItemWidgetLayout(ItemWidget, InBaseItemData.GridX, InBaseItemData.GridY);
 		}
 
-		ApplyItemOwnershipToCells(InBaseItemData);
+		TArray<FIntPoint> OccupiedCells;
+		if (BuildOccupiedCellsFromItemData(InBaseItemData, OccupiedCells) == false)
+		{
+			return;
+		}
+
+		FLinearColor AccentColor = FLinearColor::White;
+		GetItemAccentColor(InBaseItemData, AccentColor);
+
+		for (const FIntPoint& OccupiedCell : OccupiedCells)
+		{
+			int32 CellArrayIndex = INDEX_NONE;
+			if (TryGetCellArrayIndex(OccupiedCell.X, OccupiedCell.Y, CellArrayIndex) == false)
+			{
+				continue;
+			}
+
+			DesiredOwnerItemInstanceIds[CellArrayIndex] = InBaseItemData.InstanceId;
+			DesiredOccupiedAccentColors[CellArrayIndex] = AccentColor;
+		}
 	};
 
 	for (const FSMItemInstanceData& ItemData : InventoryComponent->GetItemEntries())
@@ -670,6 +692,19 @@ void USMInventoryGridWidget::SyncItemWidgets()
 		}
 
 		ItemWidgets.Remove(StaleItemInstanceId);
+	}
+
+	for (int32 CellIndex = 0; CellIndex < CellWidgets.Num(); ++CellIndex)
+	{
+		USMInventoryCellWidget* CellWidget = CellWidgets[CellIndex];
+		if (CellWidget == nullptr)
+		{
+			continue;
+		}
+
+		const FGuid& DesiredOwnerItemInstanceId = DesiredOwnerItemInstanceIds[CellIndex];
+		const FLinearColor& DesiredOccupiedAccentColor = DesiredOccupiedAccentColors[CellIndex];
+		CellWidget->UpdateOccupiedItem(DesiredOwnerItemInstanceId, DesiredOccupiedAccentColor);
 	}
 }
 

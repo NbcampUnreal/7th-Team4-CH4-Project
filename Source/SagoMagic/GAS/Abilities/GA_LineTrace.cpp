@@ -5,6 +5,7 @@
 #include "DrawDebugHelpers.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "GameplayTags/Character/SMSkillTag.h"
+#include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "GAS/SMAbilitySystemComponent.h"
 
 UGA_LineTrace::UGA_LineTrace()
@@ -166,7 +167,7 @@ bool UGA_LineTrace::HasAnyTeamTag(AActor* Actor) const
 	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
 	if (IsValid(ASC) == false) return false;
 
-	return ASC->HasMatchingGameplayTag(SMSkillTag::Team);
+	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Team);
 }
 
 void UGA_LineTrace::ApplyDamageTick()

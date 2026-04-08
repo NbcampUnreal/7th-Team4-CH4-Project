@@ -2,9 +2,12 @@
 
 #include "EngineUtils.h"
 #include "Core/SMGameMode.h"
+#include "Core/DataManager/SMAsyncDataManager.h"
 #include "Core/DataManager/SMSyncDataManager.h"
+#include "Data/SMMonsterDataAsset.h"
 #include "Data/SMMonsterData.h"
 #include "Data/SMWaveData.h"
+#include "Engine/AssetManager.h"
 
 bool USMWaveManagerSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 {
@@ -15,56 +18,214 @@ bool USMWaveManagerSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 
 }
 
-void USMWaveManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
-{
-    Super::Initialize(Collection);
-}
-
 void USMWaveManagerSubsystem::Deinitialize()
 {
-    ActiveSpawnTasks.Empty();
+    GetWorld()->GetTimerManager().ClearTimer(PreSpawnTimerHandle);
+    GetWorld()->GetTimerManager().ClearTimer(ActivateTimerHandle);
+    GetWorld()->GetTimerManager().ClearTimer(DestroyTimerHandle);
+    
+    SpawnQueue.Empty();
+    PreSpawnedActors.Empty();
+    AliveMonsters.Empty();
     Spawners.Empty();
+    PendingDestroyActors.Empty();
     Super::Deinitialize();
 }
 
-void USMWaveManagerSubsystem::Tick(float DeltaTime)
+USMWaveManagerSubsystem* USMWaveManagerSubsystem::Get(const UObject* WorldContextObject)
 {
-    Super::Tick(DeltaTime);
+    if (!WorldContextObject) return nullptr;
+    UWorld* World = WorldContextObject->GetWorld();
+    if (!World) return nullptr;
+    return World->GetSubsystem<USMWaveManagerSubsystem>();
+}
+
+void USMWaveManagerSubsystem::PreSpawnForWave(int32 WaveIndex)
+{
     if (GetWorld()->GetNetMode() == NM_Client) return;
-
-    bool bAnyTaskRemaining = false;
-    for (FActiveSpawnTask & Task : ActiveSpawnTasks)
+    
+    //이전 웨이브 남은 Actor Destroy
+    for (ASMMonsterBase* Actor : PreSpawnedActors)
     {
-        if (Task.RemainingCount <= 0) continue;
-
-        bAnyTaskRemaining = true;
-        Task.AccumulatedTime += DeltaTime;
-
-        if (Task.AccumulatedTime >= Task.Interval)
+        if (IsValid(Actor))
+            Actor->Destroy();
+    }
+    for (ASMMonsterBase* Actor : AliveMonsters)
+    {
+        if (IsValid(Actor))
+            Actor->Destroy();
+    }
+    SpawnQueue.Empty();
+    MonsterAssetIDs.Empty();
+    PreSpawnedActors.Empty();
+    AliveMonsters.Empty();
+    PendingDestroyActors.Empty();
+    
+    USMSyncDataManager* DM = USMSyncDataManager::Get(this);
+    USMAsyncDataManager* AM = USMAsyncDataManager::Get(this);
+    if (!DM || !AM) return;
+    
+    FSMWaveData WaveData = DM->GetWaveData(WaveIndex);
+    
+    
+    //WaveData에서 필요한 DataAsset들 ID뽑아오는 작업
+    TArray<FPrimaryAssetId> IDsToLoad;
+    for (const FWaveSpawnData& Entry : WaveData.SpawnList)
+    {
+        SpawnQueue.Add(TPair<EMonsterType, int32>(Entry.MonsterType, Entry.SpawnCount));
+        
+        FSMMonsterData MonsterData = DM->GetMonsterData(Entry.MonsterType);
+        FPrimaryAssetId AssetID = UAssetManager::Get()
+            .GetPrimaryAssetIdForPath(MonsterData.MonsterClass.ToSoftObjectPath());
+        
+        if (AssetID.IsValid())
         {
-            Task.AccumulatedTime = 0.f;
-            Task.RemainingCount--;
-            SpawnOne(Task.MonsterClass);
+            MonsterAssetIDs.Add(Entry.MonsterType, AssetID);
+            IDsToLoad.AddUnique(AssetID);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("[WaveManager] %d 타입 AssetID 없음"),
+                (int32)Entry.MonsterType);
         }
     }
-
-    //몯든 Task 소진 시 스폰 완료
-    if (!bAnyTaskRemaining && bSpawningInProgress)
+    
+    if (IDsToLoad.IsEmpty())
     {
-        bSpawningInProgress = false;
-        UE_LOG(LogTemp, Log, TEXT("[WaveManager] 전체 스폰 완료 - 생존 : %d"),AliveMonsterCount);
-        CheckWaveCleared();//스폰 완료 시점에 이미 전멸했을 경우 방지
+        UE_LOG(LogTemp, Warning, TEXT("[WaveManager] 로드할 Asset 없음 - OnReadyForCombat 즉시 발동"));
+        OnReadyForCombat.ExecuteIfBound();
+        return;
     }
+    
+    //로드가 완료되면 SetTimer로 Spawning 시작
+    AM->LoadAssetsByID(IDsToLoad, FOnAssetLoadComplete::CreateLambda([this]()
+    {
+        UE_LOG(LogTemp, Log, TEXT("[WaveManager] DataAsset 로드 완료 - PreSpawn 타이머 시작"));
+        GetWorld()->GetTimerManager().SetTimer(
+            PreSpawnTimerHandle,
+            this,
+            &USMWaveManagerSubsystem::TickPreSpawning,
+            0.1f,
+            true
+            );
+    }));
 }
 
-TStatId USMWaveManagerSubsystem::GetStatId() const
+void USMWaveManagerSubsystem::TickPreSpawning()
 {
-    RETURN_QUICK_DECLARE_CYCLE_STAT(USMWaveManagerSubsystem, STATGROUP_Tickables);
+    //스폰 큐 확인
+    if (SpawnQueue.IsEmpty())
+    {
+        GetWorld()->GetTimerManager().ClearTimer(PreSpawnTimerHandle);
+        UE_LOG(LogTemp, Log, TEXT("[WaveManager] PreSpawn 완료 (%d개) - OnReadyForCombat"),
+            PreSpawnedActors.Num());
+        OnReadyForCombat.ExecuteIfBound();
+        return;
+    }
+    
+    TPair<EMonsterType, int32>& Front = SpawnQueue[0];
+    EMonsterType Type = Front.Key;
+    
+    USMAsyncDataManager* AM = USMAsyncDataManager::Get(this);
+    FPrimaryAssetId* AssetIdPtr = MonsterAssetIDs.Find(Type);
+    
+    if (!AM || !AssetIdPtr)
+    {
+        Front.Value--;
+        if (Front.Value <= 0) SpawnQueue.RemoveAt(0);
+        return;
+    }
+    
+    //DataAsset확인
+    USMMonsterDataAsset* DataAsset = Cast<USMMonsterDataAsset>(AM->GetLoadAsset(*AssetIdPtr));
+    if (!DataAsset)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[WaveManager] DataAsset 캐스트 실패"));
+        Front.Value--;
+        if (Front.Value <= 0) SpawnQueue.RemoveAt(0);
+        return;
+    }
+    
+    //MonsterClass 로드(껍대기만 로드하는 방식이여서 로드가 안무거움)
+    TSubclassOf<ASMMonsterBase> MonsterClass = DataAsset->MonsterClass.LoadSynchronous();
+    if (!MonsterClass)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[WaveManager] MonsterClass 로드 실패"));
+        Front.Value--;
+        if (Front.Value <= 0) SpawnQueue.RemoveAt(0);
+        return;
+    }
+    
+    FActorSpawnParameters Params;
+    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    //몬스터 스폰
+    ASMMonsterBase* Monster = GetWorld()->SpawnActor<ASMMonsterBase>(
+        MonsterClass,
+        FVector(0.f,0.f,-10000.f),
+        FRotator::ZeroRotator,
+        Params
+    );
+    //몬스터 숨김
+    if (Monster)
+    {
+        Monster->MonsterType = Type;
+        Monster->SetActorHiddenInGame(true);
+        Monster->SetActorEnableCollision(false);
+        PreSpawnedActors.Add(Monster);
+    }
+    
+    Front.Value--;
+    if (Front.Value <= 0)
+        SpawnQueue.RemoveAt(0);
 }
 
-bool USMWaveManagerSubsystem::IsTickable() const
+void USMWaveManagerSubsystem::TickActivation()
 {
-    return bIsWaveActive;
+    if (PreSpawnedActors.IsEmpty())
+    {
+        GetWorld()->GetTimerManager().ClearTimer(ActivateTimerHandle);
+        CheckWaveCleared();
+        return;
+    }
+    
+    ASMMonsterBase* Monster = PreSpawnedActors[0];
+    PreSpawnedActors.RemoveAt(0);
+    
+    if (!IsValid(Monster)) return;
+    
+    //DataAsset -> Visual 적용
+    USMAsyncDataManager* AM = USMAsyncDataManager::Get(this);
+    FPrimaryAssetId* AssetIdPtr = MonsterAssetIDs.Find(Monster->MonsterType);
+    UE_LOG(LogTemp, Warning, TEXT("123"));
+    if (AM && AssetIdPtr)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("1234"));
+        USMMonsterDataAsset* DataAsset =
+            Cast<USMMonsterDataAsset>(AM->GetLoadAsset(*AssetIdPtr));
+        if (DataAsset)
+            Monster->MulticastApplyVisuals(DataAsset);
+    }
+    
+    //랜덤 Spawner 위치로 이동
+    if (ASMMonsterSpawner* Spawner = GetRandomSpawner())
+    {
+        Monster->SetActorLocationAndRotation(
+            Spawner->GetActorLocation(),
+            Spawner->GetActorRotation()
+        );
+    }
+    //활성화
+    Monster->SetActorHiddenInGame(false);
+    Monster->SetActorEnableCollision(true);
+    Monster->SetActorTickEnabled(true);
+    
+    //AI 재시작
+    Monster->SpawnDefaultController();
+    
+    AliveMonsters.Add(Monster);
+    
+    UE_LOG(LogTemp, Log, TEXT("[WaveManger] 몬스터 활성화 - 생존 : %d / 대기 : %d"),
+        AliveMonsters.Num(),PreSpawnedActors.Num());
 }
 
 void USMWaveManagerSubsystem::StartWave(int32 WaveIndex)
@@ -72,59 +233,43 @@ void USMWaveManagerSubsystem::StartWave(int32 WaveIndex)
     //서버에서만 동작
     if (GetWorld()->GetNetMode() == NM_Client) return;
 
-    USMSyncDataManager* DM = USMSyncDataManager::Get(this);
-    if (!DM)
-    {
-        UE_LOG(LogTemp, Error, TEXT("[WaveManager] DataManager 없음"));
-        return;
-    }
-    FSMWaveData WaveData = DM->GetWaveData(WaveIndex);
-    
-    ActiveSpawnTasks.Empty();
-    AliveMonsterCount = 0;
-    bIsWaveActive = true;
-    bSpawningInProgress = true;
-
-    CollectSpawners();
-
+   CollectSpawners();
     if (Spawners.IsEmpty())
     {
         UE_LOG(LogTemp, Error, TEXT("[WaveManager] 레벨에 Spawner 없음"));
-        bIsWaveActive = false;
-        bSpawningInProgress = false;
         return;
     }
-
-    for (const FWaveSpawnData& Entry : WaveData.SpawnList)
+    
+    float SpawnInterval = 1.0f;
+    USMSyncDataManager* DM = USMSyncDataManager::Get(this);
+    if (DM)
     {
-        FSMMonsterData MonsterData = DM->GetMonsterData(Entry.MonsterType);
-        TSubclassOf<ASMMonsterBase> MonsterClass = MonsterData.MonsterClass.LoadSynchronous();
-        if (!MonsterClass)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("[WaveManager] MonsterClass 로드 실패"));
-            continue;
-        }
-
-        FActiveSpawnTask Task;
-        Task.MonsterClass = MonsterClass;
-        Task.RemainingCount = Entry.SpawnCount;
-        Task.Interval = Entry.SpawnInterval;
-        Task.AccumulatedTime = Entry.SpawnInterval;
-
-        ActiveSpawnTasks.Add(Task);
+        FSMWaveData WaveData = DM->GetWaveData(WaveIndex);
+        if (!WaveData.SpawnList.IsEmpty())
+            SpawnInterval = WaveData.SpawnList[0].SpawnInterval;
     }
 
-    UE_LOG(LogTemp, Log, TEXT("[WaveManager] Wave %d 시작 - SpawnTask %d개"),
-        WaveIndex, ActiveSpawnTasks.Num());
-
+    GetWorld()->GetTimerManager().SetTimer(
+        ActivateTimerHandle,
+        this,
+        &USMWaveManagerSubsystem::TickActivation,
+        SpawnInterval,
+        true
+    );
+    
+    UE_LOG(LogTemp, Log, TEXT("[WaveManager] Wave %d 전투 시작 - %.1f초 간격 활성화"),
+        WaveIndex, SpawnInterval);
+    
 }
 
-void USMWaveManagerSubsystem::OnMonsterDied()
+void USMWaveManagerSubsystem::OnMonsterDied(ASMMonsterBase* Monster)
 {
     if (GetWorld()->GetNetMode() == NM_Client) return;
-
-    AliveMonsterCount = FMath::Max(0, AliveMonsterCount -1);
-    UE_LOG(LogTemp, Log, TEXT("[WaveManager] 몬스터 사망 - 생존 : %d"), AliveMonsterCount);
+    
+    AliveMonsters.Remove(Monster);
+    ScheduleDestroy(Monster);
+    
+    UE_LOG(LogTemp, Log, TEXT("[WaveManager] 몬스터 사망 - 생존 : %d"), AliveMonsters.Num());
 
     CheckWaveCleared();
 }
@@ -139,6 +284,48 @@ void USMWaveManagerSubsystem::CollectSpawners()
     UE_LOG(LogTemp, Log, TEXT("[WaveManager] Spawner %d개 수집"), Spawners.Num());
 }
 
+void USMWaveManagerSubsystem::TickDestroy()
+{
+    if (PendingDestroyActors.IsEmpty())
+    {
+        GetWorld()->GetTimerManager().ClearTimer(DestroyTimerHandle);
+        return;
+    }
+    
+    ASMMonsterBase* Monster = PendingDestroyActors[0];
+    PendingDestroyActors.RemoveAt(0);
+    
+    if (!IsValid(Monster)) return;
+    
+    //Controller 정리 후 Actor Destroy
+    if (AController* Ctrl = Monster->GetController())
+    {
+        Ctrl->UnPossess();
+        Ctrl->Destroy();
+    }
+    Monster->Destroy();
+    
+    UE_LOG(LogTemp, Log, TEXT("[WaveManager] Actor Destroy - 대기: %d"), PendingDestroyActors.Num());
+}
+
+void USMWaveManagerSubsystem::ScheduleDestroy(ASMMonsterBase* Monster)
+{
+    if (!IsValid(Monster)) return;
+    
+    PendingDestroyActors.Add(Monster);
+    
+    if (!GetWorld()->GetTimerManager().IsTimerActive(DestroyTimerHandle))
+    {
+        GetWorld()->GetTimerManager().SetTimer(
+            DestroyTimerHandle,
+            this,
+            &USMWaveManagerSubsystem::TickDestroy,
+            0.1f,
+            true
+            );
+    }
+}
+
 ASMMonsterSpawner* USMWaveManagerSubsystem::GetRandomSpawner() const
 {
     if (Spawners.IsEmpty()) return nullptr;
@@ -147,28 +334,17 @@ ASMMonsterSpawner* USMWaveManagerSubsystem::GetRandomSpawner() const
     return Spawners[RandomIndex];
 }
 
-void USMWaveManagerSubsystem::SpawnOne(TSubclassOf<ASMMonsterBase> MonsterClass)
-{
-    ASMMonsterSpawner* Spawner = GetRandomSpawner();
-    if (!Spawner) return;
-
-    ASMMonsterBase* Monster = Spawner->SpawnMonster(MonsterClass);
-    if (Monster)
-    {
-        AliveMonsterCount++;
-        //TODO 은서 : 몬스터 Die 함수에서 OnMonsterDied() 호출 연결 필요
-    }
-}
-
 void USMWaveManagerSubsystem::CheckWaveCleared()
 {
-    //스폰이 아직 진행 중이면 아직 아님
-    if (bSpawningInProgress) return;
-
-    //살아있는 몬스터가 남아있으면 아직 아님
-    if (AliveMonsterCount > 0) return;
-
-    bIsWaveActive = false;
+    // Activation 타이머가 아직 살아있으면 (PreSpawnedActors가 남아있을 수 있음)
+    if (GetWorld()->GetTimerManager().IsTimerActive(ActivateTimerHandle)) return;
+    
+    //PreSpawnedActors가 남이있으면
+    if (!PreSpawnedActors.IsEmpty()) return;
+    
+    //살아있는 몬스터가 있으면
+    if (!AliveMonsters.IsEmpty()) return;
+    
     UE_LOG(LogTemp, Log, TEXT("[WaveManager] 웨이브 클리어!"));
 
     if(ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>())

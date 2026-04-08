@@ -2,9 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BehaviorTree.h"
-#include "Enemy/SMMonsterBase.h"
 #include "Engine/DataAsset.h"
+#include "GameplayEffect.h"
 #include "SMMonsterDataAsset.generated.h"
+
+class ASMMonsterBase;
 
 /**
  * 몬스터 한 종류의 에셋 정보를 담는 PrimaryDataAsset

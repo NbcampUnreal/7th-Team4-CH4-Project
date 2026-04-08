@@ -47,7 +47,7 @@ struct FWaveMsg
  * Listener :
  * PlayerHP, Gold는 GAS 델리게이트로 처리
  */
-USTRUCT(blueprintType)
+USTRUCT(BlueprintType)
 struct FPlayerStatusMsg
 {
     GENERATED_BODY()
@@ -62,7 +62,7 @@ struct FPlayerStatusMsg
  * UI.Event.BaseCamp
  * Listener :
  */
-USTRUCT(blueprintType)
+USTRUCT(BlueprintType)
 struct FBaseCampMsg
 {
     GENERATED_BODY()
@@ -77,7 +77,7 @@ struct FBaseCampMsg
  * UI.Event.QuickSlot
  * Listener :
  */
-USTRUCT(blueprintType)
+USTRUCT(BlueprintType)
 struct FQuickSlotMsg
 {
     GENERATED_BODY()
@@ -94,7 +94,7 @@ struct FQuickSlotMsg
  * UI.Event.Result
  * Listener :
  */
-USTRUCT(blueprintType)
+USTRUCT(BlueprintType)
 struct FResultMsg
 {
     GENERATED_BODY()
@@ -111,7 +111,7 @@ struct FResultMsg
  * UI.Event.SystemLog
  * Listener :
  */
-USTRUCT(blueprintType)
+USTRUCT(BlueprintType)
 struct FSystemMsg
 {
     GENERATED_BODY()

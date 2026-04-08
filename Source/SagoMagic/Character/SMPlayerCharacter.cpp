@@ -144,12 +144,72 @@ void ASMPlayerCharacter::UseQuickSlot(const FInputActionValue& InValue)
 
 void ASMPlayerCharacter::ToggleBuildMode()
 {
+	ASMPlayerController* PC = Cast<ASMPlayerController>(Controller);
+	if (!PC || !PC->IsLocalController()) return;
 	
+	UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
+	if (!Subsystem || !BuildPlaceIMC || !SMAbilitySystemComponent) return;
+	
+	// 편집 모드라면 토글 함수를 호출해 종료
+	if (SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit))
+	{
+		ToggleEditMode();
+	}
+	
+	// 현재 건축모드인지 확인
+	bool bIsBuildMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place);
+	
+	if (!bIsBuildMode)
+	{
+		Subsystem->AddMappingContext(BuildPlaceIMC, 1);
+		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
+		SM_LOG(this, LogSM, Log, TEXT("건축 모드 ON"));
+		
+		// TODO: 나중에 BuildComponent 구현 후 건축모드 활성화 로직 추가
+	}
+	else
+	{
+		Subsystem->RemoveMappingContext(BuildPlaceIMC);
+		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
+		SM_LOG(this, LogSM, Log, TEXT("건축 모드 OFF"));
+		
+		// TODO: 나중에 BuildComponent 구현 후 건축모드 아래 비활성화 로직 추가
+	}
 }
 
 void ASMPlayerCharacter::ToggleEditMode()
 {
+	ASMPlayerController* PC = Cast<ASMPlayerController>(Controller);
+	if (!PC || !PC->IsLocalController()) return;
 	
+	UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
+	if (!Subsystem || !BuildPlaceIMC || !SMAbilitySystemComponent) return;
+	
+	// 건축 모드가 켜져 있다면 종료
+	if (SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place))
+	{
+		ToggleBuildMode();
+	}
+	
+	// 현재 편집 모드인지 확인
+	bool bIsEditMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit);
+	
+	if (!bIsEditMode)
+	{
+		Subsystem->AddMappingContext(BuildEditIMC, 1);
+		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Edit);
+		SM_LOG(this, LogSM, Log, TEXT("편집 모드 ON"));
+		
+		// TODO: 나중에 BuildComponent 구현 후 편집모드 활성화 로직 추가
+	}
+	else
+	{
+		Subsystem->RemoveMappingContext(BuildPlaceIMC);
+		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
+		SM_LOG(this, LogSM, Log, TEXT("편집 모드 OFF"));
+	}
 }
 
 void ASMPlayerCharacter::BeginPlay()

@@ -2,6 +2,7 @@
 
 #include "EngineUtils.h"
 #include "Core/SMGameMode.h"
+#include "Core/SMGameState.h"
 #include "Core/DataManager/SMAsyncDataManager.h"
 #include "Core/DataManager/SMSyncDataManager.h"
 #include "Data/SMMonsterDataAsset.h"
@@ -96,19 +97,25 @@ void USMWaveManagerSubsystem::PreSpawnForWave(int32 WaveIndex)
         OnReadyForCombat.ExecuteIfBound();
         return;
     }
-    
-    //로드가 완료되면 SetTimer로 Spawning 시작
-    AM->LoadAssetsByID(IDsToLoad, FOnAssetLoadComplete::CreateLambda([this]()
+
+    bServerReady = false;
+    ReadyClientCount = 0;
+    TotalExpectedClients = GetWorld()->GetGameState()->PlayerArray.Num();
+    UE_LOG(LogTemp, Log, TEXT("[WaveManager] TotalExpectedClients: %d"), TotalExpectedClients);
+    if (ASMGameState* GS = GetWorld()->GetGameState<ASMGameState>())
     {
-        UE_LOG(LogTemp, Log, TEXT("[WaveManager] DataAsset 로드 완료 - PreSpawn 타이머 시작"));
-        GetWorld()->GetTimerManager().SetTimer(
-            PreSpawnTimerHandle,
-            this,
-            &USMWaveManagerSubsystem::TickPreSpawning,
-            0.1f,
-            true
-            );
-    }));
+        GS->MulticastPreloadClientAssets(IDsToLoad);
+    }
+    
+    // 서버 로드 완료 콜백
+    AM->LoadAssetsByIDWithBundles(IDsToLoad, TArray<FName>{"Server"},
+        FOnAssetLoadComplete::CreateLambda([this]()
+        {
+            UE_LOG(LogTemp, Log, TEXT("[WaveManager] 서버 DataAsset 로드 완료"));
+            bServerReady = true;
+            CheckAllReady();
+        })
+    );
 }
 
 void USMWaveManagerSubsystem::TickPreSpawning()
@@ -193,17 +200,29 @@ void USMWaveManagerSubsystem::TickActivation()
     
     if (!IsValid(Monster)) return;
     
-    //DataAsset -> Visual 적용
+    //DataAsset -> DamageEffect 적용 (서버 전용)
     USMAsyncDataManager* AM = USMAsyncDataManager::Get(this);
     FPrimaryAssetId* AssetIdPtr = MonsterAssetIDs.Find(Monster->MonsterType);
-    UE_LOG(LogTemp, Warning, TEXT("123"));
     if (AM && AssetIdPtr)
     {
-        UE_LOG(LogTemp, Warning, TEXT("1234"));
+        Monster->MonsterAssetId = *AssetIdPtr;
         USMMonsterDataAsset* DataAsset =
             Cast<USMMonsterDataAsset>(AM->GetLoadAsset(*AssetIdPtr));
         if (DataAsset)
-            Monster->MulticastApplyVisuals(DataAsset);
+        {
+            TSubclassOf<UGameplayEffect> EffectClass = DataAsset->DamageEffect.LoadSynchronous();
+            // TODO 은서 : EffectClass를 Monster의 GA에 주입
+            // if (EffectClass && Monster->MonsterAbilitySystemComponent)
+            // {
+            //     for (FGameplayAbilitySpec& Spec : Monster->MonsterAbilitySystemComponent->GetActivatableAbilities())
+            //     {
+            //         if (UGA_MonsterAttackBase* GA = Cast<UGA_MonsterAttackBase>(Spec.Ability))
+            //         {
+            //             GA->DamageEffectClass = EffectClass;
+            //         }
+            //     }
+            // }
+        }
     }
     
     //랜덤 Spawner 위치로 이동
@@ -274,6 +293,27 @@ void USMWaveManagerSubsystem::OnMonsterDied(ASMMonsterBase* Monster)
     CheckWaveCleared();
 }
 
+void USMWaveManagerSubsystem::OnClientLoadComplete()
+{
+    ReadyClientCount++;
+    UE_LOG(LogTemp, Log, TEXT("[WaveManager] 클라이언트 로드 완료 (%d / %d)"),
+        ReadyClientCount, TotalExpectedClients);
+    CheckAllReady();
+}
+
+void USMWaveManagerSubsystem::CheckAllReady()
+{
+    UE_LOG(LogTemp, Log, TEXT("[WaveManager] CheckAllReady - ServerReady: %d, ReadyClientCount: %d / %d"),
+        bServerReady, ReadyClientCount, TotalExpectedClients);
+    if (bServerReady && ReadyClientCount >= TotalExpectedClients)
+    {
+        UE_LOG(LogTemp, Log, TEXT("[WaveManager] 서버 + 클라 모두 로드 완료"));
+        GetWorld()->GetTimerManager().SetTimer(
+            PreSpawnTimerHandle,this,
+            &USMWaveManagerSubsystem::TickPreSpawning,0.1f,true);
+    }
+}
+
 void USMWaveManagerSubsystem::CollectSpawners()
 {
     Spawners.Empty();
@@ -289,6 +329,7 @@ void USMWaveManagerSubsystem::TickDestroy()
     if (PendingDestroyActors.IsEmpty())
     {
         GetWorld()->GetTimerManager().ClearTimer(DestroyTimerHandle);
+        UE_LOG(LogTemp, Log, TEXT("[WaveManager] TickDestroy 완료 - 모두 제거됨"));
         return;
     }
     
@@ -313,7 +354,7 @@ void USMWaveManagerSubsystem::ScheduleDestroy(ASMMonsterBase* Monster)
     if (!IsValid(Monster)) return;
     
     PendingDestroyActors.Add(Monster);
-    
+    UE_LOG(LogTemp, Log, TEXT("[WaveManager] ScheduleDestroy 등록 - 대기: %d"), PendingDestroyActors.Num());
     if (!GetWorld()->GetTimerManager().IsTimerActive(DestroyTimerHandle))
     {
         GetWorld()->GetTimerManager().SetTimer(

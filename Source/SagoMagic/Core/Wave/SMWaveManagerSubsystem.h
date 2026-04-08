@@ -9,12 +9,6 @@
 class USMMonsterDataAsset;
 
 DECLARE_DELEGATE(FOnReadyForCombat);
-
-// 서버랑 클라 모두 로드를 해야해
-//
-// 클라에서 로드가 완료된걸 서버가 가지고있어야해.
-//
-// 서버랑 클라가 모두 로드가 되면은 Spawn을 시작해야해.
 /**
  * Wave 스폰 전담 Subsystem - 서버에서만 실제 로직 동작
  * CombatState가 StartWave()를 호출하고,
@@ -41,6 +35,12 @@ public:
     
     //preSpawn 완료 시 발동 -> BuildState가 Combat으로 전환
     FOnReadyForCombat OnReadyForCombat;
+    
+    /** 클라이언트 로드 완료 시 GameState에서 호출 */
+    void OnClientLoadComplete();
+    
+    /** 서버 + 모든 클라이언트 로드 완료 혹인 */
+    void CheckAllReady();
     
 private:
     /** SetTimer로 PreLoading을 담당하는 함수 */
@@ -89,5 +89,9 @@ private:
     FTimerHandle ActivateTimerHandle;
     /** Destroy 타이머 핸들 */
     FTimerHandle DestroyTimerHandle;
+    
+    bool bServerReady = false;
+    int32 ReadyClientCount = 0;
+    int32 TotalExpectedClients = 0;
     
 };

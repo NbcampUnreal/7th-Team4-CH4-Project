@@ -25,29 +25,35 @@ public:
 	}
 	
 	// Monster BP
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Class")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Class",
+		Meta = (AssetBundles = "Server, Client"))
 	TSoftClassPtr<ASMMonsterBase> MonsterClass;
-	
+
 	// visual
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Visual")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Visual",
+		Meta = (AssetBundles = "Client"))
 	TSoftObjectPtr<USkeletalMesh> SkeletalMesh;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Visual")
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Visual",
+		Meta = (AssetBundles = "Client"))
 	TSoftClassPtr<UAnimInstance> AnimClass;
-	
+
 	/** GAS Ability에서 Animation Montage를 호출 하는 경우 추가 필요 */
 	//TODO 은서
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Visual")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|Visual",
+		Meta = (AssetBundles = "Client"))
 	TSoftObjectPtr<UAnimMontage> AttackMontage;
-	
+
 	// AI
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|AI")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|AI",
+		Meta = (AssetBundles = "Server"))
 	TSoftObjectPtr<UBehaviorTree> BehaviorTree;
 	
 	// GAS
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|GAS")
 	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilities;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|GAS")
-	TSubclassOf<UGameplayEffect> DamageEffect;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|GAS",
+		Meta = (AssetBundles = "Server"))
+	TSoftClassPtr<UGameplayEffect> DamageEffect;
 };

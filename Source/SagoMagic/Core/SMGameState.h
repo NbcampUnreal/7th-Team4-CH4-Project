@@ -36,11 +36,15 @@ public:
     /**StateMachine이 페이즈 바꿀 때 서버에서 호출*/
     void SetCurrentState(EGameState NewState);
     EGameState GetCurrentState() const {return CurrentState;}
-
+    
+    /** 서버 -> 모든 클라이언트에게 로드할 AssetID 목록 전달 */
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastPreloadClientAssets(const TArray<FPrimaryAssetId>& AssetIds);
+    
     //클라이언트 구독용
     FOnGameStateChanged OnGameStateChanged;
 private:
-    /** CurrentState 복제 완료 시 클라이언트에서 자동 호출 -> OnGaemStateChanged 브로드캐스트 */
+    /** CurrentState 복제 완료 시 클라이언트에서 자동 호출 -> OnGameStateChanged 브로드캐스트 */
     UFUNCTION()
     void OnRep_CurrentState();
 
@@ -48,3 +52,5 @@ private:
     UPROPERTY(ReplicatedUsing = OnRep_CurrentState)
     EGameState CurrentState = EGameState::None;
 };
+
+

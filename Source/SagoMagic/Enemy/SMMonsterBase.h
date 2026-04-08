@@ -22,15 +22,16 @@ public:
 
     // IAbilitySystemInterface 구현(외부에서 ASC를 찾을 때 사용)
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     void ResetMonster();
-    
-    UFUNCTION(NetMulticast, Reliable)
-    void MulticastApplyVisuals(USMMonsterDataAsset* DataAsset);
     
     void ApplyVisuals(USMMonsterDataAsset* DataAsset);
     //UFUNCTION(NetMulticast, Reliable)
     //void MulticastHandleDeath();
+
+    UFUNCTION()
+    void OnRep_MonsterAssetId();
 protected:
     virtual void BeginPlay() override;
     virtual void PossessedBy(AController* NewController) override;
@@ -62,6 +63,9 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MonsterType")
     EMonsterType MonsterType;
+
+    UPROPERTY(ReplicatedUsing = OnRep_MonsterAssetId)
+    FPrimaryAssetId MonsterAssetId;
     
 };
 

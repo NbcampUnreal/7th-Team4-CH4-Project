@@ -30,8 +30,15 @@ public:
 	void OnPlayerDead(ASMPlayerController* InPlayerController);
 
     FSimpleDelegate OnWaveCleared;
-
+private:
+	// 관전모드 진입
+	void EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController);
 	
+	// 리스폰
+	void RespawnPlayer(TWeakObjectPtr<ASMPlayerController> InPlayerController);
+	
+	/** MaxPlayer만큼 player가 모이면 게임 스타트*/
+	void TryStartGame();
 protected:
     /** 로그인 한 플레이어 Controller 모음 */
     UPROPERTY()
@@ -49,12 +56,6 @@ private:
     /** 게임 플로우를 담당하는 FSM - 서버에만 존재 */
     UPROPERTY()
     TObjectPtr<USMStateMachine> StateMachine;
-	
-private:
-	// 관전모드 진입
-	void EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController);
-	
-	// 리스폰
-	void RespawnPlayer(TWeakObjectPtr<ASMPlayerController> InPlayerController);
-	
+    
+    int32 MaxPlayers = 2;
 };

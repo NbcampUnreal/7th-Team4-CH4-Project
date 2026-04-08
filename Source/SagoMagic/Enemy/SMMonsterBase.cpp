@@ -6,7 +6,9 @@
 #include "../GAS/AttributeSets/SMMonsterAttributeSet.h"
 #include "../GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "../Data/SMMonsterData.h"
+#include "Core/DataManager/SMAsyncDataManager.h"
 #include "Core/Wave/SMWaveManagerSubsystem.h"
+#include "Engine/AssetManager.h"
 
 ASMMonsterBase::ASMMonsterBase()
 {
@@ -46,11 +48,6 @@ void ASMMonsterBase::ResetMonster()
     SetActorTickEnabled(false);
 }
 
-void ASMMonsterBase::MulticastApplyVisuals_Implementation(USMMonsterDataAsset* DataAsset)
-{
-    ApplyVisuals(DataAsset);
-}
-
 void ASMMonsterBase::ApplyVisuals(USMMonsterDataAsset* DataAsset)
 {
     if (!DataAsset) return;
@@ -65,6 +62,22 @@ void ASMMonsterBase::ApplyVisuals(USMMonsterDataAsset* DataAsset)
         if (!DataAsset->AnimClass.IsNull())
             MeshComp->SetAnimInstanceClass(DataAsset->AnimClass.LoadSynchronous());
     }
+}
+
+void ASMMonsterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(ASMMonsterBase, MonsterAssetId);
+}
+
+void ASMMonsterBase::OnRep_MonsterAssetId()
+{
+    USMAsyncDataManager* AM = USMAsyncDataManager::Get(this);
+    if (!AM) return;
+
+    USMMonsterDataAsset* DataAsset = Cast<USMMonsterDataAsset>(AM->GetLoadAsset(MonsterAssetId));
+    if (DataAsset)
+        ApplyVisuals(DataAsset);
 }
 
 //void ASMMonsterBase::MulticastHandleDeath_Implementation()

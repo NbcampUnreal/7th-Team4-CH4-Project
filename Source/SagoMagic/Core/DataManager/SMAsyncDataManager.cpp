@@ -4,7 +4,6 @@ bool USMAsyncDataManager::ShouldCreateSubsystem(UObject* Outer) const
 {
 	UWorld* World = Cast<UWorld>(Outer);
 	if (!World) return false;
-	if (World->GetNetMode() == NM_Client) return false;
 	return World->GetMapName().Contains(TEXT("L_Play"));
 }
 

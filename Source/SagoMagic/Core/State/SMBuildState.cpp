@@ -13,7 +13,6 @@ void USMBuildState::Enter()
     
     USMWaveManagerSubsystem* WM = USMWaveManagerSubsystem::Get(this);
     if (!WM) return;
-    
     WM->OnReadyForCombat.BindLambda([this]()
     {
        bReadForCombat = true;

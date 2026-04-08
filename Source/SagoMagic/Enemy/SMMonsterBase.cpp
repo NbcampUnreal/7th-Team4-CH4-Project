@@ -126,6 +126,11 @@ void ASMMonsterBase::PossessedBy(AController* NewController)
         {
             MonsterAI->StartAttackTimer();
         }
+
+        if (GetCharacterMovement())
+        {
+            GetCharacterMovement()->MaxWalkSpeed = MonsterAttributeSet->GetMoveSpeed();
+        }
     }
 }
 
@@ -180,15 +185,13 @@ void ASMMonsterBase::HandleDeath(AController* KillerController)
                     {
                         USMPlayerAttributeSet* MutableAttr =
                             const_cast<USMPlayerAttributeSet*>(PlayerAttr);
-                        float NewGold = FMath::Clamp(
-                            MutableAttr->GetGold() + GoldReward,
-                            0.0f,
-                            MutableAttr->GetMaxGold()
-                        );
-                        MutableAttr->SetGold(NewGold);
 
-                        UE_LOG(LogTemp, Log, TEXT("[Gold] %s에게 %.0f Gold 지급 (총 %.0f)"),
-                            *KillerController->GetName(), GoldReward, NewGold);
+                        float GoldReward = MonsterAttributeSet->GetDropGold();
+                        float NewGold = MutableAttr->GetGold() + GoldReward;
+                        MutableAttr->SetGold(NewGold);
+                       
+                        /*UE_LOG(LogTemp, Log, TEXT("[Gold] %s에게 %.0f Gold 지급 (총 %.0f)"),
+                            *KillerController->GetName(), GoldReward, NewGold);*/
                     }
                 }
             }

@@ -6,9 +6,10 @@ USMMonsterAttributeSet::USMMonsterAttributeSet()
 {
     InitHealth(100.0f);
     InitMaxHealth(100.0f);
-    InitAttackPower(10.0f);
+    InitAttackPower(5.0f);
     InitDefense(5.0f);
-    InitMoveSpeed(300.0f);
+    InitMoveSpeed(100.0f);
+    InitDropGold(20.0f);
 }
 
 void USMMonsterAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -21,6 +22,7 @@ void USMMonsterAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME_CONDITION_NOTIFY(USMMonsterAttributeSet, AttackPower, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(USMMonsterAttributeSet, Defense, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(USMMonsterAttributeSet, MoveSpeed, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(USMMonsterAttributeSet, DropGold, COND_None, REPNOTIFY_Always);
 }
 
 void USMMonsterAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
@@ -86,4 +88,9 @@ void USMMonsterAttributeSet::OnRep_Defense(const FGameplayAttributeData& OldDefe
 void USMMonsterAttributeSet::OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed) 
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(USMMonsterAttributeSet, MoveSpeed, OldMoveSpeed);
+}
+
+void USMMonsterAttributeSet::OnRep_DropGold(const FGameplayAttributeData& OldDropGold)
+{
+    GAMEPLAYATTRIBUTE_REPNOTIFY(USMMonsterAttributeSet, DropGold, OldDropGold);
 }

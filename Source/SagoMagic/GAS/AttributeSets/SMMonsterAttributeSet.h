@@ -40,6 +40,10 @@ public:
     FGameplayAttributeData MoveSpeed;
     ATTRIBUTE_ACCESSORS(USMMonsterAttributeSet, MoveSpeed)
 
+    /** 보상 골드 **/
+    UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_DropGold)
+    FGameplayAttributeData DropGold;
+    ATTRIBUTE_ACCESSORS(USMMonsterAttributeSet, DropGold)
 
     /** HP가 0이 됐을 때 브로드캐스트 (서버에서만 발생) **/
     FOnMonsterDied OnMonsterDied;
@@ -54,6 +58,8 @@ public:
     virtual void OnRep_Defense(const FGameplayAttributeData& OldDefense);
     UFUNCTION()
     virtual void OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed);
+    UFUNCTION()
+    virtual void OnRep_DropGold(const FGameplayAttributeData& OldDropGold);
 
     virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
     virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;

@@ -6,14 +6,19 @@
 #include "AbilitySystemComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "SagoMagic.h"
 #include "SMInteractionScannerComponent.h"
 #include "SMPlayerController.h"
 #include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Core/SMGameMode.h"
 #include "Core/SMPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameplayTags/Character/SMCharacterTag.h"
 #include "GameplayTags/Character/SMSkillTag.h"
+#include "GAS/AttributeSets/SMPlayerAttributeSet.h"
+#include "Net/UnrealNetwork.h"
 
 ASMPlayerCharacter::ASMPlayerCharacter()
 {
@@ -85,6 +90,11 @@ USMPlayerAttributeSet* ASMPlayerCharacter::GetAttributeSet() const
 	return nullptr;
 }
 
+// UStaticMeshComponent* ASMPlayerCharacter::GetStaticMeshComponent() const
+// {
+// 	return WeaponMesh;
+// }
+
 void ASMPlayerCharacter::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
@@ -128,12 +138,19 @@ void ASMPlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 }
 
+void ASMPlayerCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(ASMPlayerCharacter, bIsDead);
+}
+
 void ASMPlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 	// 로컬만 틱에서 실행
-	if (IsLocallyControlled() && Controller)
+	if (!bIsDead && IsLocallyControlled() && Controller)
 	{
 		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 		{
@@ -192,6 +209,13 @@ void ASMPlayerCharacter::InitializeAbilitySystem()
 	{
 		// Owner는 PlayerState
 		SMAbilitySystemComponent->InitAbilityActorInfo(PS, this);
+		
+		SMAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+			AttributeSet->GetHealthAttribute()).RemoveAll(this);
+		
+		// SMASC로부터 플레이어의 체력변화 구독
+		SMAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+			AttributeSet->GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
 
 		UE_LOG(LogTemp, Log, TEXT("[%s] SMASC initialized from PlayerState"), *GetName());
 	}
@@ -220,6 +244,74 @@ void ASMPlayerCharacter::GiveDefaultAbilities()
 			SMAbilitySystemComponent->GiveAbility(AbilitySpec);
 		}
 	}
+}
+
+void ASMPlayerCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
+{
+	// 서버에서만 사망 판정
+	if (HasAuthority() && Data.NewValue <= 0.0f && !bIsDead)
+	{
+		bIsDead = true;
+		HandleDeath();
+	}
+}
+
+void ASMPlayerCharacter::OnRep_IsDead()
+{
+	// 클라이언트 동기화
+	if (bIsDead)
+	{
+		HandleDeath();
+	}
+}
+
+void ASMPlayerCharacter::HandleDeath()
+{
+	SM_LOG(this, LogSM, Log, TEXT("[%s] 플레이어 사망."), *GetName());
+	
+	
+	if (SMAbilitySystemComponent)
+	{
+		SMAbilitySystemComponent->CancelAbilities();
+	}
+	
+	if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
+	{
+		MovementComp->StopMovementImmediately();
+		MovementComp->DisableMovement();
+	}
+	
+	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
+	{
+		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	
+	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	{
+		MeshComp->SetCollisionProfileName(TEXT("Ragdoll"));
+		MeshComp->SetSimulatePhysics(true);
+	}
+	
+	if (HasAuthority())
+	{
+		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
+		{
+			// TODO: PC에서 사망 시 UI 띄우게 하기 
+			PC->ClientRPC_ShowDeathUI();
+			
+			if (ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>())
+			{
+				// TODO: GM에게 사망시 처리 함수 호출하게 하기
+				GM->OnPlayerDead(PC);
+			}
+			
+			
+		}
+		
+		// TODO: DeathLifeSpan후 시체 처리(부활 타이머랑 타이밍 논의 필요)
+		SetLifeSpan(DeathLifeSpan);
+	}
+	
 }
 
 void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

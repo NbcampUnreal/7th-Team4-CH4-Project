@@ -32,15 +32,36 @@ public:
     virtual void BeginPlay() override;
     /** 매 프레임 StateMachine에 Tick 위임  */
     virtual void Tick(float DeltaSeconds) override;
+	
+	/** 플레이어 사망시 호출되는 함수 */
+	void OnPlayerDead(ASMPlayerController* InPlayerController);
 
     FSimpleDelegate OnWaveCleared;
 
+	
 protected:
     /** 로그인 한 플레이어 Controller 모음 */
     UPROPERTY()
     TArray<TObjectPtr<ASMPlayerController>> AllPlayerController;
+	
+	/** 관전 모드 진입 시간 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Timer")
+	float SpectatorTime = 3.0f;
+	
+	/** 부활 시간 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Timer")
+	float RespawnTime = 10.0f;
+	
 private:
     /** 게임 플로우를 담당하는 FSM - 서버에만 존재 */
     UPROPERTY()
     TObjectPtr<USMStateMachine> StateMachine;
+	
+private:
+	// 관전모드 진입
+	void EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController);
+	
+	// 리스폰
+	void RespawnPlayer(TWeakObjectPtr<ASMPlayerController> InPlayerController);
+	
 };

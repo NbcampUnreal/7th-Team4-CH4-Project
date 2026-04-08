@@ -4,6 +4,7 @@
 #include "SMPlayerState.h"
 
 #include "AbilitySystemComponent.h"
+#include "SagoMagic.h"
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -38,6 +39,22 @@ void ASMPlayerState::CopyProperties(APlayerState* PlayerState)
 	NewPS->bIsHost = bIsHost;
 	NewPS->bIsReady = bIsReady;
 	NewPS->SetPlayerName(GetPlayerName());
+}
+
+void ASMPlayerState::ResetForRespawn()
+{
+	if (AttributeSet)
+	{
+		AttributeSet->SetHealth(AttributeSet->GetMaxHealth());
+	}
+	
+	if (SMAbilitySystemComponent)
+	{
+		FGameplayEffectQuery EmptyQuery;
+		SMAbilitySystemComponent->RemoveActiveEffects(EmptyQuery);
+	}
+	
+	SM_LOG(this, LogSM, Warning, TEXT("[%s]의 [PlayerState] 체력 복구"), *GetPlayerName());
 }
 
 void ASMPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

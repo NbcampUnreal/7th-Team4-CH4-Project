@@ -30,5 +30,5 @@ private:
     float Elapsed = 0.f;
     
     /** Combat State로 넘어가도 되는지 확인 */
-    bool bReadForCombat = false;
+    bool bReadyForCombat = false;
 };

@@ -46,5 +46,5 @@ struct FSMMonsterData : public FTableRowBase
     int32 DropGold = 20;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster|Asset")
-    TSoftObjectPtr<USMMonsterDataAsset> MonsterClass;
+    TSoftObjectPtr<USMMonsterDataAsset> MonsterDataAssetRef;
 };

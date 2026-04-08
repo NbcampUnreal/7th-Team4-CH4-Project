@@ -77,7 +77,7 @@ void USMWaveManagerSubsystem::PreSpawnForWave(int32 WaveIndex)
         
         FSMMonsterData MonsterData = DM->GetMonsterData(Entry.MonsterType);
         FPrimaryAssetId AssetID = UAssetManager::Get()
-            .GetPrimaryAssetIdForPath(MonsterData.MonsterClass.ToSoftObjectPath());
+            .GetPrimaryAssetIdForPath(MonsterData.MonsterDataAssetRef.ToSoftObjectPath());
         
         if (AssetID.IsValid())
         {

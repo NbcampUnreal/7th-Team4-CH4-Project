@@ -9,6 +9,7 @@
 #include "Core/DataManager/SMAsyncDataManager.h"
 #include "Core/Wave/SMWaveManagerSubsystem.h"
 #include "Engine/AssetManager.h"
+#include "Net/UnrealNetwork.h"
 
 ASMMonsterBase::ASMMonsterBase()
 {
@@ -57,8 +58,6 @@ void ASMMonsterBase::ApplyVisuals(USMMonsterDataAsset* DataAsset)
     {
         if (!DataAsset->SkeletalMesh.IsNull())
             MeshComp->SetSkeletalMesh(DataAsset->SkeletalMesh.LoadSynchronous());
-        UE_LOG(LogTemp, Log, TEXT("[ApplyVisuals] Mesh 로드 결과: %s"),
-                MeshComp ? *MeshComp->GetName() : TEXT("nullptr"));
         if (!DataAsset->AnimClass.IsNull())
             MeshComp->SetAnimInstanceClass(DataAsset->AnimClass.LoadSynchronous());
     }

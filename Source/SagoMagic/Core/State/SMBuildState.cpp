@@ -7,7 +7,7 @@ void USMBuildState::Enter()
     Super::Enter();
 
     Elapsed = 0.f;
-    bReadForCombat = false;
+    bReadyForCombat = false;
     
     int32 WaveIndex = StateMachine->GetCurrentWaveIndex();
     
@@ -15,7 +15,7 @@ void USMBuildState::Enter()
     if (!WM) return;
     WM->OnReadyForCombat.BindLambda([this]()
     {
-       bReadForCombat = true;
+       bReadyForCombat = true;
         UE_LOG(LogTemp, Log, TEXT("[BuildState] PreSpawn 완료 - Combat 준비됨"));
     });
     WM->PreSpawnForWave(WaveIndex);
@@ -27,7 +27,7 @@ void USMBuildState::Tick(float DeltaTime)
 
     if (Elapsed >= Duration)
     {
-        if (bReadForCombat)
+        if (bReadyForCombat)
         {
             UE_LOG(LogTemp, Log, TEXT("BuildState -> Combat"));
             ChangeState(EGameState::Combat);    

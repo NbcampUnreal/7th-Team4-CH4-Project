@@ -9,7 +9,7 @@ DECLARE_DELEGATE(FOnAssetLoadComplete);
 
 /**
  * PrimaryDataAsset을 ID 기반으로 비동기 로드/캐시 관리
- * 서버 전용, L_Play에서만 생성
+ * L_Play에서만 생성
  */
 UCLASS()
 class SAGOMAGIC_API USMAsyncDataManager : public UWorldSubsystem

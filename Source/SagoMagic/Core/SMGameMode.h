@@ -29,32 +29,33 @@ public:
 
 	/** 플레이어 사망시 호출되는 함수 */
 	void OnPlayerDead(ASMPlayerController* InPlayerController);
-
-	FSimpleDelegate OnWaveCleared;
-
+	
+	/** 플레이어가 L_Play에 도착하면 클라->서버로 호출되는 함수 */
+	void OnPlayerReady(ASMPlayerController* InPlayerController);
+	
+    FSimpleDelegate OnWaveCleared;
 private:
 	// 관전모드 진입
 	void EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController);
-
+	
 	// 리스폰
 	void RespawnPlayer(TWeakObjectPtr<ASMPlayerController> InPlayerController);
-
+	
 	/** MaxPlayer만큼 player가 모이면 게임 스타트*/
 	void TryStartGame();
-
 protected:
-	/** 로그인 한 플레이어 Controller 모음 */
-	UPROPERTY()
-	TArray<TObjectPtr<ASMPlayerController>> AllPlayerController;
-
+    /** 로그인 한 플레이어 Controller 모음 */
+    UPROPERTY()
+    TArray<TObjectPtr<ASMPlayerController>> AllPlayerController;
+	
 	/** 관전 모드 진입 시간 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Timer")
 	float SpectatorTime = 3.0f;
-
+	
 	/** 부활 시간 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Timer")
 	float RespawnTime = 10.0f;
-
+	
 private:
 	/** 게임 플로우를 담당하는 FSM - 서버에만 존재 */
 	UPROPERTY()

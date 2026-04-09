@@ -30,6 +30,12 @@ protected:
 	// 네트워크 이동 기능
 	//================================
 public:
+	/** 클라이언트에서 도착하면 호출되는 함수 */
+	virtual void PostSeamlessTravel() override;
+	
+	/** Server로 클라이언트 도착 RPC*/
+	UFUNCTION(Server,Reliable)
+	void LoginNotify();
 	
 	/** ASMGameMode의 HandleSeamlessTravelPlayer에서 호출
 	 *  Server에서 Client PC에게 알려줌

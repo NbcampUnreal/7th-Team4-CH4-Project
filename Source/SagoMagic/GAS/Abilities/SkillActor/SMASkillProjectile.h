@@ -8,7 +8,6 @@
 class USphereComponent;
 class UProjectileMovementComponent;
 class UNiagaraComponent;
-class UNiagaraSystem;
 
 UCLASS()
 class SAGOMAGIC_API ASMASkillProjectile : public AActor
@@ -31,13 +30,9 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Projectile")
     TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
 
-    /** 비행 중 Flying 이펙트 */
+    /** 비행 중 비주얼 이펙트 - BP에서 나이아가라 에셋 할당 */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Effects")
     TObjectPtr<UNiagaraComponent> FlyingEffect;
-
-    /** 히트 시 이펙트 - BP에서 나이아가라 시스템 할당 */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
-    TObjectPtr<UNiagaraSystem> HitEffect;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
     float ProjectileSpeed = 1000.f;

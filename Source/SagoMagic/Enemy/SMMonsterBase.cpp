@@ -195,7 +195,9 @@ void ASMMonsterBase::HandleDeath(AController* KillerController)
     if (ASMMonsterAIController* AICtl = Cast<ASMMonsterAIController>(GetController()))
     {
         AICtl->StopMovement();
+        AICtl->StopAttackTimer(); // 추가
     }
+
     // 이동 즉시 정지
     if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
     {

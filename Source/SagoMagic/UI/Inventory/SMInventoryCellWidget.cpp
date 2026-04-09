@@ -146,10 +146,7 @@ void USMInventoryCellWidget::NativeOnDragDetected(const FGeometry& InGeometry, c
 	if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
 	{
 		OwningGrid->SetHoveredItemInstanceId(FGuid());
-	}
-
-	if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
-	{
+		
 		const FVector2D LocalMousePosition = InGeometry.AbsoluteToLocal(InMouseEvent.GetScreenSpacePosition());
 		const FVector2D LocalSize = InGeometry.GetLocalSize();
 

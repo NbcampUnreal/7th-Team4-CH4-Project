@@ -215,7 +215,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Cell Widget")
 	FGuid OwnerItemInstanceId;
 
-	/** 현재 셀 점유 여부 */
+	/** 현재 셀 점유 상태 표시 여부 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Cell Widget")
 	bool bOccupiedCell;
 

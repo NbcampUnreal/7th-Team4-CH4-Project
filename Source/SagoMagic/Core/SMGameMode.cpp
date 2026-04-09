@@ -12,16 +12,15 @@ ASMGameMode::ASMGameMode()
 
 void ASMGameMode::HandleSeamlessTravelPlayer(AController*& C)
 {
-	Super::HandleSeamlessTravelPlayer(C);
-	ASMPlayerController* PC = Cast<ASMPlayerController>(C);
-	if (IsValid(PC))
-	{
-		AllPlayerController.Add(PC);
-		PC->ClientRPCArrivedAtGameLevel();
-		TryStartGame();
-	}
+    Super::HandleSeamlessTravelPlayer(C);
+	//TODO 은서 : Timer를 걸어서, 시간안에 인원수 안들어오면 어떻게 할지 테스트
+    ASMPlayerController* PC = Cast<ASMPlayerController>(C);
+    if (IsValid(PC))
+    {
+        AllPlayerController.Add(PC);
+        PC->ClientRPCArrivedAtGameLevel();
+    }
 }
-
 
 void ASMGameMode::Logout(AController* Exiting)
 {
@@ -93,6 +92,14 @@ void ASMGameMode::OnPlayerDead(ASMPlayerController* InPlayerController)
 		RespawnDelegate,
 		RespawnTime,
 		false);
+}
+
+void ASMGameMode::OnPlayerReady(ASMPlayerController* InPlayerController)
+{
+	if (!InPlayerController) return;
+	UE_LOG(LogTemp,Warning,TEXT("OnPlayerReady"));
+	AllPlayerController.AddUnique(InPlayerController);
+	TryStartGame();
 }
 
 void ASMGameMode::EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController)

@@ -118,6 +118,7 @@ void ASMMonsterBase::PossessedBy(AController* NewController)
 
         if (HasAuthority() && MonsterAttributeSet)
         {
+            MonsterAttributeSet->OnMonsterDied.RemoveAll(this);
             MonsterAttributeSet->OnMonsterDied.AddUObject(this, &ASMMonsterBase::HandleDeath);
         }
         GiveDefaultAbilities();

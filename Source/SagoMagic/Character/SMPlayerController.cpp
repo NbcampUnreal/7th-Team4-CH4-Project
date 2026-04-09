@@ -13,6 +13,7 @@
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "GameFramework/Pawn.h"
 #include "InputAction.h"
+#include "Core/SMGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/Inventory/SMInventoryRootWidget.h"
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
@@ -98,6 +99,23 @@ void ASMPlayerController::SetupInputComponent()
 				&ThisClass::RotateDraggedInventoryItem);
 		}
 	}
+}
+
+void ASMPlayerController::PostSeamlessTravel()
+{
+	Super::PostSeamlessTravel();
+	
+	LoginNotify_Implementation();
+	
+}
+
+void ASMPlayerController::LoginNotify_Implementation()
+{
+	ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>();	
+	if (IsValid(GM) == false) return;
+	
+	GM->OnPlayerReady(this);
+	
 }
 
 void ASMPlayerController::ApplyControllerMappingContext()

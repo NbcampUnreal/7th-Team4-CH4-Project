@@ -82,13 +82,12 @@ public:
 	void ToggleInventory();
 	
 	UFUNCTION(Client, Reliable)
-	void ClientRPC_ShowDeathUI(float RespawnTime);  //  TODO 현 260409 : float 추가
+	void ClientRPC_ShowDeathUI(float RespawnTime);
 	
 	UFUNCTION(Client, Reliable)
 	void ClientRPC_HideDeathUI();
 	
-	// 게임 결과 UI 표시용 RPC 추가
-	//  TODO 현 260409 : 
+	/** 게임 결과 UI 표시용 */
 	UFUNCTION(Client, Reliable)
 	void ClientRPC_ShowGameResult(bool bIsVictory);
 	

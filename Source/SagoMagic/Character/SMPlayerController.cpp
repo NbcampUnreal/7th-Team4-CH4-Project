@@ -55,11 +55,12 @@ void ASMPlayerController::BeginPlay()
 
 void ASMPlayerController::ClientRPC_ShowDeathUI_Implementation(float RespawnTime)
 {
-	
 	// TODO: 현님이 UI완성하면 호출
 	SM_LOG(this, LogSM, Log, TEXT("사망 UI 표시 - %.1f초 후 부활"), RespawnTime);
 	
 	// GameplayMessage 대신 HUD 직접 접근 (태그 미등록 문제 우회)
+	
+	// PlayerController -> HUD -> HUDManager -> PlayerDeathWidget 순서로 접근
 	if (ASMHUD* HUD = Cast<ASMHUD>(GetHUD()))
 	{
 		if (USMHUDManager* HUDMgr = HUD->GetHUDManager())
@@ -78,7 +79,6 @@ void ASMPlayerController::ClientRPC_ShowDeathUI_Implementation(float RespawnTime
 
 void ASMPlayerController::ClientRPC_HideDeathUI_Implementation()
 {
-	
 	// TODO: 현님이 UI완성하면 호출
 	SM_LOG(this, LogSM, Log, TEXT("부활 - 사망 UI 숨김"));
 	

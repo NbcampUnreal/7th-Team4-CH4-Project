@@ -335,6 +335,18 @@ void ASMPlayerCharacter::GiveDefaultAbilities()
 	{
 		if (AbilityClass)
 		{
+			// TODO 현 260409 : ASC는 PlayerState에 영속하므로 부활 시 이미 부여된 어빌리티 중복 방지
+			FGameplayAbilitySpec* ExistingSpec =
+				SMAbilitySystemComponent->FindAbilitySpecFromClass(AbilityClass);
+
+			if (ExistingSpec) // TODO 현 260409 : 
+			{
+				// 기존 Spec의 SourceObject를 현재 캐릭터로 갱신
+				ExistingSpec->SourceObject = this;
+				SMAbilitySystemComponent->MarkAbilitySpecDirty(*ExistingSpec);
+				continue;
+			}
+			
 			// Ability Spec 생성
 			// - InputID 없음 (나중에 Input Binding에서 설정)
 			FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, INDEX_NONE, this);
@@ -391,18 +403,21 @@ void ASMPlayerCharacter::HandleDeath()
 	
 	if (HasAuthority())
 	{
-		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
+		if (ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>()) // TODO 현 260409 : 
 		{
-			PC->ClientRPC_ShowDeathUI();
+			/*PC->ClientRPC_ShowDeathUI();
 			
 			if (ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>())
+			*/
+			
+			// TODO: PC에서 사망 시 UI 띄우게 하기 
+			// GameMode에 사망 통보 - RPC 호출은 GameMode에서 RespawnTime과 함께 처리
+			if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller)) // TODO 현 260409 : 
 			{
+				// TODO: GM에게 사망시 처리 함수 호출하게 하기
 				GM->OnPlayerDead(PC);
 			}
-			
-			
 		}
-		
 		// TODO: DeathLifeSpan후 시체 처리(부활 타이머랑 타이밍 논의 필요)
 		SetLifeSpan(DeathLifeSpan);
 	}

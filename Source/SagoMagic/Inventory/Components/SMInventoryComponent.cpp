@@ -14,6 +14,7 @@
 #include "Inventory/Items/Definitions/SMGemItemDefinition.h"
 
 #include "Inventory/Items/Fragments/SMGridShapeFragment.h"
+#include "Inventory/Items/Fragments/SMAbilityFragment.h"
 #include "Inventory/Items/Fragments/SMGemModifierFragment.h"
 #include "Inventory/Items/Fragments/SMInternalInventoryFragment.h"
 #include "Inventory/Items/Fragments/SMSkillProgressionFragment.h"
@@ -1538,7 +1539,6 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 
 	int32 CurrentLevel = 1;
 	int32 MaxLevel = TNumericLimits<int32>::Max();
-
 	if (const USMSkillProgressionFragment* SkillProgressionFragment =
 		SkillDefinition->FindFragmentByClass<USMSkillProgressionFragment>())
 	{
@@ -1546,74 +1546,72 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 		MaxLevel = FMath::Max(CurrentLevel, SkillProgressionFragment->GetMaxLevel());
 	}
 
-	float FinalDamage = 0.0f;
-	float FinalRangeOrArea = 0.0f;
-	float FinalCooldown = 0.0f;
-
-	TArray<FGameplayTag> SkillTags;
-	SkillDefinition->GetItemTags().GetGameplayTagArray(SkillTags);
-
-	FGameplayTag ResolvedSkillTag;
-	for (const FGameplayTag& SkillTag : SkillTags)
+	const USMAbilityFragment* AbilityFragment = SkillDefinition->FindFragmentByClass<USMAbilityFragment>();
+	if (AbilityFragment == nullptr)
 	{
-		if (SkillTag.IsValid() == false)
-		{
-			continue;
-		}
-
-		if (SkillTag.MatchesTag(SMSkillTag::Ability_Skill) == false)
-		{
-			continue;
-		}
-
-		if (SkillTag == SMSkillTag::Ability_Skill)
-		{
-			continue;
-		}
-
-		ResolvedSkillTag = SkillTag;
-		break;
+		return false;
 	}
 
-	if (ResolvedSkillTag.IsValid() == false && SkillTags.IsEmpty() == false)
-	{
-		ResolvedSkillTag = SkillTags[0];
-	}
+	const FGameplayTag ResolvedSkillTag = AbilityFragment->GetAbilityInputTag();
 
-	if (USMSyncDataManager* SyncDataManager = USMSyncDataManager::Get(this))
-	{
-		if (ResolvedSkillTag.IsValid())
-		{
-			const FSMSkillData SkillRuntimeData = SyncDataManager->GetSkillData(ResolvedSkillTag);
-			FinalDamage = SkillRuntimeData.BaseDamage;
-			FinalRangeOrArea = SkillRuntimeData.RangeCm;
-			FinalCooldown = SkillRuntimeData.Cooldown;
-		}
-	}
-
-	FGameplayTagContainer BehaviorTags;
+	TArray<const FSMItemInstanceData*> EmbeddedGems;
+	EmbeddedGems.Reserve(InternalContainer->ContainedItemIds.Num());
 
 	for (const FGuid& EmbeddedItemInstanceId : InternalContainer->ContainedItemIds)
 	{
 		if (const FSMSkillItemInstanceData* EmbeddedSkillData = FindSkill(EmbeddedItemInstanceId))
 		{
 			OutSummary.EmbeddedSkillIds.Add(EmbeddedSkillData->BaseItem.InstanceId);
-
 			if (IsSameNamedSkill(InSkillInstanceId, EmbeddedItemInstanceId))
 			{
 				++CurrentLevel;
 			}
-
 			continue;
 		}
 
 		const FSMItemInstanceData* EmbeddedItemData = FindItem(EmbeddedItemInstanceId);
-		if (EmbeddedItemData == nullptr || EmbeddedItemData->ItemType != ESMItemType::Gem)
+		if (EmbeddedItemData != nullptr && EmbeddedItemData->ItemType == ESMItemType::Gem)
 		{
-			continue;
+			EmbeddedGems.Add(EmbeddedItemData);
 		}
+	}
 
-		const USMItemDefinition* EmbeddedGemDefinition = ResolveItemDefinition(*EmbeddedItemData);
+	CurrentLevel = FMath::Clamp(CurrentLevel, 1, MaxLevel);
+	if (ResolvedSkillTag.IsValid() == false)
+	{
+		return false;
+	}
+
+	USMSyncDataManager* SyncDataManager = USMSyncDataManager::Get(this);
+	if (SyncDataManager == nullptr)
+	{
+		return false;
+	}
+
+	const FSMSkillData SkillRuntimeData = SyncDataManager->GetSkillData(ResolvedSkillTag);
+	if (SkillRuntimeData.SkillTag != ResolvedSkillTag)
+	{
+		return false;
+	}
+
+	const FSMSkillLevelData* MatchedLevelData = SkillRuntimeData.LevelData.FindByPredicate(
+		[CurrentLevel](const FSMSkillLevelData& LevelData)
+		{
+			return LevelData.Level == CurrentLevel;
+		});
+	if (MatchedLevelData == nullptr)
+	{
+		return false;
+	}
+
+	float FinalDamage = SkillRuntimeData.BaseDamage + MatchedLevelData->BaseDamage;
+	float FinalRangeOrArea = SkillRuntimeData.RangeCm + MatchedLevelData->RangeCm;
+	float FinalCooldown = SkillRuntimeData.Cooldown + MatchedLevelData->Cooldown;
+	FGameplayTagContainer BehaviorTags = MatchedLevelData->BehaviorTags;
+
+	for (const FSMItemInstanceData* EmbeddedGemData : EmbeddedGems)
+	{
+		const USMItemDefinition* EmbeddedGemDefinition = ResolveItemDefinition(*EmbeddedGemData);
 		if (EmbeddedGemDefinition == nullptr)
 		{
 			continue;
@@ -1626,7 +1624,7 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 			continue;
 		}
 
-		OutSummary.EmbeddedGemIds.Add(EmbeddedItemData->InstanceId);
+		OutSummary.EmbeddedGemIds.Add(EmbeddedGemData->InstanceId);
 		BehaviorTags.AppendTags(GemModifierFragment->GetGrantedBehaviorTags());
 
 		switch (GemModifierFragment->GetModifierType())
@@ -1634,22 +1632,19 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 		case ESMGemModifierType::Effect:
 			FinalDamage += static_cast<float>(GemModifierFragment->GetModifierValue());
 			break;
-
 		case ESMGemModifierType::RangeOrArea:
 			FinalRangeOrArea += static_cast<float>(GemModifierFragment->GetModifierValue());
 			break;
-
 		case ESMGemModifierType::Cooldown:
 			FinalCooldown += static_cast<float>(GemModifierFragment->GetModifierValue());
 			break;
-
 		case ESMGemModifierType::None:
 		default:
 			break;
 		}
 	}
 
-	OutSummary.SetCurrentLevel(FMath::Clamp(CurrentLevel, 1, MaxLevel));
+	OutSummary.SetCurrentLevel(CurrentLevel);
 	OutSummary.SetFinalDamage(FinalDamage);
 	OutSummary.SetFinalRangeOrArea(FinalRangeOrArea);
 	OutSummary.SetFinalCooldown(FMath::Max(0.0f, FinalCooldown));

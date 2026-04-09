@@ -80,8 +80,8 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
-    UE_LOG(LogTemp, Warning, TEXT("[Attack] OnHitEventReceived 호출됨. HasAuthority: %s"),
-        GetActorInfo().IsNetAuthority() ? TEXT("TRUE") : TEXT("FALSE"));
+  /*  UE_LOG(LogTemp, Warning, TEXT("[Attack] OnHitEventReceived 호출됨. HasAuthority: %s"),
+        GetActorInfo().IsNetAuthority() ? TEXT("TRUE") : TEXT("FALSE"));*/
     AActor* SourceActor = GetAvatarActorFromActorInfo();
     UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 
@@ -130,13 +130,13 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
 
                             HPAfterVal = TargetASC->GetNumericAttribute(HealthAttr);
 
-                            UE_LOG(LogTemp, Warning,
+                            /*UE_LOG(LogTemp, Warning,
                                 TEXT("[Attack] %s -> %s | 데미지: %.0f | 플레이어 HP: %.0f -> %.0f"),
                                 *SourceActor->GetName(),
                                 *HitResult.GetActor()->GetName(),
                                 DamageAmount,
                                 HPBeforeVal,
-                                HPAfterVal);
+                                HPAfterVal);*/
                             goto ApplyDone; // 중첩 루프 탈출
                         }
                     }

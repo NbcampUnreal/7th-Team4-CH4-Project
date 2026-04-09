@@ -13,12 +13,14 @@ class SAGOMAGIC_API ASMMonsterAIController : public AAIController
     GENERATED_BODY()
 public:
     ASMMonsterAIController();
+    void StopAttackTimer();
 
 protected:
     virtual void OnPossess(APawn* InPawn) override;
     virtual void OnUnPossess() override;
-
+    
 public:
+
     UFUNCTION()
     void OnTargetDetected(AActor* Actor, FAIStimulus Stimulus);
 

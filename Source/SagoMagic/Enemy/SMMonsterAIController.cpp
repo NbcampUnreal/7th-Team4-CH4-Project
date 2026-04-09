@@ -44,6 +44,10 @@ void ASMMonsterAIController::OnUnPossess()
     Super::OnUnPossess();
     GetWorldTimerManager().ClearTimer(AttackCheckTimerHandle);
 }
+void ASMMonsterAIController::StopAttackTimer()
+{
+    GetWorldTimerManager().ClearTimer(AttackCheckTimerHandle);
+}
 void ASMMonsterAIController::StartAttackTimer()
 {
     // 이미 타이머가 돌고 있으면 중복 실행 방지

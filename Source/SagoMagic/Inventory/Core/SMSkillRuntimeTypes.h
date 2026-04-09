@@ -14,7 +14,7 @@
  * - 최종 사거리/범위
  * - 최종 쿨타임
  * - 특수 동작 태그
- * - 장착된 젬/보조 스킬 ID 목록
+ * - 장착된 젬/보조 스킬 ID 목록(디버그/추적용)
  *
  * 역할:
  * - 스킬 내부 장착 결과를 실행 계층에서 바로 사용할 수 있는 형태로 캐싱
@@ -131,11 +131,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")
 	FGameplayTagContainer BehaviorTags;
 
-	/** 장착 젬 인스턴스 ID 목록 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")
+	/** 디버그/추적용 장착 젬 인스턴스 ID 목록 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill|Debug")
 	TArray<FGuid> EmbeddedGemIds;
 
-	/** 장착 동일 스킬 인스턴스 ID 목록 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")
+	/** 디버그/추적용 장착 동일 스킬 인스턴스 ID 목록 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill|Debug")
 	TArray<FGuid> EmbeddedSkillIds;
 };

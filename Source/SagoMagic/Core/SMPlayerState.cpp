@@ -5,6 +5,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "SagoMagic.h"
+#include "Character/SMQuickSlotComponent.h"
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -18,6 +19,9 @@ ASMPlayerState::ASMPlayerState()
 	
 	SMInventoryComponent = CreateDefaultSubobject<USMInventoryComponent>(TEXT("InventoryComponent"));
 	SMInventoryComponent->SetIsReplicated(true);
+	
+	QuickSlotComp = CreateDefaultSubobject<USMQuickSlotComponent>(TEXT("QuickSlotComponent"));
+	QuickSlotComp->SetIsReplicated(true);
 	
 	AttributeSet = CreateDefaultSubobject<USMPlayerAttributeSet>(TEXT("AttributeSet"));
 	

@@ -9,6 +9,7 @@
 #include "SagoMagic.h"
 #include "SMInteractionScannerComponent.h"
 #include "SMPlayerController.h"
+#include "SMQuickSlotComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Core/SMGameMode.h"
@@ -136,9 +137,12 @@ void ASMPlayerCharacter::UseQuickSlot(const FInputActionValue& InValue)
 	
 	if (!SMAbilitySystemComponent) return;
 	
-	if (SlotIndex < 3)
+	if (ASMPlayerState* PS = GetPlayerState<ASMPlayerState>())
 	{
-		// TODO: QuickSlotComponent 구현 후 교환 로직 작성
+		if (USMQuickSlotComponent* QuickSlotComponent = PS->GetQuickSlotComponent())
+		{
+			// TODO: 함수 구현후 작성
+		}
 	}
 }
 

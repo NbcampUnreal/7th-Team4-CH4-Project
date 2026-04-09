@@ -82,10 +82,15 @@ public:
 	void ToggleInventory();
 	
 	UFUNCTION(Client, Reliable)
-	void ClientRPC_ShowDeathUI();
+	void ClientRPC_ShowDeathUI(float RespawnTime);  //  TODO 현 260409 : float 추가
 	
 	UFUNCTION(Client, Reliable)
 	void ClientRPC_HideDeathUI();
+	
+	// 게임 결과 UI 표시용 RPC 추가
+	//  TODO 현 260409 : 
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_ShowGameResult(bool bIsVictory);
 	
 private:
 	/** 컨트롤러 입력 매핑 컨텍스트 적용 */

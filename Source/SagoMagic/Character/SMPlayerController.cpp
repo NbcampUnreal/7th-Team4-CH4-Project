@@ -18,6 +18,9 @@
 #include "UI/Inventory/SMInventoryRootWidget.h"
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 #include "UI/SessionUI/SMLobbyWidget.h"
+#include "UI/SMGameplayMessages.h" 
+#include "UI/SMHUD.h"
+#include "UI/SMHUDManager.h"
 
 void ASMPlayerController::BeginPlay()
 {
@@ -50,22 +53,49 @@ void ASMPlayerController::BeginPlay()
 	}
 }
 
-void ASMPlayerController::ClientRPC_ShowDeathUI_Implementation()
+void ASMPlayerController::ClientRPC_ShowDeathUI_Implementation(float RespawnTime)
 {
 	
 	// TODO: 현님이 UI완성하면 호출
-	SetInputMode(FInputModeGameAndUI());
+	SM_LOG(this, LogSM, Log, TEXT("사망 UI 표시 - %.1f초 후 부활"), RespawnTime);
 	
-	SM_LOG(this, LogSM, Log, TEXT("사망 UI"));
+	// GameplayMessage 대신 HUD 직접 접근 (태그 미등록 문제 우회)
+	if (ASMHUD* HUD = Cast<ASMHUD>(GetHUD()))
+	{
+		if (USMHUDManager* HUDMgr = HUD->GetHUDManager())
+		{
+			HUDMgr->ShowPlayerDeath(RespawnTime);
+		}
+	}
+	
+	// 사망 중 입력 모드 유지 (마우스 커서는 표시)
+	FInputModeGameAndUI InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
+	SetShowMouseCursor(true);
 }
 
 void ASMPlayerController::ClientRPC_HideDeathUI_Implementation()
 {
 	
 	// TODO: 현님이 UI완성하면 호출
-	SetInputMode(FInputModeGameOnly());
+	SM_LOG(this, LogSM, Log, TEXT("부활 - 사망 UI 숨김"));
 	
-	SM_LOG(this, LogSM, Log, TEXT("부활시 사망 UI 숨김"));
+	if (ASMHUD* HUD = Cast<ASMHUD>(GetHUD()))
+	{
+		if (USMHUDManager* HUDMgr = HUD->GetHUDManager())
+		{
+			HUDMgr->HidePlayerDeath();
+		}
+	}
+	
+	// 게임플레이 입력 모드 복원
+	FInputModeGameAndUI InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
+	SetShowMouseCursor(true);
 }
 
 void ASMPlayerController::SetupInputComponent()
@@ -116,6 +146,19 @@ void ASMPlayerController::LoginNotify_Implementation()
 	
 	GM->OnPlayerReady(this);
 	
+}
+
+void ASMPlayerController::ClientRPC_ShowGameResult_Implementation(bool bIsVictory)
+{
+	SM_LOG(this, LogSM, Log, TEXT("게임 결과 UI - %s"), bIsVictory ? TEXT("승리") : TEXT("패배"));
+
+	if (ASMHUD* HUD = Cast<ASMHUD>(GetHUD()))
+	{
+		if (USMHUDManager* HUDMgr = HUD->GetHUDManager())
+		{
+			HUDMgr->ShowGameResult(bIsVictory);
+		}
+	}
 }
 
 void ASMPlayerController::ApplyControllerMappingContext()

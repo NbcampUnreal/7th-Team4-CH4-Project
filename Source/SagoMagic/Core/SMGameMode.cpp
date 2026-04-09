@@ -5,6 +5,8 @@
 #include "Character/SMPlayerController.h"
 #include "Core/SMStateMachine.h"
 #include "Wave/SMWaveManagerSubsystem.h"
+#include "EngineUtils.h"
+#include "GameFramework/PlayerStart.h"
 
 ASMGameMode::ASMGameMode()
 {
@@ -166,6 +168,24 @@ void ASMGameMode::RespawnPlayer(TWeakObjectPtr<ASMPlayerController> InPlayerCont
 
 	// 스폰 포인트 지정 후 리스폰
 	AActor* SpawnPoint = ChoosePlayerStart(PC);
+    if (!SpawnPoint)  
+    {
+       SM_LOG(this, LogSM, Warning, TEXT("[GameMode] 엔진이 스폰 포인트를 찾지 못해 강제 할당을 시도합니다."));
+       for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+       {
+          SpawnPoint = *It;
+          break;
+       }
+    }
+   
+    if (SpawnPoint)  // 최종적으로 스폰 포인트가 확보되었는지 확인 후 부활
+    {
+        RestartPlayerAtPlayerStart(PC, SpawnPoint);
+    }
+    else
+    {
+        SM_LOG(this, LogSM, Error, TEXT("[GameMode] 맵에 PlayerStart가 아예 존재하지 않아 부활에 실패했습니다!"));
+    }
 	RestartPlayerAtPlayerStart(PC, SpawnPoint);
 
 	InPlayerController->ClientRPC_HideDeathUI();

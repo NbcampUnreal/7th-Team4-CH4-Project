@@ -8,7 +8,6 @@
 #include "GAS/SMAbilitySystemComponent.h"
 #include "SMPlayerState.generated.h"
 
-class USMQuickSlotComponent;
 class USMPlayerAttributeSet;
 class USMInventoryComponent;
 
@@ -31,7 +30,7 @@ public:
 
 	FORCEINLINE USMPlayerAttributeSet* GetAttributeSet() const { return AttributeSet; }
 	
-	FORCEINLINE USMQuickSlotComponent* GetQuickSlotComponent() const { return QuickSlotComp; }
+	FORCEINLINE USMInventoryComponent* GetInventoryComponent() const { return SMInventoryComponent; }
 
 protected:
 	/** ASC */
@@ -42,11 +41,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
 	TObjectPtr<USMInventoryComponent> SMInventoryComponent;
 	
-	/** 퀵슬롯 컴포넌트 */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "QuickSlot")
-	TObjectPtr<USMQuickSlotComponent> QuickSlotComp;
-	
-
 	/** Player Attribute Set */
 	UPROPERTY()
 	TObjectPtr<USMPlayerAttributeSet> AttributeSet;

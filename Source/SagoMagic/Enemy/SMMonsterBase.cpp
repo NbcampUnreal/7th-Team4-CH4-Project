@@ -79,13 +79,6 @@ void ASMMonsterBase::OnRep_MonsterAssetId()
         ApplyVisuals(DataAsset);
 }
 
-//void ASMMonsterBase::MulticastHandleDeath_Implementation()
-//{
-//    SetActorHiddenInGame(true);
-//    SetActorEnableCollision(false);
-//    SetActorTickEnabled(false);
-//}
-
 void ASMMonsterBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -100,8 +93,6 @@ void ASMMonsterBase::BeginPlay()
 void ASMMonsterBase::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
-
-    //UE_LOG(LogTemp, Warning, TEXT("[Monster] PossessedBy - DefaultAbilities 수: %d"), DefaultAbilities.Num());
 
     if (MonsterAbilitySystemComponent)
     {

@@ -28,15 +28,12 @@ void ASMMonsterAIController::OnPossess(APawn* InPawn)
             APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
             if (PlayerPawn)
             {
-                //GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red, TEXT("Target find!"));
                 Blackboard->SetValueAsObject(FName("TargetActor"), PlayerPawn);
             }
 
             RunBehaviorTree(BTAsset);
         }
     }
-
-  
 }
 
 void ASMMonsterAIController::OnUnPossess()
@@ -60,7 +57,6 @@ void ASMMonsterAIController::StartAttackTimer()
         AttackCooldown,
         true
     );
-
     //UE_LOG(LogTemp, Warning, TEXT("[AI] 공격 타이머 시작. 쿨다운: %.1f초"), AttackCooldown);
 }
 
@@ -77,14 +73,6 @@ void ASMMonsterAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulu
 
 void ASMMonsterAIController::CheckAttackRange()
 {
-    /*UE_LOG(LogTemp, Warning, TEXT("[AI] NetMode:%d Role:%d LocalRole:%d"),
-        (int32)GetNetMode(),
-        (int32)GetPawn()->GetRemoteRole(),
-        (int32)GetPawn()->GetLocalRole());*/
-    /*UE_LOG(LogTemp, Warning, TEXT("[AI] CheckAttackRange - NetMode: %d, HasAuthority: %s"),
-        (int32)GetNetMode(),
-        HasAuthority() ? TEXT("Server") : TEXT("Client"));*/
-
     APawn* MyPawn = GetPawn();
     if (!MyPawn) return;
 
@@ -96,16 +84,10 @@ void ASMMonsterAIController::CheckAttackRange()
 
     if (!ASC)
     {
-        //UE_LOG(LogTemp, Warning, TEXT("[AI] Pawn:%s / ASC 없음"), *MyPawn->GetName());
         return;
     }
 
     const TArray<FGameplayAbilitySpec>& AllSpecs = ASC->GetActivatableAbilities();
-
-    /*UE_LOG(LogTemp, Warning, TEXT("[AI] Pawn:%s / ASC:%p / 부여된 어빌리티 수: %d"),
-        *MyPawn->GetName(),
-        ASC,
-        AllSpecs.Num());*/
 
     if (AllSpecs.Num() == 0)
     {

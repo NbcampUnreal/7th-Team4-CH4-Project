@@ -5,7 +5,8 @@
 #include "Enemy/SMMonsterBase.h"
 #include "GAS/AttributeSets/SMMonsterAttributeSet.h"
 #include "Character/SMPlayerCharacter.h"  
-
+#include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 
 UGA_MonsterAttackBase::UGA_MonsterAttackBase()
 {    // 서버에서만 실행, 클라이언트는 복제로 받음
@@ -20,22 +21,20 @@ void UGA_MonsterAttackBase::ActivateAbility(
     const FGameplayAbilityActivationInfo ActivationInfo,
     const FGameplayEventData* TriggerEventData)
 {
-    /*UE_LOG(LogTemp, Warning, TEXT("[Attack] ActivateAbility 호출됨. HasAuthority: %s"),
-        GetActorInfo().IsNetAuthority() ? TEXT("TRUE") : TEXT("FALSE"));*/
-    // 애니메이션 몽타주 태스크 (나중에 주석 해제)
-    //UAbilityTask_PlayMontageAndWait* MontageTask =
-    //    UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, AttackMontage);
-    //MontageTask->ReadyForActivation();
+    // 애니메이션 몽타주 태스크 
+    UAbilityTask_PlayMontageAndWait* MontageTask =
+        UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, AttackMontage);
+    MontageTask->ReadyForActivation();
 
-    // 타격 이벤트 대기 태스크 (나중에 주석 해제)
-    //UAbilityTask_WaitGameplayEvent* WaitEventTask =
-    //    UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, HitEventTag);
-    //WaitEventTask->EventReceived.AddDynamic(this, &UGA_MonsterAttackBase::OnHitEventReceived);
-    //WaitEventTask->ReadyForActivation();
+    // 타격 이벤트 대기 태스크
+    UAbilityTask_WaitGameplayEvent* WaitEventTask =
+        UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, HitEventTag);
+    // 이벤트가 수신되면 데미지 처리 함수 실행
+    WaitEventTask->EventReceived.AddDynamic(this, &UGA_MonsterAttackBase::OnHitEventReceived);
+    WaitEventTask->ReadyForActivation();
 
     // 애니메이션 없이 테스트할 때는 바로 호출
-    OnHitEventReceived(FGameplayEventData());
-    
+    //OnHitEventReceived(FGameplayEventData());
     //TODO : Base Camp 공격 시
     //데미지 처리
 }

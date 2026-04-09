@@ -1,6 +1,7 @@
 ﻿#include "SMResultState.h"
 
 #include "Core/SMStateMachine.h"
+#include "Core/SMGameMode.h"  //  TODO 현 260409 : 
 
 void USMResultState::Enter()
 {
@@ -13,7 +14,11 @@ void USMResultState::Enter()
     UE_LOG(LogTemp, Log, TEXT("[ResultState] Enter - %s"), bIsVictory ? TEXT("승리") : TEXT("패배"));
 
     //TODO 은서 : 결과 UI Multicast RPC 호출
-    //예 : GM->MulticastShowResult(bIsVictory);
+    //  TODO 현 260409 : 
+    if (ASMGameMode* GM = GetGameMode())
+    {
+        GM->BroadcastGameResult(bIsVictory);
+    }
 }
 
 void USMResultState::Tick(float DeltaTime)

@@ -1,4 +1,6 @@
 #include "SMBaseCampActor.h"
+#include "Components/StaticMeshComponent.h"
+#include "AbilitySystemComponent.h"
 
 ASMBaseCampActor::ASMBaseCampActor()
 {

@@ -22,8 +22,8 @@ void USMBaseCampAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(USMBaseCampAttributeSet, Health);
-	DOREPLIFETIME(USMBaseCampAttributeSet, MaxHealth);
+	DOREPLIFETIME_CONDITION_NOTIFY(USMBaseCampAttributeSet, Health, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(USMBaseCampAttributeSet, MaxHealth, COND_None, REPNOTIFY_Always);
 }
 
 void USMBaseCampAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data)

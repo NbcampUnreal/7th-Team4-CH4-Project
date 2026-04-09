@@ -13,7 +13,8 @@ namespace SMCharacterTag
 
 	/** 캐릭터의 상태 */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat)
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Construct)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Build_Place)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Build_Edit)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Attacking)
 	
 	/** 디폴트 어빌리티 */

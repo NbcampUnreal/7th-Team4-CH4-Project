@@ -18,6 +18,7 @@ class UInputMappingContext;
 class UInputAction;
 class USpringArmComponent;
 class UCameraComponent;
+
 /**
  * 플레이어가 조종할 캐릭터 클래스
  */
@@ -34,11 +35,18 @@ class SAGOMAGIC_API ASMPlayerCharacter : public ACharacter, public IAbilitySyste
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USMInteractionScannerComponent> InteractionScannerComp;
-	
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<UInputMappingContext> DefaultMappingContext;
+	TObjectPtr<UInputMappingContext> DefaultIMC;
+	
+	// TODO: 건설관련 논의 끝난 후 에디터에서 IMC 설정 필요
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Place")
+	TObjectPtr<UInputMappingContext> BuildPlaceIMC;
+	
+	// TODO: 건설관련 논의 끝난 후 에디터에서 IMC 설정 필요
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
+	TObjectPtr<UInputMappingContext> BuildEditIMC;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
@@ -48,6 +56,21 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> InteractAction;
+	
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Place")
+	TObjectPtr<UInputAction> BuildAction;
+	
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
+	TObjectPtr<UInputAction> EditAction;
+	
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Place")
+	TObjectPtr<UInputAction> BuildPlaceAction;
+	
+	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
+	TObjectPtr<UInputAction> EditSelectAction;
+	
+	UPROPERTY(EditAnywhere, Category = "Input|Quickslot")
+	TObjectPtr<UInputAction> QuickSlotAction;
 
 	/** Pitch(상하 각도) 조정용 */
 	UPROPERTY(EditAnywhere,
@@ -71,9 +94,6 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Attributes")
 	USMPlayerAttributeSet* GetAttributeSet() const;
-	
-	// UFUNCTION(BlueprintCallable, Category = "Weapon")
-	// UStaticMeshComponent* GetStaticMeshComponent() const;
 	
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	USMInteractionScannerComponent* GetInteractionScanner() const { return InteractionScannerComp; }
@@ -106,13 +126,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilities;
 	
+	/** 죽음 판정 플래그 */
 	UPROPERTY(BlueprintReadOnly, Category = "Death", ReplicatedUsing = OnRep_IsDead)
 	bool bIsDead = false;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Death")
 	float DeathLifeSpan = 5.0f;
 	
-	/** */
+	/** 서버에서 bIsDead가 바뀌면 클라에게 복제해줄 함수 */
 	UFUNCTION()
 	virtual void OnRep_IsDead();
 	
@@ -130,4 +151,14 @@ protected:
 	void Attack();
 	
 	void Interact();
+	
+	void UseQuickSlot(const FInputActionValue& InValue);
+	
+	// B버튼 및 V버튼을 누르면 모드가 바뀌는 함수
+	void ToggleBuildMode();
+	void ToggleEditMode();
+	
+	// 건축모드나 편집 모드일시 좌클릭 누르면 실행될 함수
+	void OnBuildPlace();
+	void OnEditSelect();
 };

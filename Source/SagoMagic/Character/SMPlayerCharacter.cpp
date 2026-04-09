@@ -42,7 +42,7 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	CameraComp->SetupAttachment(SpringArmComp);
-
+	
 	// 캐릭터의 움직임으로 몸 회전 금지
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
@@ -90,11 +90,6 @@ USMPlayerAttributeSet* ASMPlayerCharacter::GetAttributeSet() const
 	return nullptr;
 }
 
-// UStaticMeshComponent* ASMPlayerCharacter::GetStaticMeshComponent() const
-// {
-// 	return WeaponMesh;
-// }
-
 void ASMPlayerCharacter::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
@@ -131,6 +126,108 @@ void ASMPlayerCharacter::Interact()
 	
 	FGameplayTag InteractTag = SMCharacterTag::Ability_Default_Interact;
 	SMAbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(InteractTag));
+}
+
+void ASMPlayerCharacter::UseQuickSlot(const FInputActionValue& InValue)
+{
+	const int32 SlotIndex = FMath::RoundToInt(InValue.Get<float>());
+	
+	SM_LOG(this, LogSM, Log, TEXT("입력된 퀵슬롯 번호: %d"), SlotIndex);
+	
+	if (!SMAbilitySystemComponent) return;
+	
+	if (SlotIndex < 3)
+	{
+		// TODO: QuickSlotComponent 구현 후 교환 로직 작성
+	}
+}
+
+void ASMPlayerCharacter::ToggleBuildMode()
+{
+	ASMPlayerController* PC = Cast<ASMPlayerController>(Controller);
+	if (!PC || !PC->IsLocalController()) return;
+	
+	UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
+	if (!Subsystem || !BuildPlaceIMC || !SMAbilitySystemComponent) return;
+	
+	// 편집 모드라면 토글 함수를 호출해 종료
+	if (SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit))
+	{
+		ToggleEditMode();
+	}
+	
+	// 현재 건축모드인지 확인
+	bool bIsBuildMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place);
+	
+	if (!bIsBuildMode)
+	{
+		Subsystem->AddMappingContext(BuildPlaceIMC, 1);
+		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
+		SM_LOG(this, LogSM, Log, TEXT("건축 모드 ON"));
+		
+		// TODO: 나중에 BuildComponent 구현 후 건축모드 활성화 로직 추가
+	}
+	else
+	{
+		Subsystem->RemoveMappingContext(BuildPlaceIMC);
+		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
+		SM_LOG(this, LogSM, Log, TEXT("건축 모드 OFF"));
+		
+		// TODO: 나중에 BuildComponent 구현 후 건축모드 아래 비활성화 로직 추가
+	}
+}
+
+void ASMPlayerCharacter::ToggleEditMode()
+{
+	ASMPlayerController* PC = Cast<ASMPlayerController>(Controller);
+	if (!PC || !PC->IsLocalController()) return;
+	
+	UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
+	if (!Subsystem || !BuildEditIMC || !SMAbilitySystemComponent) return;
+	
+	// 건축 모드가 켜져 있다면 종료
+	if (SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place))
+	{
+		ToggleBuildMode();
+	}
+	
+	// 현재 편집 모드인지 확인
+	bool bIsEditMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit);
+	
+	if (!bIsEditMode)
+	{
+		Subsystem->AddMappingContext(BuildEditIMC, 1);
+		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Edit);
+		SM_LOG(this, LogSM, Log, TEXT("편집 모드 ON"));
+		
+		// TODO: 나중에 BuildComponent 구현 후 편집모드 활성화 로직 추가
+	}
+	else
+	{
+		Subsystem->RemoveMappingContext(BuildEditIMC);
+		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
+		SM_LOG(this, LogSM, Log, TEXT("편집 모드 OFF"));
+	}
+}
+
+void ASMPlayerCharacter::OnBuildPlace()
+{
+	if (!SMAbilitySystemComponent) return;
+	
+	// TODO: 추후에 GA_BuildPlace 구현 후 주석 제거
+	// SMAbilitySystemComponent->TryActivateAbilitiesByTag(SMCharacterTag::Ability_Build_Place);
+	SM_LOG(this, LogSM, Log, TEXT("건축 GA실행"));
+}
+
+void ASMPlayerCharacter::OnEditSelect()
+{
+	if (!SMAbilitySystemComponent) return;
+	
+	// TODO: 추후에 GA_BuildEdit 구현 후 주석 제거
+	// SMAbilitySystemComponent->TryActivateAbilitiesByTag(SMCharacterTag::Ability_Build_Edit);
+	SM_LOG(this, LogSM, Log, TEXT("편집 GA 실행"));
 }
 
 void ASMPlayerCharacter::BeginPlay()
@@ -296,12 +393,10 @@ void ASMPlayerCharacter::HandleDeath()
 	{
 		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 		{
-			// TODO: PC에서 사망 시 UI 띄우게 하기 
 			PC->ClientRPC_ShowDeathUI();
 			
 			if (ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>())
 			{
-				// TODO: GM에게 사망시 처리 함수 호출하게 하기
 				GM->OnPlayerDead(PC);
 			}
 			
@@ -326,15 +421,15 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	{
 		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 		{
-			if (PC->IsLocalController() && DefaultMappingContext)
+			if (PC->IsLocalController() && DefaultIMC)
 			{
 				if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
 				{
 					if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
 							ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
 					{
-						Subsystem->RemoveMappingContext(DefaultMappingContext);
-						Subsystem->AddMappingContext(DefaultMappingContext, 0);
+						Subsystem->RemoveMappingContext(DefaultIMC);
+						Subsystem->AddMappingContext(DefaultIMC, 0);
 					}
 				}
 			}
@@ -353,6 +448,31 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		if (InteractAction)
 		{
 			EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &ThisClass::Interact);
+		}
+		
+		if (QuickSlotAction)
+		{
+			EIC->BindAction(QuickSlotAction, ETriggerEvent::Started, this, &ThisClass::UseQuickSlot);
+		}
+		
+		if (BuildAction)
+		{
+			EIC->BindAction(BuildAction, ETriggerEvent::Started, this, &ThisClass::ToggleBuildMode);
+		}
+		
+		if (EditAction)
+		{
+			EIC->BindAction(EditAction, ETriggerEvent::Started, this, &ThisClass::ToggleEditMode);
+		}
+		
+		if (BuildPlaceAction)
+		{
+			EIC->BindAction(BuildPlaceAction, ETriggerEvent::Started, this, &ThisClass::OnBuildPlace);
+		}
+		
+		if (EditSelectAction)
+		{
+			EIC->BindAction(EditSelectAction, ETriggerEvent::Started, this, &ThisClass::OnEditSelect);
 		}
 	}
 }

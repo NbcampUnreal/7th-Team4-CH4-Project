@@ -14,6 +14,12 @@ namespace SMMessageTag
     /** 인벤토리 갱신 메시지 채널 태그 */
     SAGOMAGIC_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Inventory_Updated);
 
+    /** 메인 인벤토리 갱신 메시지 채널 태그 */
+    SAGOMAGIC_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Inventory_MainContainerUpdated);
+
+    /** 스킬 내부 인벤토리 갱신 메시지 채널 태그 */
+    SAGOMAGIC_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Inventory_SkillContainerUpdated);
+
     /** 스킬 요약 갱신 메시지 채널 태그 */
     SAGOMAGIC_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Inventory_SkillSummaryUpdated);
 

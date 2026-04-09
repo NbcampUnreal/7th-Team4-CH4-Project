@@ -52,8 +52,12 @@ void USMPlayerInventoryPanelWidget::RegisterInventoryMessageListeners()
 	}
 
 	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
-	InventoryUpdatedListenerHandle = MessageSubsystem.RegisterListener<FSMInventoryUpdatedMessage>(
-		SMMessageTag::Inventory_Updated,
+	MainInventoryUpdatedListenerHandle = MessageSubsystem.RegisterListener<FSMInventoryUpdatedMessage>(
+		SMMessageTag::Inventory_MainContainerUpdated,
+		this,
+		&ThisClass::HandleInventoryUpdatedMessage);
+	SkillContainerUpdatedListenerHandle = MessageSubsystem.RegisterListener<FSMInventoryUpdatedMessage>(
+		SMMessageTag::Inventory_SkillContainerUpdated,
 		this,
 		&ThisClass::HandleInventoryUpdatedMessage);
 	SkillSummaryUpdatedListenerHandle = MessageSubsystem.RegisterListener<FSMSkillSummaryUpdatedMessage>(
@@ -64,9 +68,14 @@ void USMPlayerInventoryPanelWidget::RegisterInventoryMessageListeners()
 
 void USMPlayerInventoryPanelWidget::UnregisterInventoryMessageListeners()
 {
-	if (InventoryUpdatedListenerHandle.IsValid())
+	if (MainInventoryUpdatedListenerHandle.IsValid())
 	{
-		InventoryUpdatedListenerHandle.Unregister();
+		MainInventoryUpdatedListenerHandle.Unregister();
+	}
+
+	if (SkillContainerUpdatedListenerHandle.IsValid())
+	{
+		SkillContainerUpdatedListenerHandle.Unregister();
 	}
 
 	if (SkillSummaryUpdatedListenerHandle.IsValid())
@@ -91,7 +100,20 @@ void USMPlayerInventoryPanelWidget::HandleInventoryUpdatedMessage(
 		return;
 	}
 
-	RefreshPanel();
+	if (InChannel == SMMessageTag::Inventory_MainContainerUpdated)
+	{
+		ApplySelectedSkillState();
+		RefreshMainInventoryWidget();
+		return;
+	}
+
+	if (InChannel == SMMessageTag::Inventory_SkillContainerUpdated &&
+		SkillInventoryWidget != nullptr &&
+		SkillInventoryWidget->GetContainerId().IsValid() &&
+		SkillInventoryWidget->GetContainerId() == InMessage.GetContainerId())
+	{
+		RefreshSkillInventoryWidget();
+	}
 }
 
 void USMPlayerInventoryPanelWidget::HandleSkillSummaryUpdatedMessage(
@@ -110,7 +132,8 @@ void USMPlayerInventoryPanelWidget::HandleSkillSummaryUpdatedMessage(
 		return;
 	}
 
-	RefreshPanel();
+	ApplySelectedSkillState();
+	RefreshMainInventoryWidget();
 }
 
 void USMPlayerInventoryPanelWidget::RefreshPanel()
@@ -154,6 +177,13 @@ void USMPlayerInventoryPanelWidget::ClearSelectedSkill()
 
 void USMPlayerInventoryPanelWidget::OpenSkillInventory(const FGuid& InSkillInstanceId)
 {
+	if (SelectedSkillInstanceId == InSkillInstanceId)
+	{
+		ApplySelectedSkillState();
+		BP_OnPanelRefreshed();
+		return;
+	}
+
 	SelectedSkillInstanceId = InSkillInstanceId;
 	ApplySelectedSkillState();
 	RefreshSkillInventoryWidget();
@@ -162,14 +192,39 @@ void USMPlayerInventoryPanelWidget::OpenSkillInventory(const FGuid& InSkillInsta
 
 void USMPlayerInventoryPanelWidget::CloseSkillInventory()
 {
+	if (SelectedSkillInstanceId.IsValid() == false)
+	{
+		ApplySelectedSkillState();
+		BP_OnPanelRefreshed();
+		return;
+	}
+
 	SelectedSkillInstanceId.Invalidate();
 	ApplySelectedSkillState();
-	RefreshSkillInventoryWidget();
 	BP_OnPanelRefreshed();
 }
 
 void USMPlayerInventoryPanelWidget::RefreshMainInventoryWidget()
 {
+	if (HoveredItemInstanceId.IsValid() && (InventoryComponent == nullptr || InventoryComponent->HasItem(HoveredItemInstanceId) == false))
+	{
+		HideHoveredItemInfo();
+	}
+	else if (ItemHoverInfoWidget != nullptr && HoveredItemInstanceId.IsValid())
+	{
+		ItemHoverInfoWidget->RefreshItemInfo();
+	}
+
+	if (ContextMenuWidget != nullptr)
+	{
+		const FGuid& ContextMenuItemInstanceId = ContextMenuWidget->GetItemInstanceId();
+		if (ContextMenuItemInstanceId.IsValid() &&
+			(InventoryComponent == nullptr || InventoryComponent->HasItem(ContextMenuItemInstanceId) == false))
+		{
+			CloseContextMenu();
+		}
+	}
+
 	if (MainInventoryGridWidget == nullptr)
 	{
 		return;
@@ -404,6 +459,7 @@ void USMPlayerInventoryPanelWidget::ApplySelectedSkillState()
 	FSMSkillItemInstanceData SkillData;
 	if (InventoryComponent->GetSkillData(SelectedSkillInstanceId, SkillData) == false)
 	{
+		SelectedSkillInstanceId.Invalidate();
 		SkillInventoryWidget->ClearTargetSkill();
 		return;
 	}

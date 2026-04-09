@@ -2,6 +2,8 @@
 
 #include "Blueprint/WidgetBlueprintLibrary.h"
 
+#include "Inventory/Components/SMInventoryComponent.h"
+#include "Inventory/Core/SMContainerTypes.h"
 #include "UI/Inventory/SMInventoryDragDropOperation.h"
 #include "UI/Inventory/SMInventoryGridWidget.h"
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
@@ -32,6 +34,11 @@ void USMInventoryCellWidget::NativeOnMouseEnter(const FGeometry& InGeometry, con
 	{
 		OwningPanel->ShowHoveredItemInfo(OwnerItemInstanceId, InMouseEvent.GetScreenSpacePosition());
 	}
+
+	if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
+	{
+		OwningGrid->SetHoveredItemInstanceId(OwnerItemInstanceId);
+	}
 }
 
 FReply USMInventoryCellWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -44,6 +51,11 @@ FReply USMInventoryCellWidget::NativeOnMouseMove(const FGeometry& InGeometry, co
 	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 	{
 		OwningPanel->ShowHoveredItemInfo(OwnerItemInstanceId, InMouseEvent.GetScreenSpacePosition());
+	}
+
+	if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
+	{
+		OwningGrid->SetHoveredItemInstanceId(OwnerItemInstanceId);
 	}
 
 	return FReply::Handled();
@@ -65,6 +77,11 @@ void USMInventoryCellWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEven
 			OwningPanel->HideHoveredItemInfo();
 		}
 	}
+
+	if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
+	{
+		OwningGrid->SetHoveredItemInstanceId(FGuid());
+	}
 }
 
 FReply USMInventoryCellWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -73,6 +90,18 @@ FReply USMInventoryCellWidget::NativeOnMouseButtonDown(const FGeometry& InGeomet
 	{
 		if (InMouseEvent.GetEffectingButton() == EKeys::RightMouseButton)
 		{
+			if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
+			{
+				FSMGridContainerState ContainerData;
+				if (OwningGrid->GetInventoryComponent() != nullptr &&
+					OwningGrid->GetInventoryComponent()->GetContainerData(OwningGrid->GetContainerId(), ContainerData) &&
+					ContainerData.ContainerType == ESMContainerType::SkillInternal)
+				{
+					OwningPanel->CloseContextMenu();
+					return FReply::Handled();
+				}
+			}
+
 			if (OwnerItemInstanceId.IsValid() == false)
 			{
 				OwningPanel->CloseContextMenu();
@@ -116,6 +145,8 @@ void USMInventoryCellWidget::NativeOnDragDetected(const FGeometry& InGeometry, c
 
 	if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
 	{
+		OwningGrid->SetHoveredItemInstanceId(FGuid());
+		
 		const FVector2D LocalMousePosition = InGeometry.AbsoluteToLocal(InMouseEvent.GetScreenSpacePosition());
 		const FVector2D LocalSize = InGeometry.GetLocalSize();
 
@@ -165,10 +196,25 @@ void USMInventoryCellWidget::UpdateCellState(
 	bool bInPlaceableHighlighted,
 	bool bInBlockedHighlighted)
 {
+	const bool bShouldDisplayOccupiedState =
+		OwnerItemInstanceId.IsValid() &&
+		bInPlaceableHighlighted == false &&
+		bInBlockedHighlighted == false;
+
+	if (bCellEnabled == bInCellEnabled &&
+		bHoveredCell == bInHoveredCell &&
+		bPlaceableHighlighted == bInPlaceableHighlighted &&
+		bBlockedHighlighted == bInBlockedHighlighted &&
+		bOccupiedCell == bShouldDisplayOccupiedState)
+	{
+		return;
+	}
+
 	bCellEnabled = bInCellEnabled;
 	bHoveredCell = bInHoveredCell;
 	bPlaceableHighlighted = bInPlaceableHighlighted;
 	bBlockedHighlighted = bInBlockedHighlighted;
+	bOccupiedCell = bShouldDisplayOccupiedState;
 
 	BP_OnCellStateChanged();
 }

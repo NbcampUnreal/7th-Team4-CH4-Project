@@ -28,6 +28,8 @@ USMInventoryGridWidget::USMInventoryGridWidget(const FObjectInitializer& ObjectI
 	  , HoveredGridX(-1)
 	  , HoveredGridY(-1)
 	  , ActiveDragDropOperation(nullptr)
+	  , CachedStructureWidth(0)
+	  , CachedStructureHeight(0)
 {
 }
 
@@ -227,9 +229,21 @@ void USMInventoryGridWidget::InitializeGridWidget(const FGuid& InContainerId,
 
 void USMInventoryGridWidget::RefreshGrid()
 {
-	RefreshContainerSize();
-	RebuildCellWidgets();
-	RebuildItemWidgets();
+	FSMGridContainerState ContainerData;
+	if (TryGetContainerData(ContainerData) == false)
+	{
+		GridWidth = 0;
+		GridHeight = 0;
+		ClearItemWidgets();
+		ClearCellWidgets();
+		ClearHoveredCellState();
+		BP_OnGridRefreshed();
+		return;
+	}
+
+	RefreshContainerSize(ContainerData);
+	SyncGridStructure(ContainerData);
+	SyncItemWidgets();
 	ClearHoveredCellState();
 	BP_OnGridRefreshed();
 }
@@ -292,8 +306,20 @@ void USMInventoryGridWidget::RequestRotateDraggedItem()
 
 void USMInventoryGridWidget::ClearHoveredCellState()
 {
+	HoveredItemInstanceId.Invalidate();
 	HoveredGridX = -1;
 	HoveredGridY = -1;
+	UpdateCellStates();
+}
+
+void USMInventoryGridWidget::SetHoveredItemInstanceId(const FGuid& InItemInstanceId)
+{
+	if (HoveredItemInstanceId == InItemInstanceId)
+	{
+		return;
+	}
+
+	HoveredItemInstanceId = InItemInstanceId;
 	UpdateCellStates();
 }
 
@@ -469,7 +495,38 @@ USMInventoryDragDropOperation* USMInventoryGridWidget::GetInventoryDragDropOpera
 	return Cast<USMInventoryDragDropOperation>(InOperation);
 }
 
-void USMInventoryGridWidget::RebuildCellWidgets()
+bool USMInventoryGridWidget::TryGetContainerData(FSMGridContainerState& OutContainerData) const
+{
+	if (InventoryComponent == nullptr)
+	{
+		return false;
+	}
+
+	return InventoryComponent->GetContainerData(ContainerId, OutContainerData);
+}
+
+void USMInventoryGridWidget::SyncGridStructure(const FSMGridContainerState& InContainerData)
+{
+	const bool bStructureChanged =
+		CachedStructureContainerId != InContainerData.ContainerId ||
+		CachedStructureWidth != InContainerData.ValidMask.Width ||
+		CachedStructureHeight != InContainerData.ValidMask.Height ||
+		CachedStructureBitMask != InContainerData.ValidMask.BitMask ||
+		CellWidgets.Num() != (InContainerData.ValidMask.Width * InContainerData.ValidMask.Height);
+
+	if (bStructureChanged == false)
+	{
+		return;
+	}
+
+	RebuildCellWidgets(InContainerData);
+	CachedStructureContainerId = InContainerData.ContainerId;
+	CachedStructureWidth = InContainerData.ValidMask.Width;
+	CachedStructureHeight = InContainerData.ValidMask.Height;
+	CachedStructureBitMask = InContainerData.ValidMask.BitMask;
+}
+
+void USMInventoryGridWidget::RebuildCellWidgets(const FSMGridContainerState& InContainerData)
 {
 	ClearCellWidgets();
 
@@ -488,15 +545,9 @@ void USMInventoryGridWidget::RebuildCellWidgets()
 		return;
 	}
 
-	FSMGridContainerState ContainerData;
-	if (InventoryComponent->GetContainerData(ContainerId, ContainerData) == false)
-	{
-		return;
-	}
-
-	const FString& BitMask = ContainerData.ValidMask.BitMask;
-	const int32 MaskWidth = ContainerData.ValidMask.Width;
-	const int32 MaskHeight = ContainerData.ValidMask.Height;
+	const FString& BitMask = InContainerData.ValidMask.BitMask;
+	const int32 MaskWidth = InContainerData.ValidMask.Width;
+	const int32 MaskHeight = InContainerData.ValidMask.Height;
 
 	for (int32 Y = 0; Y < MaskHeight; ++Y)
 	{
@@ -520,24 +571,96 @@ void USMInventoryGridWidget::RebuildCellWidgets()
 	}
 }
 
-void USMInventoryGridWidget::RebuildItemWidgets()
+void USMInventoryGridWidget::SyncItemWidgets()
 {
-	ClearItemWidgets();
-
 	if (ItemLayerPanel == nullptr)
 	{
+		ClearItemWidgets();
 		return;
 	}
 
 	if (ItemWidgetClass == nullptr)
 	{
+		ClearItemWidgets();
 		return;
 	}
 
 	if (InventoryComponent == nullptr)
 	{
+		ClearItemWidgets();
 		return;
 	}
+
+	TSet<FGuid> DesiredItemInstanceIds;
+	TArray<FGuid> DesiredOwnerItemInstanceIds;
+	TArray<FLinearColor> DesiredOccupiedAccentColors;
+	DesiredOwnerItemInstanceIds.Init(FGuid(), CellWidgets.Num());
+	DesiredOccupiedAccentColors.Init(FLinearColor::White, CellWidgets.Num());
+
+	auto SyncItemWidget = [this, &DesiredItemInstanceIds, &DesiredOwnerItemInstanceIds, &DesiredOccupiedAccentColors](
+		const FSMItemInstanceData& InBaseItemData)
+	{
+		DesiredItemInstanceIds.Add(InBaseItemData.InstanceId);
+
+		USMItemWidget* ItemWidget = nullptr;
+		if (TObjectPtr<USMItemWidget>* ExistingWidget = ItemWidgets.Find(InBaseItemData.InstanceId))
+		{
+			ItemWidget = ExistingWidget->Get();
+		}
+
+		if (ItemWidget == nullptr)
+		{
+			ItemWidget = CreateWidget<USMItemWidget>(this, ItemWidgetClass);
+			if (ItemWidget == nullptr)
+			{
+				return;
+			}
+
+			ItemWidgets.Add(InBaseItemData.InstanceId, ItemWidget);
+			ItemLayerPanel->AddChild(ItemWidget);
+		}
+
+		const bool bNeedsVisualRefresh =
+			ItemWidget->GetOwningContainerId() != InBaseItemData.ParentContainerId ||
+			ItemWidget->GetGridX() != InBaseItemData.GridX ||
+			ItemWidget->GetGridY() != InBaseItemData.GridY ||
+			ItemWidget->GetDisplayRotation() != InBaseItemData.Rotation ||
+			ItemWidget->GetInventoryComponent() != InventoryComponent;
+
+		if (bNeedsVisualRefresh)
+		{
+			ItemWidget->InitializeItemWidget(
+				InBaseItemData.InstanceId,
+				InBaseItemData.ParentContainerId,
+				InBaseItemData.GridX,
+				InBaseItemData.GridY,
+				InBaseItemData.Rotation,
+				InventoryComponent);
+			ItemWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+			ApplyItemWidgetLayout(ItemWidget, InBaseItemData.GridX, InBaseItemData.GridY);
+		}
+
+		TArray<FIntPoint> OccupiedCells;
+		if (BuildOccupiedCellsFromItemData(InBaseItemData, OccupiedCells) == false)
+		{
+			return;
+		}
+
+		FLinearColor AccentColor = FLinearColor::White;
+		GetItemAccentColor(InBaseItemData, AccentColor);
+
+		for (const FIntPoint& OccupiedCell : OccupiedCells)
+		{
+			int32 CellArrayIndex = INDEX_NONE;
+			if (TryGetCellArrayIndex(OccupiedCell.X, OccupiedCell.Y, CellArrayIndex) == false)
+			{
+				continue;
+			}
+
+			DesiredOwnerItemInstanceIds[CellArrayIndex] = InBaseItemData.InstanceId;
+			DesiredOccupiedAccentColors[CellArrayIndex] = AccentColor;
+		}
+	};
 
 	for (const FSMItemInstanceData& ItemData : InventoryComponent->GetItemEntries())
 	{
@@ -546,24 +669,7 @@ void USMInventoryGridWidget::RebuildItemWidgets()
 			continue;
 		}
 
-		USMItemWidget* NewItemWidget = CreateWidget<USMItemWidget>(this, ItemWidgetClass);
-		if (NewItemWidget == nullptr)
-		{
-			continue;
-		}
-
-		NewItemWidget->InitializeItemWidget(
-			ItemData.InstanceId,
-			ItemData.ParentContainerId,
-			ItemData.GridX,
-			ItemData.GridY,
-			ItemData.Rotation,
-			InventoryComponent);
-		NewItemWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
-
-		ItemLayerPanel->AddChild(NewItemWidget);
-		ApplyItemWidgetLayout(NewItemWidget, ItemData.GridX, ItemData.GridY);
-		ApplyItemOwnershipToCells(ItemData);
+		SyncItemWidget(ItemData);
 	}
 
 	for (const FSMSkillItemInstanceData& SkillData : InventoryComponent->GetSkillEntries())
@@ -573,30 +679,54 @@ void USMInventoryGridWidget::RebuildItemWidgets()
 			continue;
 		}
 
-		USMItemWidget* NewItemWidget = CreateWidget<USMItemWidget>(this, ItemWidgetClass);
-		if (NewItemWidget == nullptr)
+		SyncItemWidget(SkillData.BaseItem);
+	}
+
+	TArray<FGuid> StaleItemInstanceIds;
+	for (const TPair<FGuid, TObjectPtr<USMItemWidget>>& Entry : ItemWidgets)
+	{
+		if (DesiredItemInstanceIds.Contains(Entry.Key))
 		{
 			continue;
 		}
 
-		NewItemWidget->InitializeItemWidget(
-			SkillData.BaseItem.InstanceId,
-			SkillData.BaseItem.ParentContainerId,
-			SkillData.BaseItem.GridX,
-			SkillData.BaseItem.GridY,
-			SkillData.BaseItem.Rotation,
-			InventoryComponent);
-		NewItemWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+		StaleItemInstanceIds.Add(Entry.Key);
+	}
 
-		ItemLayerPanel->AddChild(NewItemWidget);
-		ApplyItemWidgetLayout(NewItemWidget, SkillData.BaseItem.GridX, SkillData.BaseItem.GridY);
-		ApplyItemOwnershipToCells(SkillData.BaseItem);
+	for (const FGuid& StaleItemInstanceId : StaleItemInstanceIds)
+	{
+		if (TObjectPtr<USMItemWidget>* StaleWidget = ItemWidgets.Find(StaleItemInstanceId))
+		{
+			if (StaleWidget->Get() != nullptr)
+			{
+				StaleWidget->Get()->RemoveFromParent();
+			}
+		}
+
+		ItemWidgets.Remove(StaleItemInstanceId);
+	}
+
+	for (int32 CellIndex = 0; CellIndex < CellWidgets.Num(); ++CellIndex)
+	{
+		USMInventoryCellWidget* CellWidget = CellWidgets[CellIndex];
+		if (CellWidget == nullptr)
+		{
+			continue;
+		}
+
+		const FGuid& DesiredOwnerItemInstanceId = DesiredOwnerItemInstanceIds[CellIndex];
+		const FLinearColor& DesiredOccupiedAccentColor = DesiredOccupiedAccentColors[CellIndex];
+		CellWidget->UpdateOccupiedItem(DesiredOwnerItemInstanceId, DesiredOccupiedAccentColor);
 	}
 }
 
 void USMInventoryGridWidget::ClearCellWidgets()
 {
 	CellWidgets.Reset();
+	CachedStructureContainerId.Invalidate();
+	CachedStructureWidth = 0;
+	CachedStructureHeight = 0;
+	CachedStructureBitMask.Reset();
 
 	if (CellLayerPanel == nullptr)
 	{
@@ -608,6 +738,8 @@ void USMInventoryGridWidget::ClearCellWidgets()
 
 void USMInventoryGridWidget::ClearItemWidgets()
 {
+	ItemWidgets.Reset();
+
 	if (ItemLayerPanel == nullptr)
 	{
 		return;
@@ -676,8 +808,8 @@ void USMInventoryGridWidget::UpdateCellStates()
 		}
 
 		const bool bHovered =
-			CellWidget->GetGridX() == HoveredGridX &&
-			CellWidget->GetGridY() == HoveredGridY;
+			HoveredItemInstanceId.IsValid() &&
+			CellWidget->GetOwnerItemInstanceId() == HoveredItemInstanceId;
 
 		int32 CellArrayIndex = INDEX_NONE;
 		const bool bHighlighted =
@@ -924,28 +1056,29 @@ void USMInventoryGridWidget::ApplyItemOwnershipToCells(const FSMItemInstanceData
 			continue;
 		}
 
-		CellWidget->UpdateOccupiedItem(InBaseItemData.InstanceId, AccentColor);
+	CellWidget->UpdateOccupiedItem(InBaseItemData.InstanceId, AccentColor);
 	}
 }
 
-void USMInventoryGridWidget::RefreshContainerSize()
+void USMInventoryGridWidget::ClearCellOccupancyState()
+{
+	for (USMInventoryCellWidget* CellWidget : CellWidgets)
+	{
+		if (CellWidget == nullptr)
+		{
+			continue;
+		}
+
+		CellWidget->UpdateOccupiedItem(FGuid(), FLinearColor::White);
+	}
+}
+
+void USMInventoryGridWidget::RefreshContainerSize(const FSMGridContainerState& InContainerData)
 {
 	GridWidth = 0;
 	GridHeight = 0;
-
-	if (InventoryComponent == nullptr)
-	{
-		return;
-	}
-
-	FSMGridContainerState ContainerData;
-	if (InventoryComponent->GetContainerData(ContainerId, ContainerData) == false)
-	{
-		return;
-	}
-
-	GridWidth = ContainerData.ValidMask.Width;
-	GridHeight = ContainerData.ValidMask.Height;
+	GridWidth = InContainerData.ValidMask.Width;
+	GridHeight = InContainerData.ValidMask.Height;
 }
 
 void USMInventoryGridWidget::ApplyCellWidgetLayout(USMInventoryCellWidget* InCellWidget, int32 InGridX, int32 InGridY)

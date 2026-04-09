@@ -1,5 +1,6 @@
 ﻿#include "Inventory/Components/SMInventoryComponent.h"
 
+#include "Containers/BitArray.h"
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/GameplayMessageSubsystem.h"
 #include "GameFramework/PlayerState.h"
@@ -608,11 +609,62 @@ bool USMInventoryComponent::FindAvailablePosition(const FGuid& InItemInstanceId,
 		return false;
 	}
 
+	TArray<FIntPoint> ShapeCells;
+	if (BuildOccupiedCells(InItemInstanceId, 0, 0, RotationToUse, ShapeCells) == false)
+	{
+		return false;
+	}
+
+	TBitArray<> OccupiedBits;
+	OccupiedBits.Init(false, TargetContainer->ValidMask.Width * TargetContainer->ValidMask.Height);
+
+	for (const FSMItemInstanceData& Entry : ItemEntries)
+	{
+		if (Entry.InstanceId == InItemInstanceId || Entry.ParentContainerId != InTargetContainerId)
+		{
+			continue;
+		}
+
+		AddOccupiedBits(OccupiedBits, *TargetContainer, Entry.InstanceId, Entry.GridX, Entry.GridY, Entry.Rotation);
+	}
+
+	for (const FSMSkillItemInstanceData& Entry : SkillEntries)
+	{
+		if (Entry.BaseItem.InstanceId == InItemInstanceId || Entry.BaseItem.ParentContainerId != InTargetContainerId)
+		{
+			continue;
+		}
+
+		AddOccupiedBits(OccupiedBits, *TargetContainer, Entry.BaseItem.InstanceId, Entry.BaseItem.GridX, Entry.BaseItem.GridY, Entry.BaseItem.Rotation);
+	}
+
 	for (int32 Y = 0; Y < TargetContainer->ValidMask.Height; ++Y)
 	{
 		for (int32 X = 0; X < TargetContainer->ValidMask.Width; ++X)
 		{
-			if (CanPlaceItem(InItemInstanceId, InTargetContainerId, X, Y, RotationToUse))
+			bool bCanPlace = true;
+
+			for (const FIntPoint& ShapeCell : ShapeCells)
+			{
+				const int32 CellX = X + ShapeCell.X;
+				const int32 CellY = Y + ShapeCell.Y;
+				if (CellX < 0 || CellY < 0 || CellX >= TargetContainer->ValidMask.Width || CellY >= TargetContainer->ValidMask.Height)
+				{
+					bCanPlace = false;
+					break;
+				}
+
+				const int32 CellIndex = (CellY * TargetContainer->ValidMask.Width) + CellX;
+				if (TargetContainer->ValidMask.BitMask.IsValidIndex(CellIndex) == false ||
+					TargetContainer->ValidMask.BitMask[CellIndex] != TEXT('1') ||
+					OccupiedBits[CellIndex])
+				{
+					bCanPlace = false;
+					break;
+				}
+			}
+
+			if (bCanPlace)
 			{
 				OutGridX = X;
 				OutGridY = Y;
@@ -1194,6 +1246,31 @@ bool USMInventoryComponent::BuildOccupiedCells(const FGuid& InItemInstanceId, in
 	return OutOccupiedCells.Num() > 0;
 }
 
+void USMInventoryComponent::AddOccupiedBits(TBitArray<>& InOutOccupiedBits, const FSMGridContainerState& InTargetContainer,
+                                            const FGuid& InItemInstanceId, int32 InGridX, int32 InGridY,
+                                            ESMGridRotation InRotation) const
+{
+	TArray<FIntPoint> OccupiedCells;
+	if (BuildOccupiedCells(InItemInstanceId, InGridX, InGridY, InRotation, OccupiedCells) == false)
+	{
+		return;
+	}
+
+	for (const FIntPoint& Cell : OccupiedCells)
+	{
+		if (Cell.X < 0 || Cell.Y < 0 || Cell.X >= InTargetContainer.ValidMask.Width || Cell.Y >= InTargetContainer.ValidMask.Height)
+		{
+			continue;
+		}
+
+		const int32 CellIndex = (Cell.Y * InTargetContainer.ValidMask.Width) + Cell.X;
+		if (InOutOccupiedBits.IsValidIndex(CellIndex))
+		{
+			InOutOccupiedBits[CellIndex] = true;
+		}
+	}
+}
+
 bool USMInventoryComponent::HasPlacementConflict(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId,
                                                  int32 InGridX, int32 InGridY, ESMGridRotation InRotation) const
 {
@@ -1202,6 +1279,15 @@ bool USMInventoryComponent::HasPlacementConflict(const FGuid& InItemInstanceId, 
 	{
 		return true;
 	}
+
+	const FSMGridContainerState* TargetContainer = FindContainer(InTargetContainerId);
+	if (TargetContainer == nullptr)
+	{
+		return true;
+	}
+
+	TBitArray<> OccupiedBits;
+	OccupiedBits.Init(false, TargetContainer->ValidMask.Width * TargetContainer->ValidMask.Height);
 
 	for (const FSMItemInstanceData& Entry : ItemEntries)
 	{
@@ -1215,19 +1301,7 @@ bool USMInventoryComponent::HasPlacementConflict(const FGuid& InItemInstanceId, 
 			continue;
 		}
 
-		TArray<FIntPoint> ExistingCells;
-		if (BuildOccupiedCells(Entry.InstanceId, Entry.GridX, Entry.GridY, Entry.Rotation, ExistingCells) == false)
-		{
-			continue;
-		}
-
-		for (const FIntPoint& TargetCell : TargetCells)
-		{
-			if (ExistingCells.Contains(TargetCell))
-			{
-				return true;
-			}
-		}
+		AddOccupiedBits(OccupiedBits, *TargetContainer, Entry.InstanceId, Entry.GridX, Entry.GridY, Entry.Rotation);
 	}
 
 	for (const FSMSkillItemInstanceData& Entry : SkillEntries)
@@ -1242,19 +1316,20 @@ bool USMInventoryComponent::HasPlacementConflict(const FGuid& InItemInstanceId, 
 			continue;
 		}
 
-		TArray<FIntPoint> ExistingCells;
-		if (BuildOccupiedCells(Entry.BaseItem.InstanceId, Entry.BaseItem.GridX, Entry.BaseItem.GridY,
-		                       Entry.BaseItem.Rotation, ExistingCells) == false)
+		AddOccupiedBits(OccupiedBits, *TargetContainer, Entry.BaseItem.InstanceId, Entry.BaseItem.GridX, Entry.BaseItem.GridY, Entry.BaseItem.Rotation);
+	}
+
+	for (const FIntPoint& TargetCell : TargetCells)
+	{
+		if (TargetCell.X < 0 || TargetCell.Y < 0 || TargetCell.X >= TargetContainer->ValidMask.Width || TargetCell.Y >= TargetContainer->ValidMask.Height)
 		{
-			continue;
+			return true;
 		}
 
-		for (const FIntPoint& TargetCell : TargetCells)
+		const int32 CellIndex = (TargetCell.Y * TargetContainer->ValidMask.Width) + TargetCell.X;
+		if (OccupiedBits.IsValidIndex(CellIndex) && OccupiedBits[CellIndex])
 		{
-			if (ExistingCells.Contains(TargetCell))
-			{
-				return true;
-			}
+			return true;
 		}
 	}
 
@@ -1457,12 +1532,25 @@ void USMInventoryComponent::PublishInventoryUpdatedMessage(const FGuid& InContai
 		return;
 	}
 
+	const FSMGridContainerState* ContainerState = FindContainer(InContainerId);
+	if (ContainerState == nullptr)
+	{
+		return;
+	}
+
 	FSMInventoryUpdatedMessage Message;
 	Message.SetOwningPlayerState(OwningPlayerState);
 	Message.SetContainerId(InContainerId);
 
 	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
-	MessageSubsystem.BroadcastMessage(SMMessageTag::Inventory_Updated, Message);
+
+	if (ContainerState->ContainerType == ESMContainerType::SkillInternal)
+	{
+		MessageSubsystem.BroadcastMessage(SMMessageTag::Inventory_SkillContainerUpdated, Message);
+		return;
+	}
+
+	MessageSubsystem.BroadcastMessage(SMMessageTag::Inventory_MainContainerUpdated, Message);
 }
 
 void USMInventoryComponent::PublishSkillSummaryUpdatedMessage(const FGuid& InSkillInstanceId) const

@@ -939,10 +939,59 @@ bool USMInventoryComponent::CanDropItem(const FGuid& InItemInstanceId) const
 	return CanDropItemInternal(InItemInstanceId);
 }
 
-bool USMInventoryComponent::GetSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const
+bool USMInventoryComponent::GetActiveSkillSummary(FSMCompiledSkillSummary& OutSummary) const
 {
-	/** TODO: 요약 캐시 조회 처리 */
-	return false;
+	OutSummary.Reset();
+
+	const FGuid ActiveSkillId = QuickSlots.ActiveSlotIndex == 1
+		                            ? QuickSlots.Slot2SkillId
+		                            : QuickSlots.Slot1SkillId;
+
+	if (ActiveSkillId.IsValid() == false)
+	{
+		return false;
+	}
+
+	const FSMSkillItemInstanceData* SkillData = FindSkill(ActiveSkillId);
+	if (SkillData == nullptr)
+	{
+		return false;
+	}
+
+	OutSummary = SkillData->GetCachedSummary();
+	return true;
+}
+
+FGameplayTag USMInventoryComponent::GetActiveSkillTag() const
+{
+	const FGuid ActiveSkillId = QuickSlots.ActiveSlotIndex == 1
+		                            ? QuickSlots.Slot2SkillId
+		                            : QuickSlots.Slot1SkillId;
+
+	if (ActiveSkillId.IsValid() == false)
+	{
+		return FGameplayTag();
+	}
+
+	const FSMSkillItemInstanceData* SkillData = FindSkill(ActiveSkillId);
+	if (SkillData == nullptr)
+	{
+		return FGameplayTag();
+	}
+
+	const USMItemDefinition* SkillDefinition = ResolveItemDefinition(SkillData->BaseItem);
+	if (SkillDefinition == nullptr)
+	{
+		return FGameplayTag();
+	}
+
+	const USMAbilityFragment* AbilityFragment = SkillDefinition->FindFragmentByClass<USMAbilityFragment>();
+	if (AbilityFragment == nullptr)
+	{
+		return FGameplayTag();
+	}
+
+	return AbilityFragment->GetAbilityInputTag();
 }
 
 bool USMInventoryComponent::GetContainerData(const FGuid& InContainerId, FSMGridContainerState& OutContainerData) const

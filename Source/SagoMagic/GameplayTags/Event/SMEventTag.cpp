@@ -8,4 +8,7 @@ namespace SMEventTag
      *예시
      *UE_DEFINE_GAMEPLAY_TAG(Data_Reload_Ammo, "Data.Reload.Ammo");
      */
+
+    //AnimNotify → GAS 이벤트 전달
+    UE_DEFINE_GAMEPLAY_TAG(Event_Monster_HitCheck, "Event.Monster.HitCheck");
 }

@@ -21,24 +21,57 @@ void UGA_MonsterAttackBase::ActivateAbility(
     const FGameplayAbilityActivationInfo ActivationInfo,
     const FGameplayEventData* TriggerEventData)
 {
-    // 애니메이션 몽타주 태스크 
+    Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+    if (!AttackMontage)
+    {
+        //UE_LOG(LogTemp, Warning, TEXT("[Attack] AttackMontage 없음! 종료")); // ★ 임시 추가
+
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+    // 공격 시작 시 State.Attacking 태그 부착
+    if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+    {
+        ASC->AddLooseGameplayTags(AttackingTags);
+    }
+    // 1. 몽타주 재생
     UAbilityTask_PlayMontageAndWait* MontageTask =
-        UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, AttackMontage);
+        UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
+            this, FName("Attack"), AttackMontage, 1.0f);
+
+    MontageTask->OnCompleted.AddDynamic(this, &UGA_MonsterAttackBase::OnMontageCompleted);
+    MontageTask->OnCancelled.AddDynamic(this, &UGA_MonsterAttackBase::OnMontageCancelled);
+    MontageTask->OnInterrupted.AddDynamic(this, &UGA_MonsterAttackBase::OnMontageCancelled);
     MontageTask->ReadyForActivation();
 
-    // 타격 이벤트 대기 태스크
+    // 2. AnimNotify가 보낼 HitEventTag 대기
     UAbilityTask_WaitGameplayEvent* WaitEventTask =
         UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, HitEventTag);
-    // 이벤트가 수신되면 데미지 처리 함수 실행
+
     WaitEventTask->EventReceived.AddDynamic(this, &UGA_MonsterAttackBase::OnHitEventReceived);
     WaitEventTask->ReadyForActivation();
-
     // 애니메이션 없이 테스트할 때는 바로 호출
     //OnHitEventReceived(FGameplayEventData());
     //TODO : Base Camp 공격 시
     //데미지 처리
 }
 
+// EndAbility에서 태그 반드시 해제
+void UGA_MonsterAttackBase::EndAbility(
+    const FGameplayAbilitySpecHandle Handle,
+    const FGameplayAbilityActorInfo* ActorInfo,
+    const FGameplayAbilityActivationInfo ActivationInfo,
+    bool bReplicateEndAbility,
+    bool bWasCancelled)
+{
+    if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+    {
+        ASC->RemoveLooseGameplayTags(AttackingTags);
+    }
+
+    Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
 void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
 {
     // 서버에서만 데미지 적용
@@ -47,8 +80,8 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
-    /*UE_LOG(LogTemp, Warning, TEXT("[Attack] OnHitEventReceived 호출됨. HasAuthority: %s"),
-        GetActorInfo().IsNetAuthority() ? TEXT("TRUE") : TEXT("FALSE"));*/
+    UE_LOG(LogTemp, Warning, TEXT("[Attack] OnHitEventReceived 호출됨. HasAuthority: %s"),
+        GetActorInfo().IsNetAuthority() ? TEXT("TRUE") : TEXT("FALSE"));
     AActor* SourceActor = GetAvatarActorFromActorInfo();
     UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 
@@ -97,13 +130,13 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
 
                             HPAfterVal = TargetASC->GetNumericAttribute(HealthAttr);
 
-                            /*UE_LOG(LogTemp, Warning,
+                            UE_LOG(LogTemp, Warning,
                                 TEXT("[Attack] %s -> %s | 데미지: %.0f | 플레이어 HP: %.0f -> %.0f"),
                                 *SourceActor->GetName(),
                                 *HitResult.GetActor()->GetName(),
                                 DamageAmount,
                                 HPBeforeVal,
-                                HPAfterVal);*/
+                                HPAfterVal);
                             goto ApplyDone; // 중첩 루프 탈출
                         }
                     }

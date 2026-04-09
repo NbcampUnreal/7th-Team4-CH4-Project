@@ -34,6 +34,13 @@ public:
 	void OnPlayerReady(ASMPlayerController* InPlayerController);
 	
     FSimpleDelegate OnWaveCleared;
+	
+	/** 게임 결과를 모든 클라이언트에 전달 */
+	void BroadcastGameResult(bool bIsVictory);
+	
+	/** 베이스캠프 파괴 시 호출 */
+	void OnBaseCampDestroyed();
+
 private:
 	// 관전모드 진입
 	void EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController);

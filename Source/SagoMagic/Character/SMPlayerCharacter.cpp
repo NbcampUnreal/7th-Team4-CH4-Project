@@ -391,18 +391,16 @@ void ASMPlayerCharacter::HandleDeath()
 	
 	if (HasAuthority())
 	{
-		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
+		if (ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>())
 		{
-			PC->ClientRPC_ShowDeathUI();
-			
-			if (ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>())
+			// TODO: PC에서 사망 시 UI 띄우게 하기 
+			// GameMode에 사망 통보 - RPC 호출은 GameMode에서 RespawnTime과 함께 처리
+			if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 			{
+				// TODO: GM에게 사망시 처리 함수 호출하게 하기
 				GM->OnPlayerDead(PC);
 			}
-			
-			
 		}
-		
 		// TODO: DeathLifeSpan후 시체 처리(부활 타이머랑 타이밍 논의 필요)
 		SetLifeSpan(DeathLifeSpan);
 	}

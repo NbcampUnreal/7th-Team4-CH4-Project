@@ -5,6 +5,8 @@
 #include "Character/SMPlayerController.h"
 #include "Core/SMStateMachine.h"
 #include "Wave/SMWaveManagerSubsystem.h"
+#include "EngineUtils.h"
+#include "GameFramework/PlayerStart.h"
 
 ASMGameMode::ASMGameMode()
 {
@@ -66,6 +68,9 @@ void ASMGameMode::OnPlayerDead(ASMPlayerController* InPlayerController)
 	SM_LOG(this, LogSM, Error,
 		TEXT("[GameMode] 플레이어 사망. 관전모드(%.1f) 및 부활(%.1f) 타이머 시작"), SpectatorTime, RespawnTime);
 
+	// 사망 UI 표시 - RespawnTime을 포함해서 클라이언트에 전달
+	InPlayerController->ClientRPC_ShowDeathUI(RespawnTime);
+	
 	TWeakObjectPtr<ASMPlayerController> WeakPC = InPlayerController;
 
 	// 중복 타이머가 있다면 제거
@@ -102,6 +107,33 @@ void ASMGameMode::OnPlayerReady(ASMPlayerController* InPlayerController)
 	TryStartGame();
 }
 
+void ASMGameMode::BroadcastGameResult(bool bIsVictory)
+{
+	SM_LOG(this, LogSM, Log, TEXT("[GameMode] 게임 결과 브로드캐스트 - %s"),
+		bIsVictory ? TEXT("승리") : TEXT("패배"));
+
+	// AllPlayerController에 등록된 모든 클라이언트에게 결과 전달
+	for (ASMPlayerController* PC : AllPlayerController)
+	{
+		if (IsValid(PC))
+		{
+			PC->ClientRPC_ShowGameResult(bIsVictory);
+		}
+	}
+}
+
+void ASMGameMode::OnBaseCampDestroyed()
+{
+	SM_LOG(this, LogSM, Error, TEXT("[GameMode] 베이스캠프 파괴 - 패배 처리"));
+
+	// StateMachine이 살아있으면 Result 상태로 강제 전환
+	if (StateMachine)
+	{
+		StateMachine->ChangeState(EGameState::Result);
+		// ChangeState -> SMResultState::Enter() -> BroadcastGameResult(false) 자동 호출
+	}
+}
+
 void ASMGameMode::EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController)
 {
 	if (!InPlayerController.IsValid()) return;
@@ -110,7 +142,7 @@ void ASMGameMode::EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlaye
 
 	// TODO: 추후 기획 확정 시 관전 처리 로직 작성
 	// 임시로 비행 관전모드 진입
-	InPlayerController->ChangeState(NAME_Spectating);
+	// InPlayerController->ChangeState(NAME_Spectating);
 
 	SM_LOG(this, LogSM, Error, TEXT("[GameMode] 관전 모드 진입"));
 }
@@ -136,6 +168,24 @@ void ASMGameMode::RespawnPlayer(TWeakObjectPtr<ASMPlayerController> InPlayerCont
 
 	// 스폰 포인트 지정 후 리스폰
 	AActor* SpawnPoint = ChoosePlayerStart(PC);
+    if (!SpawnPoint)  
+    {
+       SM_LOG(this, LogSM, Warning, TEXT("[GameMode] 엔진이 스폰 포인트를 찾지 못해 강제 할당을 시도합니다."));
+       for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+       {
+          SpawnPoint = *It;
+          break;
+       }
+    }
+   
+    if (SpawnPoint)  // 최종적으로 스폰 포인트가 확보되었는지 확인 후 부활
+    {
+        RestartPlayerAtPlayerStart(PC, SpawnPoint);
+    }
+    else
+    {
+        SM_LOG(this, LogSM, Error, TEXT("[GameMode] 맵에 PlayerStart가 아예 존재하지 않아 부활에 실패했습니다!"));
+    }
 	RestartPlayerAtPlayerStart(PC, SpawnPoint);
 
 	InPlayerController->ClientRPC_HideDeathUI();

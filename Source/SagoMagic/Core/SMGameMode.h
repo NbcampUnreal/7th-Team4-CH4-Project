@@ -41,8 +41,6 @@ public:
 	/** 베이스캠프 파괴 시 호출 */
 	void OnBaseCampDestroyed();
 
-	FSimpleDelegate OnWaveCleared;
-
 private:
 	// 관전모드 진입
 	void EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController);

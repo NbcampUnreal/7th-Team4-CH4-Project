@@ -53,13 +53,6 @@ private:
 	
 	/** 재시도 타이머를 관리할 타이머 핸들 */
 	FTimerHandle ASC_InitTimerHandle;
-	
-	/** 플레이어 상태 메시지 수신 함수 */
-	void OnPlayerStatusMessageReceived(FGameplayTag Channel, const FPlayerStatusMsg& Payload);
-	/** 플레이어 부활 메시지 수신 함수 */
-	void OnPlayerRespawnMessageReceived(FGameplayTag Channel, const FPlayerStatusMsg& Payload);
-	/** 게임 결과 메시지 수신 함수 */
-	void OnGameResultMessageReceived(FGameplayTag Channel, const FResultMsg& Payload);
 
 
 	UPROPERTY()

@@ -8,32 +8,11 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/Pawn.h"
-#include "GameFramework/GameplayMessageSubsystem.h"
 
 void USMHUDManager::NativeConstruct()
 {
 	Super::NativeConstruct();
 	TryInitASC();
-	
-	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
-	// 사망 리스너
-	PlayerStatusListenerHandle = MessageSubsystem.RegisterListener<FPlayerStatusMsg>(
-		FGameplayTag::RequestGameplayTag(TEXT("UI.Event.Player.Dead")),
-		this,
-		&USMHUDManager::OnPlayerStatusMessageReceived
-	);
-	// 부활 리스너
-	PlayerRespawnListenerHandle = MessageSubsystem.RegisterListener<FPlayerStatusMsg>(
-		FGameplayTag::RequestGameplayTag(TEXT("UI.Event.Player.Respawn")),
-		this,
-		&USMHUDManager::OnPlayerRespawnMessageReceived
-	);
-	// 게임 결과 리스너
-	GameResultListenerHandle = MessageSubsystem.RegisterListener<FResultMsg>(
-	FGameplayTag::RequestGameplayTag(TEXT("UI.Event.Result")),
-	this,
-	&USMHUDManager::OnGameResultMessageReceived
-);
 }
 
 void USMHUDManager::NativeDestruct()
@@ -41,14 +20,6 @@ void USMHUDManager::NativeDestruct()
 	if (GetWorld())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(ASC_InitTimerHandle);
-	}
-	
-	if (UGameplayMessageSubsystem::HasInstance(this))
-	{
-		UGameplayMessageSubsystem& Sub = UGameplayMessageSubsystem::Get(this);
-		Sub.UnregisterListener(PlayerStatusListenerHandle);
-		Sub.UnregisterListener(PlayerRespawnListenerHandle);
-		Sub.UnregisterListener(GameResultListenerHandle);
 	}
 	
 	Super::NativeDestruct();
@@ -82,33 +53,6 @@ void USMHUDManager::TryInitASC()
 	{
 		GetWorld()->GetTimerManager().SetTimer(ASC_InitTimerHandle, this, &USMHUDManager::TryInitASC, 0.1f, false);
 	}
-}
-
-void USMHUDManager::OnPlayerStatusMessageReceived(FGameplayTag Channel, const FPlayerStatusMsg& Payload)
-{
-	if (APlayerController* PC = GetOwningPlayer())
-	{
-		PC->SetInputMode(FInputModeUIOnly());
-		PC->SetShowMouseCursor(true);
-	}
-
-	// RespawnTime 값을 사망 위젯으로 넘겨줌
-	ShowPlayerDeath(Payload.RespawnTime);
-}
-
-void USMHUDManager::OnPlayerRespawnMessageReceived(FGameplayTag Channel, const FPlayerStatusMsg& Payload)
-{
-	if (APlayerController* PC = GetOwningPlayer())
-	{
-		PC->SetInputMode(FInputModeGameAndUI());
-		PC->SetShowMouseCursor(true);
-	}
-	HidePlayerDeath();
-}
-
-void USMHUDManager::OnGameResultMessageReceived(FGameplayTag Channel, const FResultMsg& Payload)
-{
-	ShowGameResult(Payload.bIsVictory);
 }
 
 void USMHUDManager::InitializeHUD(UAbilitySystemComponent* InPlayerASC)

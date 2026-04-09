@@ -213,3 +213,12 @@ float UGA_MonsterAttackBase::GetMonsterAttackPower() const
     //UE_LOG(LogTemp, Warning, TEXT("[Attack] MonsterAttributeSet을 찾지 못해 기본 공격력(10)을 사용합니다."));
     return 10.0f;
 }
+void UGA_MonsterAttackBase::OnMontageCompleted()
+{
+    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+}
+
+void UGA_MonsterAttackBase::OnMontageCancelled()
+{
+    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+}

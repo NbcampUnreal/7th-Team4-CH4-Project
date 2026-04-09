@@ -105,7 +105,7 @@ void ASMGameMode::EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlaye
 	// 임시로 비행 관전모드 진입
 	InPlayerController->ChangeState(NAME_Spectating);
 
-	SM_LOG(this, LogSM, Error, TEXT("[GameMode] %.1f초 뒤 관전 모드 진입"), SpectatorTime);
+	SM_LOG(this, LogSM, Error, TEXT("[GameMode] 관전 모드 진입"));
 }
 
 void ASMGameMode::RespawnPlayer(TWeakObjectPtr<ASMPlayerController> InPlayerController)

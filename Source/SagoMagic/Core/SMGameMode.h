@@ -17,7 +17,7 @@ class SAGOMAGIC_API ASMGameMode : public AGameMode
 
 public:
 	ASMGameMode();
-	/** 씸리스 트래블로 입장한 플레이어를 ALlPlayerController에 등록 */
+	/** 씸리스 트래블로 입장한 플레이어를 AllPlayerController에 등록 */
 	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
 	/** 퇴장한 플레이어를 AllPlayerController에서 제거 */
 	virtual void Logout(AController* Exiting) override;

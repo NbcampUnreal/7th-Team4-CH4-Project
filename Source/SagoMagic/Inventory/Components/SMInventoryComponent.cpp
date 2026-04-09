@@ -904,10 +904,25 @@ void USMInventoryComponent::SetActiveQuickSlot(int32 InSlotIndex)
 
 bool USMInventoryComponent::RebuildSkillSummary(const FGuid& InSkillInstanceId)
 {
-	/** TODO: BuildSkillSummary 호출 */
-	/** TODO: CachedSummary 반영 */
-	/** TODO: 메시지 발행 */
-	return false;
+	if (GetOwner() == nullptr || GetOwner()->HasAuthority() == false)
+	{
+		return false;
+	}
+
+	FSMSkillItemInstanceData* EditableSkillData = FindEditableSkill(InSkillInstanceId);
+	if (EditableSkillData == nullptr)
+	{
+		return false;
+	}
+
+	FSMCompiledSkillSummary RebuiltSummary;
+	if (BuildSkillSummary(InSkillInstanceId, RebuiltSummary) == false)
+	{
+		return false;
+	}
+
+	EditableSkillData->SetCachedSummary(RebuiltSummary);
+	return true;
 }
 
 bool USMInventoryComponent::GetItemData(const FGuid& InItemInstanceId, FSMItemInstanceData& OutItemData) const

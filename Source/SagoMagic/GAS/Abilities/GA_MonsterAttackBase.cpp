@@ -35,6 +35,9 @@ void UGA_MonsterAttackBase::ActivateAbility(
 
     // 애니메이션 없이 테스트할 때는 바로 호출
     OnHitEventReceived(FGameplayEventData());
+    
+    //TODO : Base Camp 공격 시
+    //데미지 처리
 }
 
 void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)

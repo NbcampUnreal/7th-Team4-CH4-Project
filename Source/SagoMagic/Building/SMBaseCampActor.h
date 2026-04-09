@@ -25,4 +25,8 @@ protected:
 	
 	UPROPERTY()
 	TObjectPtr<USMBaseCampAttributeSet> AttributeSet;
+	
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
+	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
 };

@@ -2,6 +2,12 @@
 
 ASMBaseCampActor::ASMBaseCampActor()
 {
+	bReplicates = true;
+	PrimaryActorTick.bCanEverTick = false;
+	
+	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
+	RootComponent = StaticMeshComponent;
+	
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	
 	AbilitySystemComponent->SetIsReplicated(true);
@@ -9,7 +15,6 @@ ASMBaseCampActor::ASMBaseCampActor()
 	
 	AttributeSet = CreateDefaultSubobject<USMBaseCampAttributeSet>(TEXT("AttributeSet"));
 	
-	PrimaryActorTick.bCanEverTick = false;
 }
 
 UAbilitySystemComponent* ASMBaseCampActor::GetAbilitySystemComponent() const

@@ -4,6 +4,9 @@
 #include "Animation/AnimInstance.h"
 #include "SMMonsterAnimInstance.generated.h"
 
+class ASMMonsterBase;
+class UAbilitySystemComponent;
+
 UCLASS()
 class SAGOMAGIC_API USMMonsterAnimInstance : public UAnimInstance
 {
@@ -24,4 +27,8 @@ public:
 private:
     UPROPERTY()
     TObjectPtr<ASMMonsterBase> OwnerMonster;
+
+    /**  ASC 캐싱(매 틱 Cast 방지)**/
+    UPROPERTY()
+    TObjectPtr<UAbilitySystemComponent> CachedASC;
 };

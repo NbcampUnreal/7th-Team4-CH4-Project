@@ -1,4 +1,8 @@
 #include "Enemy/SMMonsterAnimInstance.h"
+#include "AbilitySystemComponent.h"   
+#include "GameplayTagContainer.h"     
+#include "SMMonsterBase.h"
+#include "GAS/AttributeSets/SMMonsterAttributeSet.h"
 
 void USMMonsterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
@@ -10,12 +14,24 @@ void USMMonsterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
         if (!OwnerMonster) return;
     }
 
-    // 이동 속도 → 블렌드스페이스용
     Speed = OwnerMonster->GetVelocity().Size();
 
-    // HP 기반 사망 여부
     if (OwnerMonster->MonsterAttributeSet)
     {
         bIsDead = OwnerMonster->MonsterAttributeSet->GetHealth() <= 0.f;
+    }
+
+    //: ASC 한 번만 캐싱
+    if (!CachedASC)
+    {
+        CachedASC = OwnerMonster->GetAbilitySystemComponent();
+    }
+
+    // 태그 유무로 bIsAttacking 결정
+    if (CachedASC)
+    {
+        bIsAttacking = CachedASC->HasMatchingGameplayTag(
+            FGameplayTag::RequestGameplayTag(FName("Enemy.Attacking"))
+        );
     }
 }

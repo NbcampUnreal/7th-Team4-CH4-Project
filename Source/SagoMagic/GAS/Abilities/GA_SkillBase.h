@@ -71,8 +71,7 @@ protected:
 
 	FVector CurrentAimOrigin = FVector::ZeroVector;
 	FVector CurrentAimDirection = FVector::ForwardVector;
-
-private:
+	
 	// DT에서 스킬 수치 로드 ActivateAbility 시작 시 호출
 	bool LoadSkillStats();
 };

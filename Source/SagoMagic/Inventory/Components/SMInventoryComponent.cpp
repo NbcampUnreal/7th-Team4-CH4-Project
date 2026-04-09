@@ -397,6 +397,18 @@ bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid&
 		return false;
 	}
 
+	FGuid PreviousOwningSkillId;
+	for (const FSMSkillItemInstanceData& SkillEntry : SkillEntries)
+	{
+		if (SkillEntry.InternalContainerId == PreviousContainerId)
+		{
+			PreviousOwningSkillId = SkillEntry.BaseItem.InstanceId;
+			break;
+		}
+	}
+
+	FGuid TargetOwningSkillId;
+
 	if (TargetContainer->ContainerType == ESMContainerType::SkillInternal)
 	{
 		const FSMSkillItemInstanceData* TargetOwningSkill = nullptr;
@@ -413,6 +425,8 @@ bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid&
 		{
 			return false;
 		}
+
+		TargetOwningSkillId = TargetOwningSkill->BaseItem.InstanceId;
 
 		if (TargetOwningSkill->BaseItem.InstanceId == InItemInstanceId)
 		{
@@ -534,6 +548,16 @@ bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid&
 			SkillEntry.EmbeddedItemIds.AddUnique(InItemInstanceId);
 			break;
 		}
+	}
+
+	if (PreviousOwningSkillId.IsValid())
+	{
+		RebuildSkillSummary(PreviousOwningSkillId);
+	}
+
+	if (TargetOwningSkillId.IsValid() && TargetOwningSkillId != PreviousOwningSkillId)
+	{
+		RebuildSkillSummary(TargetOwningSkillId);
 	}
 
 	if (PreviousContainerId != InTargetContainerId)
@@ -2015,7 +2039,7 @@ bool USMInventoryComponent::RestoreNestedPayloads(const FSMItemDropPayload& InDr
 		}
 	}
 
-	return true;
+	return RebuildSkillSummary(InParentSkillInstanceId);
 }
 
 bool USMInventoryComponent::RemoveItemInternal(const FGuid& InItemInstanceId, bool bPublishInventoryMessage)
@@ -2035,6 +2059,10 @@ bool USMInventoryComponent::RemoveItemInternal(const FGuid& InItemInstanceId, bo
 			if (SkillEntry.InternalContainerId == ParentContainerId)
 			{
 				SkillEntry.EmbeddedItemIds.Remove(InItemInstanceId);
+				if (bPublishInventoryMessage)
+				{
+					RebuildSkillSummary(SkillEntry.BaseItem.InstanceId);
+				}
 				break;
 			}
 		}
@@ -2058,6 +2086,7 @@ bool USMInventoryComponent::RemoveItemInternal(const FGuid& InItemInstanceId, bo
 	{
 		const FGuid ParentContainerId = EditableSkill->BaseItem.ParentContainerId;
 		const FGuid InternalContainerId = EditableSkill->InternalContainerId;
+		FGuid ParentOwningSkillId;
 
 		TArray<FGuid> ChildItemIds;
 		if (const FSMGridContainerState* InternalContainer = FindContainer(InternalContainerId))
@@ -2083,6 +2112,7 @@ bool USMInventoryComponent::RemoveItemInternal(const FGuid& InItemInstanceId, bo
 			if (SkillEntry.InternalContainerId == ParentContainerId)
 			{
 				SkillEntry.EmbeddedItemIds.Remove(InItemInstanceId);
+				ParentOwningSkillId = SkillEntry.BaseItem.InstanceId;
 				break;
 			}
 		}
@@ -2110,6 +2140,11 @@ bool USMInventoryComponent::RemoveItemInternal(const FGuid& InItemInstanceId, bo
 			{
 				return ContainerState.ContainerId == InternalContainerId;
 			});
+
+		if (bPublishInventoryMessage && ParentOwningSkillId.IsValid())
+		{
+			RebuildSkillSummary(ParentOwningSkillId);
+		}
 
 		if (bPublishInventoryMessage)
 		{

@@ -28,7 +28,7 @@ protected:
 
 	/** 커서 위치 기준 적 탐색 반경 */
 	UPROPERTY(EditDefaultsOnly, Category = "Skill|DetectionRadius")
-	float DetectionRadius;
+	float DetectionRadius = 300.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Skill|Debug")
 	bool bShowDebugSphere = true;

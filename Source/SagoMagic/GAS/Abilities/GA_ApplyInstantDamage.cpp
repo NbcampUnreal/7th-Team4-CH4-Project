@@ -5,6 +5,7 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
+#include "DrawDebugHelpers.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 UGA_ApplyInstantDamage::UGA_ApplyInstantDamage()
@@ -93,13 +94,13 @@ void UGA_ApplyInstantDamage::OnSkillEffect(const FGameplayAbilityActorInfo* Acto
 	GetAbilitySystemComponentFromActorInfo()->ExecuteGameplayCue(
 		SMSkillTag::GameplayCue_Skill_ApplyInstantDamage_Hit, CueParams);
 
-	EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
+	EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, false);
 }
 
 bool UGA_ApplyInstantDamage::GetCursorHitLocation(const FGameplayAbilityActorInfo* ActorInfo,
                                                   FVector& OutLocation) const
 {
-	if (!ActorInfo || ActorInfo->AvatarActor.IsValid() == false) return false;
+	if (!ActorInfo || ActorInfo->PlayerController.IsValid() == false) return false;
 
 	APlayerController* PC = ActorInfo->PlayerController.Get();
 

@@ -4,6 +4,7 @@
 #include "GameFramework/GameMode.h"
 #include "SMGameMode.generated.h"
 
+class ASMBaseCampActor;
 class ASMPlayerController;
 class USMStateMachine;
 
@@ -42,7 +43,10 @@ public:
 	
 	/** 베이스캠프 파괴 시 호출 */
 	void OnBaseCampDestroyed();
-
+	
+	void RegisterBaseCamp(ASMBaseCampActor* InBaseCamp);
+	ASMBaseCampActor* GetBaseCamp() const {return CachedBaseCamp;}
+	
 private:
 	// 관전모드 진입
 	void EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController);
@@ -88,4 +92,7 @@ private:
 
 	/** 실제로 로비로 서버 트래블을 실행하는 함수 */
 	void ServerTravelToLobby();
+	
+	UPROPERTY()
+	TObjectPtr<ASMBaseCampActor> CachedBaseCamp;
 };

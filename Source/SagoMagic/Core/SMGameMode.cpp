@@ -50,6 +50,7 @@ void ASMGameMode::Logout(AController* Exiting)
 void ASMGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+	
 }
 
 void ASMGameMode::Tick(float DeltaSeconds)
@@ -149,9 +150,15 @@ void ASMGameMode::OnBaseCampDestroyed()
 	// StateMachine이 살아있으면 Result 상태로 강제 전환
 	if (StateMachine)
 	{
+		StateMachine->SetPendingVictory(false);
 		StateMachine->ChangeState(EGameState::Result);
 		// ChangeState -> SMResultState::Enter() -> BroadcastGameResult(false) 자동 호출
 	}
+}
+
+void ASMGameMode::RegisterBaseCamp(ASMBaseCampActor* InBaseCamp)
+{
+	CachedBaseCamp = InBaseCamp;
 }
 
 void ASMGameMode::EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController)

@@ -63,6 +63,13 @@ void UGA_ApplyInstantDamage::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 			return;
 		}
+		
+		// 클라이언트 예측 GameplayCue 실행
+		FGameplayCueParameters CueParams;
+		CueParams.Location = LocalTarget->GetActorLocation();
+		CueParams.EffectContext = ASC->MakeEffectContext();
+		ASC->ExecuteGameplayCue(
+			SMSkillTag::GameplayCue_Skill_ApplyInstantDamage_Hit, CueParams);
 
 		//적이 있으므로 커서 위치를 TargetData로 서버에 전송
 		FGameplayAbilityTargetData_LocationInfo* LocationData = new FGameplayAbilityTargetData_LocationInfo();

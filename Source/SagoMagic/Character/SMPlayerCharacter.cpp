@@ -183,6 +183,8 @@ void ASMPlayerCharacter::ToggleBuildMode()
 	{
 		Subsystem->AddMappingContext(BuildPlaceIMC, 1);
 		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
+		ServerRPC_SetBuildModeTag(true);
+		
 		SM_LOG(this, LogSM, Log, TEXT("건축 모드 ON"));
 		
 		// TODO: 나중에 BuildComponent 구현 후 건축모드 활성화 로직 추가
@@ -191,6 +193,8 @@ void ASMPlayerCharacter::ToggleBuildMode()
 	{
 		Subsystem->RemoveMappingContext(BuildPlaceIMC);
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
+		ServerRPC_SetBuildModeTag(false);
+		
 		SM_LOG(this, LogSM, Log, TEXT("건축 모드 OFF"));
 		
 		// TODO: 나중에 BuildComponent 구현 후 건축모드 아래 비활성화 로직 추가
@@ -219,6 +223,8 @@ void ASMPlayerCharacter::ToggleEditMode()
 	{
 		Subsystem->AddMappingContext(BuildEditIMC, 1);
 		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Edit);
+		ServerRPC_SetEditModeTag(true);
+		
 		SM_LOG(this, LogSM, Log, TEXT("편집 모드 ON"));
 		
 		// TODO: 나중에 BuildComponent 구현 후 편집모드 활성화 로직 추가
@@ -227,7 +233,37 @@ void ASMPlayerCharacter::ToggleEditMode()
 	{
 		Subsystem->RemoveMappingContext(BuildEditIMC);
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
+		ServerRPC_SetEditModeTag(false);
+		
 		SM_LOG(this, LogSM, Log, TEXT("편집 모드 OFF"));
+	}
+}
+
+void ASMPlayerCharacter::ServerRPC_SetBuildModeTag_Implementation(bool bEnable)
+{
+	if (!SMAbilitySystemComponent) return;
+	
+	if (bEnable)
+	{
+		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
+	}
+	else
+	{
+		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
+	}
+}
+
+void ASMPlayerCharacter::ServerRPC_SetEditModeTag_Implementation(bool bEnable)
+{
+	if (!SMAbilitySystemComponent) return;
+	
+	if (bEnable)
+	{
+		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Edit);
+	}
+	else
+	{
+		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 	}
 }
 

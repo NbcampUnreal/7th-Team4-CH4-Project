@@ -158,6 +158,12 @@ protected:
 	void ToggleBuildMode();
 	void ToggleEditMode();
 	
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_SetBuildModeTag(bool bEnable);
+
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_SetEditModeTag(bool bEnable);
+	
 	// 건축모드나 편집 모드일시 좌클릭 누르면 실행될 함수
 	void OnBuildPlace();
 	void OnEditSelect();

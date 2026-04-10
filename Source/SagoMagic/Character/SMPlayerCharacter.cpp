@@ -273,7 +273,7 @@ void ASMPlayerCharacter::Tick(float DeltaTime)
 			FHitResult Hit;
 
 			// TODO: 채널 설정을 바닥으로만 할 필요 있음
-			bool bHit = PC->GetHitResultUnderCursor(ECC_Visibility, true, Hit);
+			bool bHit = PC->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, Hit);
 
 			if (bHit)
 			{

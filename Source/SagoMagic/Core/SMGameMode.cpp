@@ -7,6 +7,7 @@
 #include "Wave/SMWaveManagerSubsystem.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerStart.h"
+#include "Kismet/GameplayStatics.h"
 
 ASMGameMode::ASMGameMode()
 {
@@ -63,7 +64,8 @@ void ASMGameMode::Tick(float DeltaSeconds)
 void ASMGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
-	
+	MaxPlayers = UGameplayStatics::GetIntOption(Options, TEXT("MaxPlayers"), 4);
+	UE_LOG(LogTemp, Log, TEXT("[GameMode] MaxPlayers: %d"), MaxPlayers);
 	StateMachine = NewObject<USMStateMachine>(this);
 }
 

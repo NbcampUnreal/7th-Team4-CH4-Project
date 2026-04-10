@@ -5,7 +5,8 @@
 #include "Enemy/SMMonsterBase.h"
 #include "GAS/AttributeSets/SMMonsterAttributeSet.h"
 #include "Character/SMPlayerCharacter.h"  
-
+#include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 
 UGA_MonsterAttackBase::UGA_MonsterAttackBase()
 {    // 서버에서만 실행, 클라이언트는 복제로 받음
@@ -20,26 +21,57 @@ void UGA_MonsterAttackBase::ActivateAbility(
     const FGameplayAbilityActivationInfo ActivationInfo,
     const FGameplayEventData* TriggerEventData)
 {
-    /*UE_LOG(LogTemp, Warning, TEXT("[Attack] ActivateAbility 호출됨. HasAuthority: %s"),
-        GetActorInfo().IsNetAuthority() ? TEXT("TRUE") : TEXT("FALSE"));*/
-    // 애니메이션 몽타주 태스크 (나중에 주석 해제)
-    //UAbilityTask_PlayMontageAndWait* MontageTask =
-    //    UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, AttackMontage);
-    //MontageTask->ReadyForActivation();
+    Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-    // 타격 이벤트 대기 태스크 (나중에 주석 해제)
-    //UAbilityTask_WaitGameplayEvent* WaitEventTask =
-    //    UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, HitEventTag);
-    //WaitEventTask->EventReceived.AddDynamic(this, &UGA_MonsterAttackBase::OnHitEventReceived);
-    //WaitEventTask->ReadyForActivation();
+    if (!AttackMontage)
+    {
+        //UE_LOG(LogTemp, Warning, TEXT("[Attack] AttackMontage 없음! 종료")); // ★ 임시 추가
 
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+    // 공격 시작 시 State.Attacking 태그 부착
+    if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+    {
+        ASC->AddLooseGameplayTags(AttackingTags);
+    }
+    // 1. 몽타주 재생
+    UAbilityTask_PlayMontageAndWait* MontageTask =
+        UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
+            this, FName("Attack"), AttackMontage, 1.0f);
+
+    MontageTask->OnCompleted.AddDynamic(this, &UGA_MonsterAttackBase::OnMontageCompleted);
+    MontageTask->OnCancelled.AddDynamic(this, &UGA_MonsterAttackBase::OnMontageCancelled);
+    MontageTask->OnInterrupted.AddDynamic(this, &UGA_MonsterAttackBase::OnMontageCancelled);
+    MontageTask->ReadyForActivation();
+
+    // 2. AnimNotify가 보낼 HitEventTag 대기
+    UAbilityTask_WaitGameplayEvent* WaitEventTask =
+        UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, HitEventTag);
+
+    WaitEventTask->EventReceived.AddDynamic(this, &UGA_MonsterAttackBase::OnHitEventReceived);
+    WaitEventTask->ReadyForActivation();
     // 애니메이션 없이 테스트할 때는 바로 호출
-    OnHitEventReceived(FGameplayEventData());
-    
+    //OnHitEventReceived(FGameplayEventData());
     //TODO : Base Camp 공격 시
     //데미지 처리
 }
 
+// EndAbility에서 태그 반드시 해제
+void UGA_MonsterAttackBase::EndAbility(
+    const FGameplayAbilitySpecHandle Handle,
+    const FGameplayAbilityActorInfo* ActorInfo,
+    const FGameplayAbilityActivationInfo ActivationInfo,
+    bool bReplicateEndAbility,
+    bool bWasCancelled)
+{
+    if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+    {
+        ASC->RemoveLooseGameplayTags(AttackingTags);
+    }
+
+    Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
 void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
 {
     // 서버에서만 데미지 적용
@@ -48,7 +80,7 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
-    /*UE_LOG(LogTemp, Warning, TEXT("[Attack] OnHitEventReceived 호출됨. HasAuthority: %s"),
+  /*  UE_LOG(LogTemp, Warning, TEXT("[Attack] OnHitEventReceived 호출됨. HasAuthority: %s"),
         GetActorInfo().IsNetAuthority() ? TEXT("TRUE") : TEXT("FALSE"));*/
     AActor* SourceActor = GetAvatarActorFromActorInfo();
     UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
@@ -180,4 +212,13 @@ float UGA_MonsterAttackBase::GetMonsterAttackPower() const
 
     //UE_LOG(LogTemp, Warning, TEXT("[Attack] MonsterAttributeSet을 찾지 못해 기본 공격력(10)을 사용합니다."));
     return 10.0f;
+}
+void UGA_MonsterAttackBase::OnMontageCompleted()
+{
+    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+}
+
+void UGA_MonsterAttackBase::OnMontageCancelled()
+{
+    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
 }

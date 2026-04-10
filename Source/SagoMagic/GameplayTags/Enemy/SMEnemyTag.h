@@ -10,4 +10,5 @@ namespace SMEnemyTag
     *예시
     *UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Reload_Ammo);
     */
+    UE_DECLARE_GAMEPLAY_TAG_EXTERN(Enemy_Attacking);
 }

@@ -12,8 +12,19 @@ public:
     UGA_MonsterAttackBase();
 
     /** 어빌리티가 실행될 때 호출되는 핵심 함수**/
-    virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+    virtual void ActivateAbility(
+        const FGameplayAbilitySpecHandle Handle,
+        const FGameplayAbilityActorInfo* ActorInfo,
+        const FGameplayAbilityActivationInfo ActivationInfo,
+        const FGameplayEventData* TriggerEventData) override;
 
+    /** EndAbility 오버라이드 (태그 해제용)**/
+    virtual void EndAbility(
+        const FGameplayAbilitySpecHandle Handle,
+        const FGameplayAbilityActorInfo* ActorInfo,
+        const FGameplayAbilityActivationInfo ActivationInfo,
+        bool bReplicateEndAbility,
+        bool bWasCancelled) override;
 protected:
     /** 사용할 공격 애니메이션 **/
     UPROPERTY(EditAnywhere, Category = "Design")
@@ -25,7 +36,7 @@ protected:
 
     /**
      * 타겟에게 적용할 데미지 GameplayEffect 클래스.
-     * 에디터(블루프린트 서브클래스)에서 GE_MonsterDamage 같은 에셋을 할당하세요.
+     * 에디터(블루프린트 서브클래스)에서 GE_MonsterDamage 같은 에셋을 할당필요.
      **/
     UPROPERTY(EditAnywhere, Category = "Design")
     TSubclassOf<class UGameplayEffect> DamageEffectClass;
@@ -42,6 +53,12 @@ protected:
      **/
     UPROPERTY(EditAnywhere, Category = "Design")
     float AttackRange = 150.0f;
+
+    /**
+     * 공격 중 상태를 알리는 태그 (에디터에서 "State.Attacking" 할당)
+     **/
+    UPROPERTY(EditAnywhere, Category = "Design")
+    FGameplayTagContainer AttackingTags;
 
     /** 타격 이벤트 수신 시 실행될 콜백 **/
     UFUNCTION()
@@ -60,4 +77,11 @@ private:
      * AttributeSet이 없으면 기본값 10을 반환합니다.
      **/
     float GetMonsterAttackPower() const;
+
+    // 이거 추가
+    UFUNCTION()
+    void OnMontageCompleted();
+
+    UFUNCTION()
+    void OnMontageCancelled();
 };

@@ -53,7 +53,7 @@ void ASMMonsterBase::ApplyVisuals(USMMonsterDataAsset* DataAsset)
 {
     if (!DataAsset) return;
     UE_LOG(LogTemp, Log, TEXT("[ApplyVisuals] DataAsset: %s"), *DataAsset->GetName());
-    //TODO 은서 / 영택 : 추가적으로 넣어야 할 변수 넣어줘야함 
+    //TODO 은서 / 영택 : 추가적으로 넣어야 할 변수 넣어줘야함 material 추가
     if (USkeletalMeshComponent* MeshComp = GetMesh())
     {
         if (!DataAsset->SkeletalMesh.IsNull())
@@ -79,13 +79,6 @@ void ASMMonsterBase::OnRep_MonsterAssetId()
         ApplyVisuals(DataAsset);
 }
 
-//void ASMMonsterBase::MulticastHandleDeath_Implementation()
-//{
-//    SetActorHiddenInGame(true);
-//    SetActorEnableCollision(false);
-//    SetActorTickEnabled(false);
-//}
-
 void ASMMonsterBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -100,8 +93,6 @@ void ASMMonsterBase::BeginPlay()
 void ASMMonsterBase::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
-
-    //UE_LOG(LogTemp, Warning, TEXT("[Monster] PossessedBy - DefaultAbilities 수: %d"), DefaultAbilities.Num());
 
     if (MonsterAbilitySystemComponent)
     {
@@ -157,6 +148,20 @@ void ASMMonsterBase::HandleDeath(AController* KillerController)
    
     // 이미 죽었거나 유효하지 않으면 무시
     if (!IsValid(this) || !HasAuthority()) return;
+
+
+    // AnimInstance에 사망 알리기
+    //if (USMMonsterAnimInstance* AnimInst =
+    //    Cast<USMMonsterAnimInstance>(GetMesh()->GetAnimInstance()))
+    //{
+    //    AnimInst->bIsDead = true;
+    //}
+
+    // 사망 Montage 재생
+    //if (DeathMontage)
+    //{
+    //    PlayAnimMontage(DeathMontage);
+    //}
 
     // 막타 친 플레이어에게 골드 지급
     if (KillerController)

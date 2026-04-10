@@ -8,4 +8,5 @@ namespace SMEnemyTag
      *예시
      *UE_DEFINE_GAMEPLAY_TAG(Data_Reload_Ammo, "Data.Reload.Ammo");
      */
+    UE_DEFINE_GAMEPLAY_TAG(Enemy_Attacking, "Enemy.Attacking");
 }

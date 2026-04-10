@@ -11,6 +11,7 @@ USMBaseCampAttributeSet::USMBaseCampAttributeSet()
 void USMBaseCampAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(USMBaseCampAttributeSet, Health, OldHealth);
+	//TODO 현 : HP가 변경될 때마다 UI에 쏴주는 부분
 }
 
 void USMBaseCampAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth)

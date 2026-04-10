@@ -178,7 +178,7 @@ void ASMPlayerCharacter::ToggleBuildMode()
 	{
 		Subsystem->RemoveMappingContext(BuildPlaceIMC);
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
-		ServerRPC_SetEditModeTag(false);
+		ServerRPC_SetBuildModeTag(false);
 		
 		SM_LOG(this, LogSM, Log, TEXT("건축 모드 종료"));
 		return;
@@ -189,7 +189,7 @@ void ASMPlayerCharacter::ToggleBuildMode()
 	{
 		Subsystem->RemoveMappingContext(BuildEditIMC);
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
-		ServerRPC_SetBuildModeTag(false);
+		ServerRPC_SetEditModeTag(false);
 	}
 	
 	// 건축모드 켜기

@@ -97,3 +97,18 @@ void ASMMonsterAIController::CheckAttackRange()
     const FGameplayAbilitySpec& Spec = AllSpecs[0];
     ASC->TryActivateAbility(Spec.Handle);
 }
+
+AActor* ASMMonsterAIController::FindBestTarget()
+{
+    return nullptr;
+}
+
+AActor* ASMMonsterAIController::FindBuildingOnPath()
+{
+    return nullptr;
+}
+
+AActor* ASMMonsterAIController::FindNearestPlayerInRange()
+{
+    return nullptr;
+}

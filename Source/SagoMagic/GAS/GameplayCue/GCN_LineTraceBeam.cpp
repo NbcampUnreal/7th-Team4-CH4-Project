@@ -86,11 +86,19 @@ void AGCN_LineTraceBeam::UpdateBeam()
 
 	ACharacter* Character = Cast<ACharacter>(TargetActor.Get());
 	if (IsValid(Character) == false) return;
-
+	
 	const FVector Origin = Character->GetActorLocation();
-	const FVector AimDirection = Character->GetBaseAimRotation().Vector();
+	FVector AimDirection = Character->GetBaseAimRotation().Vector();
+	
+	AController* Controller = Character->GetController();
+	if (IsValid(Controller) == true)
+	{
+		//스킬 사용플레이어인 경우 Controller 방향으로
+		AimDirection = Controller->GetControlRotation().Vector();
+	}
+	
 	const FVector TraceEnd = Origin + AimDirection * BeamRange;
-
+	
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(TargetActor.Get());
 

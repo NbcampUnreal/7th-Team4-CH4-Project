@@ -16,7 +16,7 @@ void UGA_LineTrace::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 {
 	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
 
-	if (IsValid(Avatar) == false || Avatar->HasAuthority() == false)
+	if (IsValid(Avatar) == false)
 	{
 		EndAbility(
 			GetCurrentAbilitySpecHandle(),
@@ -38,6 +38,17 @@ void UGA_LineTrace::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 	GetAbilitySystemComponentFromActorInfo()->AddGameplayCue(
 		SMSkillTag::GameplayCue_Skill_LineTrace_Beam, CueParameters);
 
+	if (Avatar->HasAuthority() == false)
+	{
+		//클라이언트인 경우 타이머만 적용
+		World->GetTimerManager().SetTimer(
+			DurationEndHandle,
+			this,
+			&UGA_LineTrace::OnDurationExpired,
+			SkillDuration,
+			false
+		);
+	}
 	//반복 데미지 타이머 - 매 Tick마다 LineTrace발사
 	World->GetTimerManager().SetTimer(
 		DamageTickHandle,

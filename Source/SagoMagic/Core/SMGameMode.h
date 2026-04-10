@@ -4,6 +4,7 @@
 #include "GameFramework/GameMode.h"
 #include "SMGameMode.generated.h"
 
+class ASMBaseCampActor;
 class ASMPlayerController;
 class USMStateMachine;
 
@@ -26,7 +27,9 @@ public:
 	virtual void BeginPlay() override;
 	/** 매 프레임 StateMachine에 Tick 위임  */
 	virtual void Tick(float DeltaSeconds) override;
-
+	
+	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
+	
 	/** 플레이어 사망시 호출되는 함수 */
 	void OnPlayerDead(ASMPlayerController* InPlayerController);
 	
@@ -40,7 +43,10 @@ public:
 	
 	/** 베이스캠프 파괴 시 호출 */
 	void OnBaseCampDestroyed();
-
+	
+	void RegisterBaseCamp(ASMBaseCampActor* InBaseCamp);
+	ASMBaseCampActor* GetBaseCamp() const {return CachedBaseCamp;}
+	
 private:
 	// 관전모드 진입
 	void EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController);
@@ -86,4 +92,7 @@ private:
 
 	/** 실제로 로비로 서버 트래블을 실행하는 함수 */
 	void ServerTravelToLobby();
+	
+	UPROPERTY()
+	TObjectPtr<ASMBaseCampActor> CachedBaseCamp;
 };

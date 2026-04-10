@@ -104,7 +104,7 @@ void USMWaveManagerSubsystem::PreSpawnForWave(int32 WaveIndex)
     UE_LOG(LogTemp, Log, TEXT("[WaveManager] TotalExpectedClients: %d"), TotalExpectedClients);
     if (ASMGameState* GS = GetWorld()->GetGameState<ASMGameState>())
     {
-        GS->MulticastPreloadClientAssets(IDsToLoad);
+        GS->SetAssetsToLoad(IDsToLoad);
     }
     
     // 서버 로드 완료 콜백

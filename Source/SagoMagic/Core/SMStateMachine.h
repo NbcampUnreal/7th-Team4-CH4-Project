@@ -32,7 +32,10 @@ public:
 
     /** State들이 현재 웨이브 번호를 알아야 할 때 사용 */
     int32 GetCurrentWaveIndex() const {return CurrentWaveIndex;}
-
+    
+    int32 GetMaxWaveCount() const {return MaxWaveCount;}
+    void SetPendingVictory(bool bVictory) {bPendingVictory = bVictory;}
+    bool GetPendingVictory() const {return bPendingVictory;}
 private:
     /** Build/Combat/Result State 인스터스 생성 후 StateCache에 등록 */
     void RegisterStatus();
@@ -64,6 +67,8 @@ private:
     /** 현재 웨이브 번호 - Combat -> Build 전환마다 증가 */
     int32 CurrentWaveIndex = 1;
 
-    /** 총 웨이브 수 - 추후 Result 전환 조건에 사용 */
-    static constexpr int32 MaxWaveCount = 3;
+    /** 총 웨이브 수 */
+    int32 MaxWaveCount = 0;
+    
+    bool bPendingVictory = false;
 };

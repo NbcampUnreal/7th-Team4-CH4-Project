@@ -37,9 +37,7 @@ public:
     void SetCurrentState(EGameState NewState);
     EGameState GetCurrentState() const {return CurrentState;}
     
-    /** 서버 -> 모든 클라이언트에게 로드할 AssetID 목록 전달 */
-    UFUNCTION(NetMulticast, Reliable)
-    void MulticastPreloadClientAssets(const TArray<FPrimaryAssetId>& AssetIds);
+    void SetAssetsToLoad(const TArray<FPrimaryAssetId>& InAssets);
     
     void SetBuildTimeRemaining(int32 WaveIndex, float TimeRemaining);
     
@@ -61,6 +59,9 @@ private:
     UFUNCTION()
     void OnRep_CombatTimeRemaining();
     
+    UFUNCTION()
+    void OnRep_AssetsToLoad();
+    
 private:
     /** 현재 게임 페이즈 - 서버에서 쓰고 클라이언트에 복제됨 */
     UPROPERTY(ReplicatedUsing = OnRep_CurrentState)
@@ -77,6 +78,12 @@ private:
     /** 전투 페이즈 남은 시간 */
     UPROPERTY(ReplicatedUsing = OnRep_CombatTimeRemaining)
     float CombatTimeRemaining = 0.f;
+    
+    UPROPERTY(ReplicatedUsing = OnRep_AssetsToLoad)
+    uint8 AssetsLoadSerial = 0;
+    
+    UPROPERTY(Replicated)
+    TArray<FPrimaryAssetId> AssetsToLoad;
     
 };
 

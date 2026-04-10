@@ -7,6 +7,7 @@
 #include "Wave/SMWaveManagerSubsystem.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerStart.h"
+#include "Kismet/GameplayStatics.h"
 
 ASMGameMode::ASMGameMode()
 {
@@ -19,7 +20,7 @@ void ASMGameMode::HandleSeamlessTravelPlayer(AController*& C)
     ASMPlayerController* PC = Cast<ASMPlayerController>(C);
     if (IsValid(PC))
     {
-        AllPlayerController.Add(PC);
+        AllPlayerController.AddUnique(PC);
         PC->ClientRPCArrivedAtGameLevel();
     }
 }
@@ -50,8 +51,7 @@ void ASMGameMode::Logout(AController* Exiting)
 void ASMGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-
-	StateMachine = NewObject<USMStateMachine>(this);
+	
 }
 
 void ASMGameMode::Tick(float DeltaSeconds)
@@ -59,6 +59,14 @@ void ASMGameMode::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 	if (StateMachine)
 		StateMachine->Tick(DeltaSeconds);
+}
+
+void ASMGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+{
+	Super::InitGame(MapName, Options, ErrorMessage);
+	MaxPlayers = UGameplayStatics::GetIntOption(Options, TEXT("MaxPlayers"), 4);
+	UE_LOG(LogTemp, Log, TEXT("[GameMode] MaxPlayers: %d"), MaxPlayers);
+	StateMachine = NewObject<USMStateMachine>(this);
 }
 
 void ASMGameMode::OnPlayerDead(ASMPlayerController* InPlayerController)
@@ -144,9 +152,15 @@ void ASMGameMode::OnBaseCampDestroyed()
 	// StateMachine이 살아있으면 Result 상태로 강제 전환
 	if (StateMachine)
 	{
+		StateMachine->SetPendingVictory(false);
 		StateMachine->ChangeState(EGameState::Result);
 		// ChangeState -> SMResultState::Enter() -> BroadcastGameResult(false) 자동 호출
 	}
+}
+
+void ASMGameMode::RegisterBaseCamp(ASMBaseCampActor* InBaseCamp)
+{
+	CachedBaseCamp = InBaseCamp;
 }
 
 void ASMGameMode::EnterSpectatorMode(TWeakObjectPtr<ASMPlayerController> InPlayerController)
@@ -214,6 +228,11 @@ void ASMGameMode::TryStartGame()
 {
 	if (AllPlayerController.Num() >= MaxPlayers)
 	{
+		if (!StateMachine)
+		{
+			UE_LOG(LogTemp, Error, TEXT("[GameMode] TryStartGame - StateMachine nullptr! 무시"));
+			return;
+		}
 		UE_LOG(LogTemp, Warning, TEXT("[GameMode] 모든 플레이어 도착 %d - 게임 시작"), MaxPlayers);
 		StateMachine->Initialize(this);
 	}

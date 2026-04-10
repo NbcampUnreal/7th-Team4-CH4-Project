@@ -1,6 +1,7 @@
 ﻿#include "SMCombatState.h"
 
 #include "SagoMagic.h"
+#include "Building/SMBaseCampActor.h"
 #include "Core/SMGameMode.h"
 #include "Core/SMStateMachine.h"
 #include "Core/SMGameState.h"
@@ -49,14 +50,26 @@ void USMCombatState::OnWaveCleared()
     UE_LOG(LogTemp, Log, TEXT("[CombatState] 웨이브 %d 클리어"),WaveIndex);
 
     //마지막 웨이브(보스전) 클리어 -> 승리
-    if (WaveIndex >= MaxWaveCount - 1)
+    if (WaveIndex >= StateMachine->GetMaxWaveCount())
     {
-        UE_LOG(LogTemp, Log, TEXT("[CombatState] 보스 처치 -> Result(승리)"));
+        //마지막 웨이브 - BaseCamp HP로 승패 판정
+        bool bIsVictory = false;
+        if (ASMGameMode* GM = GetGameMode())
+        {
+            if (ASMBaseCampActor* BaseCampActor = GM->GetBaseCamp())
+            {
+                bIsVictory = BaseCampActor->GetCurrentHealth() > 0.f;
+            }
+        }
+        UE_LOG(LogTemp, Log, TEXT("[CombatState] 마지막 웨이브 클리어 -> %s"),
+            bIsVictory ? TEXT("승리") : TEXT("패배"));
+        StateMachine->SetPendingVictory(bIsVictory);
         ChangeState(EGameState::Result);
     }
     else
     {
-        UE_LOG(LogTemp, Log, TEXT("[CombatState] -> Build 전환 (WaveIndex : %d -> %d)"), WaveIndex, WaveIndex);
+        UE_LOG(LogTemp, Log, TEXT("[CombatState] -> Build 전환 (WaveIndex: %d -> %d)"),
+            WaveIndex, WaveIndex + 1);
         ChangeState(EGameState::Build);
     }
 }
@@ -73,8 +86,6 @@ void USMCombatState::Tick(float DeltaTime)
 
         if (CachedGameState)
         {
-            SM_LOG(this, LogSM, Log, TEXT("[Combat] WaveIndex=%d TimeRemaining=%.1f 서버→GameState 세팅"),
-            StateMachine->GetCurrentWaveIndex(), Duration - Elapsed);
             CachedGameState->SetCombatInfo(
                 StateMachine->GetCurrentWaveIndex(),
                 FMath::Max(0.f, Duration - Elapsed)

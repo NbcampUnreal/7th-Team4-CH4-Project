@@ -15,6 +15,7 @@ public:
 	ASMBaseCampActor();
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	float GetCurrentHealth() const;
 	
 protected:
 	virtual void BeginPlay() override;

@@ -11,4 +11,5 @@ namespace SMUITag
 	
 	// 별명과 실제 태그 문자열 연결
 	UE_DEFINE_GAMEPLAY_TAG(Event_BaseCamp, "UI.Event.BaseCamp");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Wave,     "UI.Event.Wave"); 
 }

@@ -8,6 +8,8 @@
 #include "SMQuickSlotBarWidget.generated.h"
 
 class USMInventoryComponent;
+class UBorder;
+class UCanvasPanel;
 
 
 /**
@@ -96,6 +98,9 @@ protected:
 	/** 퀵슬롯 상태 동기화 */
 	void SyncFromInventoryComponent();
 
+	/** 퀵슬롯 슬롯 프리뷰 재구성 */
+	void RebuildSlotPreviewVisuals();
+
 	/** 퀵슬롯 갱신 메시지 리스너 등록 */
 	void RegisterQuickSlotMessageListener();
 
@@ -130,6 +135,34 @@ protected:
 	/** 퀵슬롯 엔트리 배열 */
 	UPROPERTY(BlueprintReadOnly, Category="Quick Slot Bar Widget")
 	TArray<FSMQuickSlotEntry> Slots;
+
+	/** 첫 번째 슬롯 프리뷰 캔버스 */
+	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Quick Slot Bar Widget")
+	TObjectPtr<UCanvasPanel> Slot1_PreviewCanvas;
+
+	/** 두 번째 슬롯 프리뷰 캔버스 */
+	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Quick Slot Bar Widget")
+	TObjectPtr<UCanvasPanel> Slot2_PreviewCanvas;
+
+	/** 첫 번째 슬롯 활성 테두리 */
+	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Quick Slot Bar Widget")
+	TObjectPtr<UBorder> Slot1_ActiveOutline;
+
+	/** 두 번째 슬롯 활성 테두리 */
+	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Quick Slot Bar Widget")
+	TObjectPtr<UBorder> Slot2_ActiveOutline;
+
+	/** 슬롯 내부 프리뷰 가용 크기 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Quick Slot Bar Widget")
+	FVector2D PreviewAreaSize = FVector2D(72.0f, 72.0f);
+
+	/** 프리뷰 셀 최소 크기 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Quick Slot Bar Widget")
+	float MinPreviewCellSize = 8.0f;
+
+	/** 프리뷰 셀 최대 크기 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Quick Slot Bar Widget")
+	float MaxPreviewCellSize = 24.0f;
 
 private:
 	FGameplayMessageListenerHandle QuickSlotUpdatedListenerHandle;

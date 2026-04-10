@@ -53,12 +53,4 @@ private:
 	
 	/** 재시도 타이머를 관리할 타이머 핸들 */
 	FTimerHandle ASC_InitTimerHandle;
-
-
-	UPROPERTY()
-	FGameplayMessageListenerHandle PlayerStatusListenerHandle;
-	UPROPERTY()
-	FGameplayMessageListenerHandle PlayerRespawnListenerHandle;
-	UPROPERTY()
-	FGameplayMessageListenerHandle GameResultListenerHandle;
 };

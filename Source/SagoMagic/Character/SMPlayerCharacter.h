@@ -144,6 +144,8 @@ protected:
 public:
 	/** Adds inputs bindings */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
+	virtual void PawnClientRestart() override;
 
 protected:
 	void Move(const FInputActionValue& Value);

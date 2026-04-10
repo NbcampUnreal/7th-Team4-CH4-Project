@@ -357,7 +357,7 @@ void ASMPlayerCharacter::InitializeAbilitySystem()
 	SMAbilitySystemComponent = PS->GetSMAbilitySystemComponent();
 	AttributeSet = PS->GetAttributeSet();
 	
-	if (SMAbilitySystemComponent)
+	if (SMAbilitySystemComponent && AttributeSet)
 	{
 		// Owner는 PlayerState
 		SMAbilitySystemComponent->InitAbilityActorInfo(PS, this);
@@ -473,22 +473,6 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 	if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
-		{
-			if (PC->IsLocalController() && DefaultIMC)
-			{
-				if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
-				{
-					if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
-							ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
-					{
-						Subsystem->RemoveMappingContext(DefaultIMC);
-						Subsystem->AddMappingContext(DefaultIMC, 0);
-					}
-				}
-			}
-		}
-
 		if (MoveAction)
 		{
 			EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
@@ -527,6 +511,27 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		if (EditSelectAction)
 		{
 			EIC->BindAction(EditSelectAction, ETriggerEvent::Started, this, &ThisClass::OnEditSelect);
+		}
+	}
+}
+
+void ASMPlayerCharacter::PawnClientRestart()
+{
+	Super::PawnClientRestart();
+	
+	if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
+	{
+		if (PC->IsLocalController() && DefaultIMC)
+		{
+			if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
+			{
+				if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+						ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+				{
+					Subsystem->RemoveMappingContext(DefaultIMC);
+					Subsystem->AddMappingContext(DefaultIMC, 0);
+				}
+			}
 		}
 	}
 }

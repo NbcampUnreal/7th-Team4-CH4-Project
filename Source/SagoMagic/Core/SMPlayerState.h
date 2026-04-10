@@ -29,6 +29,8 @@ public:
 	FORCEINLINE USMAbilitySystemComponent* GetSMAbilitySystemComponent() const { return SMAbilitySystemComponent; }
 
 	FORCEINLINE USMPlayerAttributeSet* GetAttributeSet() const { return AttributeSet; }
+	
+	FORCEINLINE USMInventoryComponent* GetInventoryComponent() const { return SMInventoryComponent; }
 
 protected:
 	/** ASC */
@@ -39,7 +41,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
 	TObjectPtr<USMInventoryComponent> SMInventoryComponent;
 	
-
 	/** Player Attribute Set */
 	UPROPERTY()
 	TObjectPtr<USMPlayerAttributeSet> AttributeSet;

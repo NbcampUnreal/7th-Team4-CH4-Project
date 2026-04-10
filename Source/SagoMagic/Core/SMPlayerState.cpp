@@ -19,6 +19,7 @@ ASMPlayerState::ASMPlayerState()
 	SMInventoryComponent = CreateDefaultSubobject<USMInventoryComponent>(TEXT("InventoryComponent"));
 	SMInventoryComponent->SetIsReplicated(true);
 	
+	
 	AttributeSet = CreateDefaultSubobject<USMPlayerAttributeSet>(TEXT("AttributeSet"));
 	
 	SetNetUpdateFrequency(100.0f);

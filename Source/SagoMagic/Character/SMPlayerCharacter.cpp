@@ -18,6 +18,7 @@
 #include "GameplayTags/Character/SMCharacterTag.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
+#include "Inventory/Components/SMInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
 
 ASMPlayerCharacter::ASMPlayerCharacter()
@@ -116,8 +117,22 @@ void ASMPlayerCharacter::Attack()
 {
 	if (!SMAbilitySystemComponent) return;
 	
-	FGameplayTag AttackTag = SMSkillTag::Ability_Skill;
-	SMAbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(AttackTag));
+	if (ASMPlayerState* PS = GetPlayerState<ASMPlayerState>())
+	{
+		if (USMInventoryComponent* InventoryComp = PS->GetInventoryComponent())
+		{
+			// 퀵슬롯에 있는 태그를 받아와 해당 어빌리티 발동
+			// TODO: 인벤토리 컴포넌트에서 현재 퀵슬롯에 장착된 태그 받아오면 주석 제거.
+			/*FGameplayTag ActiveSkillTag = InventoryComp->GetActiveSkillTag();
+			
+			if (ActiveSkillTag.IsValid())
+			{
+				SMAbilitySystemComponent->TryActivateAbilitiesByTag(ActiveSKillTag));
+				
+				SM_LOG(this, LogSM, Log, TEXT("%s 마법 발동"), *ActiveSkillTag.ToString());
+			}*/
+		}
+	}
 }
 
 void ASMPlayerCharacter::Interact()
@@ -130,15 +145,19 @@ void ASMPlayerCharacter::Interact()
 
 void ASMPlayerCharacter::UseQuickSlot(const FInputActionValue& InValue)
 {
+	if (!IsLocallyControlled()) return;
+	
 	const int32 SlotIndex = FMath::RoundToInt(InValue.Get<float>());
 	
-	SM_LOG(this, LogSM, Log, TEXT("입력된 퀵슬롯 번호: %d"), SlotIndex);
 	
-	if (!SMAbilitySystemComponent) return;
-	
-	if (SlotIndex < 3)
+	if (ASMPlayerState* PS = GetPlayerState<ASMPlayerState>())
 	{
-		// TODO: QuickSlotComponent 구현 후 교환 로직 작성
+		if (USMInventoryComponent* InventoryComp = PS->GetInventoryComponent())
+		{
+			InventoryComp->SetActiveQuickSlot(SlotIndex);
+			
+			SM_LOG(this, LogSM, Log, TEXT("퀵슬롯 %d번 장착"), SlotIndex);
+		}
 	}
 }
 
@@ -401,6 +420,7 @@ void ASMPlayerCharacter::HandleDeath()
 				GM->OnPlayerDead(PC);
 			}
 		}
+		
 		// TODO: DeathLifeSpan후 시체 처리(부활 타이머랑 타이밍 논의 필요)
 		SetLifeSpan(DeathLifeSpan);
 	}

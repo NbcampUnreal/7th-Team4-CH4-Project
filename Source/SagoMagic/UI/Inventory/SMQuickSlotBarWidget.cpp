@@ -1,5 +1,7 @@
-﻿#include "UI/Inventory/SMQuickSlotBarWidget.h"
+#include "UI/Inventory/SMQuickSlotBarWidget.h"
 
+#include "Character/SMPlayerController.h"
+#include "GameplayTags/Message/SMMessageTag.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Inventory/Core/SMContainerTypes.h"
 
@@ -15,9 +17,17 @@ void USMQuickSlotBarWidget::NativeConstruct()
 	Super::NativeConstruct();
 }
 
+void USMQuickSlotBarWidget::NativeDestruct()
+{
+	UnregisterQuickSlotMessageListener();
+	Super::NativeDestruct();
+}
+
 void USMQuickSlotBarWidget::InitializeQuickSlotBarWidget(USMInventoryComponent* InInventoryComponent)
 {
+	UnregisterQuickSlotMessageListener();
 	InventoryComponent = InInventoryComponent;
+	RegisterQuickSlotMessageListener();
 	RefreshQuickSlotBar();
 }
 
@@ -29,24 +39,24 @@ void USMQuickSlotBarWidget::RefreshQuickSlotBar()
 
 void USMQuickSlotBarWidget::ActivateFirstSlot()
 {
-	if (InventoryComponent == nullptr)
+	ASMPlayerController* OwningPlayerController = GetOwningPlayer<ASMPlayerController>();
+	if (OwningPlayerController == nullptr)
 	{
 		return;
 	}
 
-	InventoryComponent->SetActiveQuickSlot(0);
-	RefreshQuickSlotBar();
+	OwningPlayerController->ServerRPCSetActiveQuickSlot(0);
 }
 
 void USMQuickSlotBarWidget::ActivateSecondSlot()
 {
-	if (InventoryComponent == nullptr)
+	ASMPlayerController* OwningPlayerController = GetOwningPlayer<ASMPlayerController>();
+	if (OwningPlayerController == nullptr)
 	{
 		return;
 	}
 
-	InventoryComponent->SetActiveQuickSlot(1);
-	RefreshQuickSlotBar();
+	OwningPlayerController->ServerRPCSetActiveQuickSlot(1);
 }
 
 void USMQuickSlotBarWidget::SyncFromInventoryComponent()
@@ -89,4 +99,45 @@ void USMQuickSlotBarWidget::SyncFromInventoryComponent()
 			}
 		}
 	}
+}
+
+void USMQuickSlotBarWidget::RegisterQuickSlotMessageListener()
+{
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
+	QuickSlotUpdatedListenerHandle = MessageSubsystem.RegisterListener<FSMQuickSlotUpdatedMessage>(
+		SMMessageTag::Inventory_QuickSlotUpdated,
+		this,
+		&ThisClass::HandleQuickSlotUpdatedMessage);
+}
+
+void USMQuickSlotBarWidget::UnregisterQuickSlotMessageListener()
+{
+	if (QuickSlotUpdatedListenerHandle.IsValid())
+	{
+		QuickSlotUpdatedListenerHandle.Unregister();
+	}
+}
+
+void USMQuickSlotBarWidget::HandleQuickSlotUpdatedMessage(
+	FGameplayTag InChannel,
+	const FSMQuickSlotUpdatedMessage& InMessage)
+{
+	APlayerController* OwningPlayerController = GetOwningPlayer();
+	if (OwningPlayerController == nullptr)
+	{
+		return;
+	}
+
+	APlayerState* OwningPlayerState = OwningPlayerController->GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr || InMessage.GetOwningPlayerState() != OwningPlayerState)
+	{
+		return;
+	}
+
+	RefreshQuickSlotBar();
 }

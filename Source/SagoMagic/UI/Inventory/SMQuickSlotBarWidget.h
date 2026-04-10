@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
+#include "Inventory/Core/SMInventoryMessageTypes.h"
 #include "Inventory/Core/SMContainerTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "SMQuickSlotBarWidget.generated.h"
@@ -33,6 +35,9 @@ public:
 
 	/** NativeConstruct 오버라이드 */
 	virtual void NativeConstruct() override;
+
+	/** NativeDestruct 오버라이드 */
+	virtual void NativeDestruct() override;
 
 	/** 인벤토리 컴포넌트 Getter */
 	USMInventoryComponent* GetInventoryComponent() const
@@ -91,6 +96,15 @@ protected:
 	/** 퀵슬롯 상태 동기화 */
 	void SyncFromInventoryComponent();
 
+	/** 퀵슬롯 갱신 메시지 리스너 등록 */
+	void RegisterQuickSlotMessageListener();
+
+	/** 퀵슬롯 갱신 메시지 리스너 해제 */
+	void UnregisterQuickSlotMessageListener();
+
+	/** 퀵슬롯 갱신 메시지 수신 */
+	void HandleQuickSlotUpdatedMessage(FGameplayTag InChannel, const FSMQuickSlotUpdatedMessage& InMessage);
+
 	/** 퀵슬롯 바 갱신 블루프린트 이벤트 */
 	UFUNCTION(BlueprintImplementableEvent, Category="Quick Slot Bar Widget")
 	void BP_OnQuickSlotBarUpdated();
@@ -118,4 +132,5 @@ protected:
 	TArray<FSMQuickSlotEntry> Slots;
 
 private:
+	FGameplayMessageListenerHandle QuickSlotUpdatedListenerHandle;
 };

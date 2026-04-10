@@ -31,4 +31,12 @@ private:
     
     /** Combat State로 넘어가도 되는지 확인 */
     bool bReadyForCombat = false;
+    
+    /** 1초마다 복제시간 */
+    float SyncElapsed = 0.f;
+    
+    UPROPERTY()
+    TObjectPtr<ASMGameState> CachedGameState = nullptr;
+    
+    int32 CurrentWaveIndex = 0;
 };

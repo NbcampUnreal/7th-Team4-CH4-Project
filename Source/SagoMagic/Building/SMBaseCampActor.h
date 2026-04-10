@@ -7,7 +7,7 @@
 #include "SMBaseCampActor.generated.h"
 
 UCLASS()
-class SAGOMAGIC_API ASMBaseCampActor : public AActor,public IAbilitySystemInterface
+class SAGOMAGIC_API ASMBaseCampActor : public AActor, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 	
@@ -25,7 +25,6 @@ protected:
 	
 	UPROPERTY()
 	TObjectPtr<USMBaseCampAttributeSet> AttributeSet;
-	
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
 	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;

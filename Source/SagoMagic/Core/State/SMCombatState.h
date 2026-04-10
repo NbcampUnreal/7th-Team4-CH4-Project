@@ -4,6 +4,8 @@
 #include "SMBaseState.h"
 #include "SMCombatState.generated.h"
 
+class USMWaveManagerSubsystem;
+
 /**
  * 전투 단계 - 몬스터 스폰 시작
  * 전체 몬스터 처치 시 WaveIndex에 따라 Build 또는 Result 전환
@@ -33,6 +35,16 @@ private:
 
     /** 현재 경과 시간 */
     float Elapsed = 0.f;
+    
+    /** 1초마다 복제시간 */
+    float SyncElapsed = 0.f;
+    
     /** 총 웨이브 수 - StateMachine의 MaxWaveCount와 동일하게 유지 */
     static constexpr int32 MaxWaveCount = 3;
+    
+    UPROPERTY()
+    TObjectPtr<ASMGameState> CachedGameState = nullptr;
+    
+    UPROPERTY()
+    TObjectPtr<USMWaveManagerSubsystem> CachedWaveManager = nullptr;
 };

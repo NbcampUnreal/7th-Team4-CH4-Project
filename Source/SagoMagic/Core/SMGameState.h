@@ -41,16 +41,43 @@ public:
     UFUNCTION(NetMulticast, Reliable)
     void MulticastPreloadClientAssets(const TArray<FPrimaryAssetId>& AssetIds);
     
+    void SetBuildTimeRemaining(int32 WaveIndex, float TimeRemaining);
+    
+    void SetCombatInfo(int32 WaveIndex, float TimeRemaining);
+    
     //클라이언트 구독용
     FOnGameStateChanged OnGameStateChanged;
 private:
     /** CurrentState 복제 완료 시 클라이언트에서 자동 호출 -> OnGameStateChanged 브로드캐스트 */
     UFUNCTION()
     void OnRep_CurrentState();
-
+    
+    UFUNCTION()
+    void OnRep_WaveIndex();
+    
+    UFUNCTION()
+    void OnRep_BuildTimeRemaining();
+    
+    UFUNCTION()
+    void OnRep_CombatTimeRemaining();
+    
+private:
     /** 현재 게임 페이즈 - 서버에서 쓰고 클라이언트에 복제됨 */
     UPROPERTY(ReplicatedUsing = OnRep_CurrentState)
     EGameState CurrentState = EGameState::None;
+    
+    /** 빌드 페이즈 남은 시간 (서버->클라 복제) */
+    UPROPERTY(ReplicatedUsing = OnRep_BuildTimeRemaining)
+    float BuildTimeRemaining = 0.f;
+    
+    /** 현재 웨이브 인덱스 */
+    UPROPERTY(ReplicatedUsing = OnRep_WaveIndex)
+    int32 ReplicatedWaveIndex = 0;
+    
+    /** 전투 페이즈 남은 시간 */
+    UPROPERTY(ReplicatedUsing = OnRep_CombatTimeRemaining)
+    float CombatTimeRemaining = 0.f;
+    
 };
 
 

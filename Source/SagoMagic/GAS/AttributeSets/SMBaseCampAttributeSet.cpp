@@ -11,6 +11,7 @@ USMBaseCampAttributeSet::USMBaseCampAttributeSet()
 void USMBaseCampAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(USMBaseCampAttributeSet, Health, OldHealth);
+	//TODO 현 : HP가 변경될 때마다 UI에 쏴주는 부분
 }
 
 void USMBaseCampAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth)
@@ -22,8 +23,8 @@ void USMBaseCampAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(USMBaseCampAttributeSet, Health);
-	DOREPLIFETIME(USMBaseCampAttributeSet, MaxHealth);
+	DOREPLIFETIME_CONDITION_NOTIFY(USMBaseCampAttributeSet, Health, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(USMBaseCampAttributeSet, MaxHealth, COND_None, REPNOTIFY_Always);
 }
 
 void USMBaseCampAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data)

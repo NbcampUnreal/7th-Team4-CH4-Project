@@ -1,7 +1,9 @@
 ﻿#include "SMCombatState.h"
 
+#include "SagoMagic.h"
 #include "Core/SMGameMode.h"
 #include "Core/SMStateMachine.h"
+#include "Core/SMGameState.h"
 #include "Core/DataManager/SMSyncDataManager.h"
 #include "Core/Wave/SMWaveManagerSubsystem.h"
 #include "Data/SMWaveData.h"
@@ -13,7 +15,11 @@ void USMCombatState::Enter()
 
     int32 WaveIndex = StateMachine->GetCurrentWaveIndex();
     UE_LOG(LogTemp, Log, TEXT("[CombatState] Enter - WaveIndex : %d"),WaveIndex);
-
+    
+    UWorld* World = StateMachine->GetOwner()->GetWorld();
+    CachedGameState   = World->GetGameState<ASMGameState>();
+    CachedWaveManager = USMWaveManagerSubsystem::Get(this);
+    
     ASMGameMode* GM = GetGameMode();
     if (!GM) return;
 
@@ -59,7 +65,23 @@ void USMCombatState::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
     Elapsed += DeltaTime;
+    SyncElapsed += DeltaTime;
+    
+    if (SyncElapsed >= 1.0f)
+    {
+        SyncElapsed = 0.f;
 
+        if (CachedGameState)
+        {
+            SM_LOG(this, LogSM, Log, TEXT("[Combat] WaveIndex=%d TimeRemaining=%.1f 서버→GameState 세팅"),
+            StateMachine->GetCurrentWaveIndex(), Duration - Elapsed);
+            CachedGameState->SetCombatInfo(
+                StateMachine->GetCurrentWaveIndex(),
+                FMath::Max(0.f, Duration - Elapsed)
+            );
+        }
+    }
+    
     if (Elapsed >= Duration)
     {
         UE_LOG(LogTemp, Warning, TEXT("[CombatState] 제한 시간 초과 (%.1f) -> 패배"),Duration);

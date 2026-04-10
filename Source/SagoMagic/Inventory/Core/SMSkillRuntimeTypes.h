@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "SMSkillRuntimeTypes.generated.h"
 
 
@@ -9,14 +10,15 @@
  *
  * 포함 내용:
  * - 스킬 레벨
- * - 총합 효과
- * - 총합 사거리/범위
- * - 총합 쿨타임
- * - 장착된 젬/보조 스킬 ID 목록
- * 추후 추가 가능성 있음
+ * - 최종 데미지
+ * - 최종 사거리/범위
+ * - 최종 쿨타임
+ * - 특수 동작 태그
+ * - 장착된 젬/보조 스킬 ID 목록(디버그/추적용)
  *
  * 역할:
- * - 스킬 내부 장착 결과를 런타임에서 캐싱하고 UI 및 실행 계층에 전달하는 데이터 제공
+ * - 스킬 내부 장착 결과를 실행 계층에서 바로 사용할 수 있는 형태로 캐싱
+ * - UI 및 추후 퀵슬롯/GA 실행 계층에 동일한 요약 데이터 제공
  */
 
 /** 스킬 계산 결과 캐시 데이터 */
@@ -29,9 +31,9 @@ public:
 	/** 기본 생성자 */
 	FSMCompiledSkillSummary()
 		: CurrentLevel(1)
-		  , TotalEffect(0)
-		  , TotalRangeOrArea(0)
-		  , TotalCooldown(0)
+		  , FinalDamage(0.0f)
+		  , FinalRangeOrArea(0.0f)
+		  , FinalCooldown(0.0f)
 	{
 	}
 
@@ -41,22 +43,28 @@ public:
 		return CurrentLevel;
 	}
 
-	/** 총합 효과 Getter */
-	int32 GetTotalEffect() const
+	/** 최종 데미지 Getter */
+	float GetFinalDamage() const
 	{
-		return TotalEffect;
+		return FinalDamage;
 	}
 
-	/** 총합 사거리/범위 Getter */
-	int32 GetTotalRangeOrArea() const
+	/** 최종 사거리/범위 Getter */
+	float GetFinalRangeOrArea() const
 	{
-		return TotalRangeOrArea;
+		return FinalRangeOrArea;
 	}
 
-	/** 총합 쿨타임 Getter */
-	int32 GetTotalCooldown() const
+	/** 최종 쿨타임 Getter */
+	float GetFinalCooldown() const
 	{
-		return TotalCooldown;
+		return FinalCooldown;
+	}
+
+	/** 특수 동작 태그 Getter */
+	const FGameplayTagContainer& GetBehaviorTags() const
+	{
+		return BehaviorTags;
 	}
 
 	/** 현재 레벨 Setter */
@@ -65,22 +73,28 @@ public:
 		CurrentLevel = InCurrentLevel;
 	}
 
-	/** 총합 효과 Setter */
-	void SetTotalEffect(const int32 InTotalEffect)
+	/** 최종 데미지 Setter */
+	void SetFinalDamage(const float InFinalDamage)
 	{
-		TotalEffect = InTotalEffect;
+		FinalDamage = InFinalDamage;
 	}
 
-	/** 총합 사거리/범위 Setter */
-	void SetTotalRangeOrArea(const int32 InTotalRangeOrArea)
+	/** 최종 사거리/범위 Setter */
+	void SetFinalRangeOrArea(const float InFinalRangeOrArea)
 	{
-		TotalRangeOrArea = InTotalRangeOrArea;
+		FinalRangeOrArea = InFinalRangeOrArea;
 	}
 
-	/** 총합 쿨타임 Setter */
-	void SetTotalCooldown(const int32 InTotalCooldown)
+	/** 최종 쿨타임 Setter */
+	void SetFinalCooldown(const float InFinalCooldown)
 	{
-		TotalCooldown = InTotalCooldown;
+		FinalCooldown = InFinalCooldown;
+	}
+
+	/** 특수 동작 태그 Setter */
+	void SetBehaviorTags(const FGameplayTagContainer& InBehaviorTags)
+	{
+		BehaviorTags = InBehaviorTags;
 	}
 
 public:
@@ -88,9 +102,10 @@ public:
 	void Reset()
 	{
 		CurrentLevel = 1;
-		TotalEffect = 0;
-		TotalRangeOrArea = 0;
-		TotalCooldown = 0;
+		FinalDamage = 0.0f;
+		FinalRangeOrArea = 0.0f;
+		FinalCooldown = 0.0f;
+		BehaviorTags.Reset();
 		EmbeddedGemIds.Reset();
 		EmbeddedSkillIds.Reset();
 	}
@@ -100,23 +115,27 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")
 	int32 CurrentLevel;
 
-	/** 장착 젬 기반 총합 효과 */
+	/** 장착 결과 반영 후 최종 데미지 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")
-	int32 TotalEffect;
+	float FinalDamage;
 
-	/** 장착 젬 기반 총합 사거리/범위 */
+	/** 장착 결과 반영 후 최종 사거리/범위 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")
-	int32 TotalRangeOrArea;
+	float FinalRangeOrArea;
 
-	/** 장착 젬 기반 총합 쿨타임 */
+	/** 장착 결과 반영 후 최종 쿨타임 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")
-	int32 TotalCooldown;
+	float FinalCooldown;
 
-	/** 장착 젬 인스턴스 ID 목록 */
+	/** 특수 동작 분기용 태그 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")
+	FGameplayTagContainer BehaviorTags;
+
+	/** 디버그/추적용 장착 젬 인스턴스 ID 목록 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill|Debug")
 	TArray<FGuid> EmbeddedGemIds;
 
-	/** 장착 동일 스킬 인스턴스 ID 목록 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")
+	/** 디버그/추적용 장착 동일 스킬 인스턴스 ID 목록 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill|Debug")
 	TArray<FGuid> EmbeddedSkillIds;
 };

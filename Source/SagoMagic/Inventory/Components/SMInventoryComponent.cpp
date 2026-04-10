@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Engine/World.h"
 
+#include "Core/DataManager/SMSyncDataManager.h"
 #include "Inventory/Core/SMInventoryMessageTypes.h"
 
 #include "Inventory/Items/Definitions/SMItemDefinition.h"
@@ -13,6 +14,7 @@
 #include "Inventory/Items/Definitions/SMGemItemDefinition.h"
 
 #include "Inventory/Items/Fragments/SMGridShapeFragment.h"
+#include "Inventory/Items/Fragments/SMAbilityFragment.h"
 #include "Inventory/Items/Fragments/SMGemModifierFragment.h"
 #include "Inventory/Items/Fragments/SMInternalInventoryFragment.h"
 #include "Inventory/Items/Fragments/SMSkillProgressionFragment.h"
@@ -22,6 +24,7 @@
 #include "GameplayTags/Message/SMMessageTag.h"
 
 #include "Inventory/World/SMBaseItemDropActor.h"
+#include "GameplayTags/Character/SMSkillTag.h"
 
 USMInventoryComponent::USMInventoryComponent()
 {
@@ -394,6 +397,18 @@ bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid&
 		return false;
 	}
 
+	FGuid PreviousOwningSkillId;
+	for (const FSMSkillItemInstanceData& SkillEntry : SkillEntries)
+	{
+		if (SkillEntry.InternalContainerId == PreviousContainerId)
+		{
+			PreviousOwningSkillId = SkillEntry.BaseItem.InstanceId;
+			break;
+		}
+	}
+
+	FGuid TargetOwningSkillId;
+
 	if (TargetContainer->ContainerType == ESMContainerType::SkillInternal)
 	{
 		const FSMSkillItemInstanceData* TargetOwningSkill = nullptr;
@@ -410,6 +425,8 @@ bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid&
 		{
 			return false;
 		}
+
+		TargetOwningSkillId = TargetOwningSkill->BaseItem.InstanceId;
 
 		if (TargetOwningSkill->BaseItem.InstanceId == InItemInstanceId)
 		{
@@ -531,6 +548,16 @@ bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid&
 			SkillEntry.EmbeddedItemIds.AddUnique(InItemInstanceId);
 			break;
 		}
+	}
+
+	if (PreviousOwningSkillId.IsValid())
+	{
+		RebuildSkillSummary(PreviousOwningSkillId);
+	}
+
+	if (TargetOwningSkillId.IsValid() && TargetOwningSkillId != PreviousOwningSkillId)
+	{
+		RebuildSkillSummary(TargetOwningSkillId);
 	}
 
 	if (PreviousContainerId != InTargetContainerId)
@@ -901,10 +928,25 @@ void USMInventoryComponent::SetActiveQuickSlot(int32 InSlotIndex)
 
 bool USMInventoryComponent::RebuildSkillSummary(const FGuid& InSkillInstanceId)
 {
-	/** TODO: BuildSkillSummary 호출 */
-	/** TODO: CachedSummary 반영 */
-	/** TODO: 메시지 발행 */
-	return false;
+	if (GetOwner() == nullptr || GetOwner()->HasAuthority() == false)
+	{
+		return false;
+	}
+
+	FSMSkillItemInstanceData* EditableSkillData = FindEditableSkill(InSkillInstanceId);
+	if (EditableSkillData == nullptr)
+	{
+		return false;
+	}
+
+	FSMCompiledSkillSummary RebuiltSummary;
+	if (BuildSkillSummary(InSkillInstanceId, RebuiltSummary) == false)
+	{
+		return false;
+	}
+
+	EditableSkillData->SetCachedSummary(RebuiltSummary);
+	return true;
 }
 
 bool USMInventoryComponent::GetItemData(const FGuid& InItemInstanceId, FSMItemInstanceData& OutItemData) const
@@ -936,10 +978,59 @@ bool USMInventoryComponent::CanDropItem(const FGuid& InItemInstanceId) const
 	return CanDropItemInternal(InItemInstanceId);
 }
 
-bool USMInventoryComponent::GetSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const
+bool USMInventoryComponent::GetActiveSkillSummary(FSMCompiledSkillSummary& OutSummary) const
 {
-	/** TODO: 요약 캐시 조회 처리 */
-	return false;
+	OutSummary.Reset();
+
+	const FGuid ActiveSkillId = QuickSlots.ActiveSlotIndex == 1
+		                            ? QuickSlots.Slot2SkillId
+		                            : QuickSlots.Slot1SkillId;
+
+	if (ActiveSkillId.IsValid() == false)
+	{
+		return false;
+	}
+
+	const FSMSkillItemInstanceData* SkillData = FindSkill(ActiveSkillId);
+	if (SkillData == nullptr)
+	{
+		return false;
+	}
+
+	OutSummary = SkillData->GetCachedSummary();
+	return true;
+}
+
+FGameplayTag USMInventoryComponent::GetActiveSkillTag() const
+{
+	const FGuid ActiveSkillId = QuickSlots.ActiveSlotIndex == 1
+		                            ? QuickSlots.Slot2SkillId
+		                            : QuickSlots.Slot1SkillId;
+
+	if (ActiveSkillId.IsValid() == false)
+	{
+		return FGameplayTag();
+	}
+
+	const FSMSkillItemInstanceData* SkillData = FindSkill(ActiveSkillId);
+	if (SkillData == nullptr)
+	{
+		return FGameplayTag();
+	}
+
+	const USMItemDefinition* SkillDefinition = ResolveItemDefinition(SkillData->BaseItem);
+	if (SkillDefinition == nullptr)
+	{
+		return FGameplayTag();
+	}
+
+	const USMAbilityFragment* AbilityFragment = SkillDefinition->FindFragmentByClass<USMAbilityFragment>();
+	if (AbilityFragment == nullptr)
+	{
+		return FGameplayTag();
+	}
+
+	return AbilityFragment->GetAbilityInputTag();
 }
 
 bool USMInventoryComponent::GetContainerData(const FGuid& InContainerId, FSMGridContainerState& OutContainerData) const
@@ -1514,8 +1605,139 @@ ASMBaseItemDropActor* USMInventoryComponent::SpawnDropActorFromPayload(const FSM
 
 bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const
 {
-	/** TODO: 장착 젬 / 보조 스킬 기반 총합 계산 */
-	return false;
+	OutSummary.Reset();
+
+	const FSMSkillItemInstanceData* SkillData = FindSkill(InSkillInstanceId);
+	if (SkillData == nullptr)
+	{
+		return false;
+	}
+
+	const USMItemDefinition* SkillDefinition = ResolveItemDefinition(SkillData->BaseItem);
+	if (SkillDefinition == nullptr)
+	{
+		return false;
+	}
+
+	const FSMGridContainerState* InternalContainer = FindContainer(SkillData->InternalContainerId);
+	if (InternalContainer == nullptr)
+	{
+		return false;
+	}
+
+	int32 CurrentLevel = 1;
+	int32 MaxLevel = TNumericLimits<int32>::Max();
+	if (const USMSkillProgressionFragment* SkillProgressionFragment =
+		SkillDefinition->FindFragmentByClass<USMSkillProgressionFragment>())
+	{
+		CurrentLevel = FMath::Max(1, SkillProgressionFragment->GetBaseLevel());
+		MaxLevel = FMath::Max(CurrentLevel, SkillProgressionFragment->GetMaxLevel());
+	}
+
+	const USMAbilityFragment* AbilityFragment = SkillDefinition->FindFragmentByClass<USMAbilityFragment>();
+	if (AbilityFragment == nullptr)
+	{
+		return false;
+	}
+
+	const FGameplayTag ResolvedSkillTag = AbilityFragment->GetAbilityInputTag();
+
+	TArray<const FSMItemInstanceData*> EmbeddedGems;
+	EmbeddedGems.Reserve(InternalContainer->ContainedItemIds.Num());
+
+	for (const FGuid& EmbeddedItemInstanceId : InternalContainer->ContainedItemIds)
+	{
+		if (const FSMSkillItemInstanceData* EmbeddedSkillData = FindSkill(EmbeddedItemInstanceId))
+		{
+			OutSummary.EmbeddedSkillIds.Add(EmbeddedSkillData->BaseItem.InstanceId);
+			if (IsSameNamedSkill(InSkillInstanceId, EmbeddedItemInstanceId))
+			{
+				++CurrentLevel;
+			}
+			continue;
+		}
+
+		const FSMItemInstanceData* EmbeddedItemData = FindItem(EmbeddedItemInstanceId);
+		if (EmbeddedItemData != nullptr && EmbeddedItemData->ItemType == ESMItemType::Gem)
+		{
+			EmbeddedGems.Add(EmbeddedItemData);
+		}
+	}
+
+	CurrentLevel = FMath::Clamp(CurrentLevel, 1, MaxLevel);
+	if (ResolvedSkillTag.IsValid() == false)
+	{
+		return false;
+	}
+
+	USMSyncDataManager* SyncDataManager = USMSyncDataManager::Get(this);
+	if (SyncDataManager == nullptr)
+	{
+		return false;
+	}
+
+	const FSMSkillData SkillRuntimeData = SyncDataManager->GetSkillData(ResolvedSkillTag);
+	if (SkillRuntimeData.SkillTag != ResolvedSkillTag)
+	{
+		return false;
+	}
+
+	const FSMSkillLevelData* MatchedLevelData = SkillRuntimeData.LevelData.FindByPredicate(
+		[CurrentLevel](const FSMSkillLevelData& LevelData)
+		{
+			return LevelData.Level == CurrentLevel;
+		});
+	if (MatchedLevelData == nullptr)
+	{
+		return false;
+	}
+
+	float FinalDamage = SkillRuntimeData.BaseDamage + MatchedLevelData->BaseDamage;
+	float FinalRangeOrArea = SkillRuntimeData.RangeCm + MatchedLevelData->RangeCm;
+	float FinalCooldown = SkillRuntimeData.Cooldown + MatchedLevelData->Cooldown;
+	FGameplayTagContainer BehaviorTags = MatchedLevelData->BehaviorTags;
+
+	for (const FSMItemInstanceData* EmbeddedGemData : EmbeddedGems)
+	{
+		const USMItemDefinition* EmbeddedGemDefinition = ResolveItemDefinition(*EmbeddedGemData);
+		if (EmbeddedGemDefinition == nullptr)
+		{
+			continue;
+		}
+
+		const USMGemModifierFragment* GemModifierFragment =
+			EmbeddedGemDefinition->FindFragmentByClass<USMGemModifierFragment>();
+		if (GemModifierFragment == nullptr)
+		{
+			continue;
+		}
+
+		OutSummary.EmbeddedGemIds.Add(EmbeddedGemData->InstanceId);
+		BehaviorTags.AppendTags(GemModifierFragment->GetGrantedBehaviorTags());
+
+		switch (GemModifierFragment->GetModifierType())
+		{
+		case ESMGemModifierType::Effect:
+			FinalDamage += static_cast<float>(GemModifierFragment->GetModifierValue());
+			break;
+		case ESMGemModifierType::RangeOrArea:
+			FinalRangeOrArea += static_cast<float>(GemModifierFragment->GetModifierValue());
+			break;
+		case ESMGemModifierType::Cooldown:
+			FinalCooldown += static_cast<float>(GemModifierFragment->GetModifierValue());
+			break;
+		case ESMGemModifierType::None:
+		default:
+			break;
+		}
+	}
+
+	OutSummary.SetCurrentLevel(CurrentLevel);
+	OutSummary.SetFinalDamage(FinalDamage);
+	OutSummary.SetFinalRangeOrArea(FinalRangeOrArea);
+	OutSummary.SetFinalCooldown(FMath::Max(0.0f, FinalCooldown));
+	OutSummary.SetBehaviorTags(BehaviorTags);
+	return true;
 }
 
 bool USMInventoryComponent::IsValidQuickSlotIndex(int32 InSlotIndex) const
@@ -1817,7 +2039,7 @@ bool USMInventoryComponent::RestoreNestedPayloads(const FSMItemDropPayload& InDr
 		}
 	}
 
-	return true;
+	return RebuildSkillSummary(InParentSkillInstanceId);
 }
 
 bool USMInventoryComponent::RemoveItemInternal(const FGuid& InItemInstanceId, bool bPublishInventoryMessage)
@@ -1837,6 +2059,10 @@ bool USMInventoryComponent::RemoveItemInternal(const FGuid& InItemInstanceId, bo
 			if (SkillEntry.InternalContainerId == ParentContainerId)
 			{
 				SkillEntry.EmbeddedItemIds.Remove(InItemInstanceId);
+				if (bPublishInventoryMessage)
+				{
+					RebuildSkillSummary(SkillEntry.BaseItem.InstanceId);
+				}
 				break;
 			}
 		}
@@ -1860,6 +2086,7 @@ bool USMInventoryComponent::RemoveItemInternal(const FGuid& InItemInstanceId, bo
 	{
 		const FGuid ParentContainerId = EditableSkill->BaseItem.ParentContainerId;
 		const FGuid InternalContainerId = EditableSkill->InternalContainerId;
+		FGuid ParentOwningSkillId;
 
 		TArray<FGuid> ChildItemIds;
 		if (const FSMGridContainerState* InternalContainer = FindContainer(InternalContainerId))
@@ -1885,6 +2112,7 @@ bool USMInventoryComponent::RemoveItemInternal(const FGuid& InItemInstanceId, bo
 			if (SkillEntry.InternalContainerId == ParentContainerId)
 			{
 				SkillEntry.EmbeddedItemIds.Remove(InItemInstanceId);
+				ParentOwningSkillId = SkillEntry.BaseItem.InstanceId;
 				break;
 			}
 		}
@@ -1912,6 +2140,11 @@ bool USMInventoryComponent::RemoveItemInternal(const FGuid& InItemInstanceId, bo
 			{
 				return ContainerState.ContainerId == InternalContainerId;
 			});
+
+		if (bPublishInventoryMessage && ParentOwningSkillId.IsValid())
+		{
+			RebuildSkillSummary(ParentOwningSkillId);
+		}
 
 		if (bPublishInventoryMessage)
 		{

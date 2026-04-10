@@ -28,7 +28,13 @@ private:
 	/** 방송을 수신했을 때 실행될 콜백 함수 */
 	void OnBaseCampMessageReceived(FGameplayTag Channel, const FBaseCampMsg& Message);
 
+	/** 월드에서 BaseCamp를 찾아 현재 HP로 직접 초기화 */
+	bool TryInitializeFromBaseCamp();
+	void RetryInitialize();
+	
 	/** Listener 해제를 위한 핸들러 */
 	UPROPERTY()
 	FGameplayMessageListenerHandle BaseCampListenerHandle;
+	
+	FTimerHandle InitRetryTimerHandle;
 };

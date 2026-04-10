@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Inventory/Core/SMContainerTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "SMQuickSlotBarWidget.generated.h"
 
@@ -57,6 +58,12 @@ public:
 		return Slot2SkillId;
 	}
 
+	/** 퀵슬롯 엔트리 배열 Getter */
+	const TArray<FSMQuickSlotEntry>& GetSlots() const
+	{
+		return Slots;
+	}
+
 	/** 인벤토리 컴포넌트 Setter */
 	void SetInventoryComponent(USMInventoryComponent* InInventoryComponent)
 	{
@@ -105,6 +112,10 @@ protected:
 	/** 두 번째 슬롯 스킬 인스턴스 ID */
 	UPROPERTY(BlueprintReadOnly, Category="Quick Slot Bar Widget")
 	FGuid Slot2SkillId;
+
+	/** 퀵슬롯 엔트리 배열 */
+	UPROPERTY(BlueprintReadOnly, Category="Quick Slot Bar Widget")
+	TArray<FSMQuickSlotEntry> Slots;
 
 private:
 };

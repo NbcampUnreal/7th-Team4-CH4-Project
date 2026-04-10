@@ -48,6 +48,7 @@ void USMInventoryComponent::BeginPlay()
 	if (GetOwner()->HasAuthority())
 	{
 		InitializeMainInventory();
+		InitializeQuickSlots();
 	}
 }
 
@@ -911,19 +912,266 @@ bool USMInventoryComponent::DetachEmbeddedItem(const FGuid& InEmbeddedItemInstan
 
 bool USMInventoryComponent::EquipSkillToQuickSlot(const FGuid& InSkillInstanceId, int32 InSlotIndex)
 {
-	/** TODO: 슬롯 유효성 검사 및 장착 처리 */
+	if (GetOwner() == nullptr || GetOwner()->HasAuthority() == false)
+	{
+		return false;
+	}
+
+	if (IsValidQuickSlotIndex(InSlotIndex) == false)
+	{
+		return false;
+	}
+
+	FSMSkillItemInstanceData* EditableSkill = FindEditableSkill(InSkillInstanceId);
+	if (EditableSkill == nullptr)
+	{
+		return false;
+	}
+
+	FSMQuickSlotEntry* TargetSlot = FindEditableQuickSlotEntry(InSlotIndex);
+	if (TargetSlot == nullptr || TargetSlot->IsValidSlot() == false)
+	{
+		return false;
+	}
+
+	if (TargetSlot->GetEquippedSkillId() == InSkillInstanceId)
+	{
+		SetActiveQuickSlot(InSlotIndex);
+		return true;
+	}
+
+	if (TargetSlot->GetEquippedSkillId().IsValid())
+	{
+		return false;
+	}
+
+	const FGuid PreviousContainerId = EditableSkill->BaseItem.ParentContainerId;
+	const FSMGridContainerState* PreviousContainer = FindContainer(PreviousContainerId);
+	FSMQuickSlotEntry* PreviousSlot = nullptr;
+
+	for (FSMQuickSlotEntry& SlotEntry : QuickSlots.Slots)
+	{
+		if (SlotEntry.GetEquippedSkillId() == InSkillInstanceId)
+		{
+			PreviousSlot = &SlotEntry;
+			break;
+		}
+	}
+
+	if (PreviousContainer != nullptr)
+	{
+		if (PreviousContainer->ContainerType == ESMContainerType::SkillInternal)
+		{
+			return false;
+		}
+
+		if (FSMGridContainerState* PreviousEditableContainer = FindEditableContainer(PreviousContainerId))
+		{
+			PreviousEditableContainer->ContainedItemIds.Remove(InSkillInstanceId);
+		}
+	}
+	else if (PreviousSlot == nullptr)
+	{
+		return false;
+	}
+
+	if (PreviousSlot != nullptr)
+	{
+		PreviousSlot->SetEquippedSkillId(FGuid());
+
+		if (PreviousSlot->GetSlotIndex() == 0)
+		{
+			QuickSlots.Slot1SkillId.Invalidate();
+		}
+		else if (PreviousSlot->GetSlotIndex() == 1)
+		{
+			QuickSlots.Slot2SkillId.Invalidate();
+		}
+	}
+
+	EditableSkill->BaseItem.ParentContainerId = TargetSlot->GetContainerId();
+	EditableSkill->BaseItem.GridX = 0;
+	EditableSkill->BaseItem.GridY = 0;
+
+	TargetSlot->SetEquippedSkillId(InSkillInstanceId);
+	if (InSlotIndex == 0)
+	{
+		QuickSlots.Slot1SkillId = InSkillInstanceId;
+	}
+	else if (InSlotIndex == 1)
+	{
+		QuickSlots.Slot2SkillId = InSkillInstanceId;
+	}
+
+	if (PreviousContainer != nullptr)
+	{
+		PublishInventoryUpdatedMessage(PreviousContainerId);
+	}
+
+	if (PreviousSlot != nullptr)
+	{
+		PublishQuickSlotUpdatedMessage(PreviousSlot->GetSlotIndex());
+	}
+
+	PublishQuickSlotUpdatedMessage(InSlotIndex);
+	return true;
+}
+
+bool USMInventoryComponent::EquipSkillToFirstAvailableQuickSlot(const FGuid& InSkillInstanceId)
+{
+	if (GetOwner() == nullptr || GetOwner()->HasAuthority() == false)
+	{
+		return false;
+	}
+
+	if (FindSkill(InSkillInstanceId) == nullptr)
+	{
+		return false;
+	}
+
+	for (const FSMQuickSlotEntry& SlotEntry : QuickSlots.Slots)
+	{
+		if (SlotEntry.GetEquippedSkillId() == InSkillInstanceId)
+		{
+			return false;
+		}
+	}
+
+	for (int32 SlotIndex = 0; SlotIndex <= 1; ++SlotIndex)
+	{
+		const FSMQuickSlotEntry* SlotEntry = FindQuickSlotEntry(SlotIndex);
+		if (SlotEntry == nullptr || SlotEntry->GetEquippedSkillId().IsValid())
+		{
+			continue;
+		}
+
+		return EquipSkillToQuickSlot(InSkillInstanceId, SlotIndex);
+	}
+
 	return false;
 }
 
 bool USMInventoryComponent::UnequipSkillFromQuickSlot(int32 InSlotIndex)
 {
-	/** TODO: 슬롯 유효성 검사 및 해제 처리 */
-	return false;
+	if (GetOwner() == nullptr || GetOwner()->HasAuthority() == false)
+	{
+		return false;
+	}
+
+	if (IsValidQuickSlotIndex(InSlotIndex) == false)
+	{
+		return false;
+	}
+
+	FSMQuickSlotEntry* SlotEntry = FindEditableQuickSlotEntry(InSlotIndex);
+	if (SlotEntry == nullptr || SlotEntry->GetEquippedSkillId().IsValid() == false)
+	{
+		return false;
+	}
+
+	FSMSkillItemInstanceData* EditableSkill = FindEditableSkill(SlotEntry->GetEquippedSkillId());
+	if (EditableSkill == nullptr)
+	{
+		return false;
+	}
+
+	int32 FoundGridX = 0;
+	int32 FoundGridY = 0;
+	if (FindAvailablePosition(EditableSkill->BaseItem.InstanceId, MainInventory.ContainerId, FoundGridX, FoundGridY) == false)
+	{
+		return false;
+	}
+
+	EditableSkill->BaseItem.ParentContainerId = MainInventory.ContainerId;
+	EditableSkill->BaseItem.GridX = FoundGridX;
+	EditableSkill->BaseItem.GridY = FoundGridY;
+
+	MainInventory.ContainedItemIds.AddUnique(EditableSkill->BaseItem.InstanceId);
+	SlotEntry->SetEquippedSkillId(FGuid());
+
+	if (InSlotIndex == 0)
+	{
+		QuickSlots.Slot1SkillId.Invalidate();
+	}
+	else if (InSlotIndex == 1)
+	{
+		QuickSlots.Slot2SkillId.Invalidate();
+	}
+
+	PublishInventoryUpdatedMessage(MainInventory.ContainerId);
+	PublishQuickSlotUpdatedMessage(InSlotIndex);
+	return true;
+}
+
+bool USMInventoryComponent::UnequipSkillFromQuickSlotToMainInventory(
+	int32 InSlotIndex,
+	int32 InGridX,
+	int32 InGridY,
+	ESMGridRotation InRotation)
+{
+	if (GetOwner() == nullptr || GetOwner()->HasAuthority() == false)
+	{
+		return false;
+	}
+
+	if (IsValidQuickSlotIndex(InSlotIndex) == false)
+	{
+		return false;
+	}
+
+	FSMQuickSlotEntry* SlotEntry = FindEditableQuickSlotEntry(InSlotIndex);
+	if (SlotEntry == nullptr || SlotEntry->GetEquippedSkillId().IsValid() == false)
+	{
+		return false;
+	}
+
+	FSMSkillItemInstanceData* EditableSkill = FindEditableSkill(SlotEntry->GetEquippedSkillId());
+	if (EditableSkill == nullptr)
+	{
+		return false;
+	}
+
+	if (CanPlaceItem(EditableSkill->BaseItem.InstanceId, MainInventory.ContainerId, InGridX, InGridY, InRotation) == false)
+	{
+		return false;
+	}
+
+	EditableSkill->BaseItem.ParentContainerId = MainInventory.ContainerId;
+	EditableSkill->BaseItem.GridX = InGridX;
+	EditableSkill->BaseItem.GridY = InGridY;
+	EditableSkill->BaseItem.Rotation = InRotation;
+
+	MainInventory.ContainedItemIds.AddUnique(EditableSkill->BaseItem.InstanceId);
+	SlotEntry->SetEquippedSkillId(FGuid());
+
+	if (InSlotIndex == 0)
+	{
+		QuickSlots.Slot1SkillId.Invalidate();
+	}
+	else if (InSlotIndex == 1)
+	{
+		QuickSlots.Slot2SkillId.Invalidate();
+	}
+
+	PublishInventoryUpdatedMessage(MainInventory.ContainerId);
+	PublishQuickSlotUpdatedMessage(InSlotIndex);
+	return true;
 }
 
 void USMInventoryComponent::SetActiveQuickSlot(int32 InSlotIndex)
 {
-	/** TODO: 활성 슬롯 갱신 처리 */
+	if (IsValidQuickSlotIndex(InSlotIndex) == false)
+	{
+		return;
+	}
+
+	if (QuickSlots.ActiveSlotIndex == InSlotIndex)
+	{
+		return;
+	}
+
+	QuickSlots.ActiveSlotIndex = InSlotIndex;
+	PublishQuickSlotUpdatedMessage(InSlotIndex);
 }
 
 bool USMInventoryComponent::RebuildSkillSummary(const FGuid& InSkillInstanceId)
@@ -982,9 +1230,18 @@ bool USMInventoryComponent::GetActiveSkillSummary(FSMCompiledSkillSummary& OutSu
 {
 	OutSummary.Reset();
 
-	const FGuid ActiveSkillId = QuickSlots.ActiveSlotIndex == 1
-		                            ? QuickSlots.Slot2SkillId
-		                            : QuickSlots.Slot1SkillId;
+	FGuid ActiveSkillId;
+	if (const FSMQuickSlotEntry* ActiveSlot = FindQuickSlotEntry(QuickSlots.ActiveSlotIndex))
+	{
+		ActiveSkillId = ActiveSlot->GetEquippedSkillId();
+	}
+
+	if (ActiveSkillId.IsValid() == false)
+	{
+		ActiveSkillId = QuickSlots.ActiveSlotIndex == 1
+			                ? QuickSlots.Slot2SkillId
+			                : QuickSlots.Slot1SkillId;
+	}
 
 	if (ActiveSkillId.IsValid() == false)
 	{
@@ -1003,9 +1260,18 @@ bool USMInventoryComponent::GetActiveSkillSummary(FSMCompiledSkillSummary& OutSu
 
 FGameplayTag USMInventoryComponent::GetActiveSkillTag() const
 {
-	const FGuid ActiveSkillId = QuickSlots.ActiveSlotIndex == 1
-		                            ? QuickSlots.Slot2SkillId
-		                            : QuickSlots.Slot1SkillId;
+	FGuid ActiveSkillId;
+	if (const FSMQuickSlotEntry* ActiveSlot = FindQuickSlotEntry(QuickSlots.ActiveSlotIndex))
+	{
+		ActiveSkillId = ActiveSlot->GetEquippedSkillId();
+	}
+
+	if (ActiveSkillId.IsValid() == false)
+	{
+		ActiveSkillId = QuickSlots.ActiveSlotIndex == 1
+			                ? QuickSlots.Slot2SkillId
+			                : QuickSlots.Slot1SkillId;
+	}
 
 	if (ActiveSkillId.IsValid() == false)
 	{
@@ -1126,6 +1392,19 @@ const FSMGridContainerState* USMInventoryComponent::FindContainer(const FGuid& I
 	return nullptr;
 }
 
+const FSMQuickSlotEntry* USMInventoryComponent::FindQuickSlotEntry(int32 InSlotIndex) const
+{
+	for (const FSMQuickSlotEntry& Entry : QuickSlots.Slots)
+	{
+		if (Entry.GetSlotIndex() == InSlotIndex)
+		{
+			return &Entry;
+		}
+	}
+
+	return nullptr;
+}
+
 const USMItemDefinition* USMInventoryComponent::ResolveItemDefinition(const FSMItemInstanceData& InItemData) const
 {
 	if (InItemData.Definition.IsNull())
@@ -1180,6 +1459,19 @@ FSMGridContainerState* USMInventoryComponent::FindEditableContainer(const FGuid&
 	return nullptr;
 }
 
+FSMQuickSlotEntry* USMInventoryComponent::FindEditableQuickSlotEntry(int32 InSlotIndex)
+{
+	for (FSMQuickSlotEntry& Entry : QuickSlots.Slots)
+	{
+		if (Entry.GetSlotIndex() == InSlotIndex)
+		{
+			return &Entry;
+		}
+	}
+
+	return nullptr;
+}
+
 void USMInventoryComponent::InitializeMainInventory()
 {
 	if (MainInventory.ContainerId.IsValid())
@@ -1191,6 +1483,47 @@ void USMInventoryComponent::InitializeMainInventory()
 	MainInventory.ContainerType = ESMContainerType::MainInventory;
 	MainInventory.ValidMask = DefaultMainInventoryMask;
 	MainInventory.ContainedItemIds.Reset();
+}
+
+void USMInventoryComponent::InitializeQuickSlots()
+{
+	if (QuickSlots.Slots.Num() == 0)
+	{
+		FSMQuickSlotEntry FirstSlot;
+		FirstSlot.SetContainerId(FGuid::NewGuid());
+		FirstSlot.SetSlotIndex(0);
+		FirstSlot.SetEquippedSkillId(QuickSlots.Slot1SkillId);
+		QuickSlots.Slots.Add(FirstSlot);
+
+		FSMQuickSlotEntry SecondSlot;
+		SecondSlot.SetContainerId(FGuid::NewGuid());
+		SecondSlot.SetSlotIndex(1);
+		SecondSlot.SetEquippedSkillId(QuickSlots.Slot2SkillId);
+		QuickSlots.Slots.Add(SecondSlot);
+	}
+
+	if (FSMQuickSlotEntry* FirstSlot = FindEditableQuickSlotEntry(0))
+	{
+		QuickSlots.Slot1SkillId = FirstSlot->GetEquippedSkillId();
+	}
+	else
+	{
+		QuickSlots.Slot1SkillId.Invalidate();
+	}
+
+	if (FSMQuickSlotEntry* SecondSlot = FindEditableQuickSlotEntry(1))
+	{
+		QuickSlots.Slot2SkillId = SecondSlot->GetEquippedSkillId();
+	}
+	else
+	{
+		QuickSlots.Slot2SkillId.Invalidate();
+	}
+
+	if (QuickSlots.ActiveSlotIndex < 0 || QuickSlots.ActiveSlotIndex > 1)
+	{
+		QuickSlots.ActiveSlotIndex = 0;
+	}
 }
 
 bool USMInventoryComponent::CreateSkillInternalContainer(const FGuid& InSkillInstanceId,
@@ -1742,8 +2075,7 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 
 bool USMInventoryComponent::IsValidQuickSlotIndex(int32 InSlotIndex) const
 {
-	/** TODO: 1~2 슬롯 범위 검사 */
-	return false;
+	return FindQuickSlotEntry(InSlotIndex) != nullptr;
 }
 
 void USMInventoryComponent::PublishInventoryUpdatedMessage(const FGuid& InContainerId) const
@@ -2117,16 +2449,25 @@ bool USMInventoryComponent::RemoveItemInternal(const FGuid& InItemInstanceId, bo
 			}
 		}
 
-		if (QuickSlots.Slot1SkillId == InItemInstanceId)
+		for (FSMQuickSlotEntry& SlotEntry : QuickSlots.Slots)
 		{
-			QuickSlots.Slot1SkillId = FGuid();
-			PublishQuickSlotUpdatedMessage(0);
-		}
+			if (SlotEntry.GetEquippedSkillId() != InItemInstanceId)
+			{
+				continue;
+			}
 
-		if (QuickSlots.Slot2SkillId == InItemInstanceId)
-		{
-			QuickSlots.Slot2SkillId = FGuid();
-			PublishQuickSlotUpdatedMessage(1);
+			SlotEntry.SetEquippedSkillId(FGuid());
+
+			if (SlotEntry.GetSlotIndex() == 0)
+			{
+				QuickSlots.Slot1SkillId.Invalidate();
+			}
+			else if (SlotEntry.GetSlotIndex() == 1)
+			{
+				QuickSlots.Slot2SkillId.Invalidate();
+			}
+
+			PublishQuickSlotUpdatedMessage(SlotEntry.GetSlotIndex());
 		}
 
 		SkillEntries.RemoveAll(

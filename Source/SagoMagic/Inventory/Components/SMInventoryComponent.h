@@ -129,9 +129,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Inventory|QuickSlot")
 	bool EquipSkillToQuickSlot(const FGuid& InSkillInstanceId, int32 InSlotIndex);
 
+	/** 빈 퀵슬롯(0 -> 1 순) 자동 장착 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|QuickSlot")
+	bool EquipSkillToFirstAvailableQuickSlot(const FGuid& InSkillInstanceId);
+
 	/** 퀵슬롯 해제 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory|QuickSlot")
 	bool UnequipSkillFromQuickSlot(int32 InSlotIndex);
+
+	/** 퀵슬롯 스킬을 메인 인벤토리 지정 위치로 해제 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|QuickSlot")
+	bool UnequipSkillFromQuickSlotToMainInventory(int32 InSlotIndex, int32 InGridX, int32 InGridY,
+	                                              ESMGridRotation InRotation);
 
 	/** 활성 퀵슬롯 설정 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory|QuickSlot")
@@ -186,6 +195,9 @@ public:
 	/** 컨테이너 포인터 조회 */
 	const FSMGridContainerState* FindContainer(const FGuid& InContainerId) const;
 
+	/** 퀵슬롯 엔트리 포인터 조회 */
+	const FSMQuickSlotEntry* FindQuickSlotEntry(int32 InSlotIndex) const;
+
 	/** 아이템 정의 로드 */
 	const USMItemDefinition* ResolveItemDefinition(const FSMItemInstanceData& InItemData) const;
 
@@ -199,8 +211,14 @@ protected:
 	/** 컨테이너 수정가능 포인터 조회 */
 	FSMGridContainerState* FindEditableContainer(const FGuid& InContainerId);
 
+	/** 퀵슬롯 엔트리 수정가능 포인터 조회 */
+	FSMQuickSlotEntry* FindEditableQuickSlotEntry(int32 InSlotIndex);
+
 	/** 메인 인벤토리 초기화 */
 	void InitializeMainInventory();
+
+	/** 퀵슬롯 상태 초기화 */
+	void InitializeQuickSlots();
 
 	/** 스킬 내부 컨테이너 생성 */
 	bool CreateSkillInternalContainer(const FGuid& InSkillInstanceId, const FSMGridMaskData& InInternalMask,

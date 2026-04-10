@@ -5,6 +5,9 @@
 #include "Net/UnrealNetwork.h"
 #include "Wave/SMWaveManagerSubsystem.h"
 #include "Character/SMPlayerController.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
+#include "UI/SMGameplayMessages.h"
+#include "GameplayTags/UI/SMUITag.h"
 
 ASMGameState::ASMGameState()
 {
@@ -20,6 +23,8 @@ void ASMGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
     DOREPLIFETIME(ASMGameState, CombatTimeRemaining);
     DOREPLIFETIME(ASMGameState, AssetsToLoad);
     DOREPLIFETIME(ASMGameState, AssetsLoadSerial);
+    DOREPLIFETIME(ASMGameState, MaxBuildTime);
+    DOREPLIFETIME(ASMGameState, MaxCombatTime);
     
 }
 
@@ -48,16 +53,20 @@ void ASMGameState::SetAssetsToLoad(const TArray<FPrimaryAssetId>& InAssets)
     ForceNetUpdate();
 }
 
-void ASMGameState::SetBuildTimeRemaining(int32 WaveIndex, float TimeRemaining)
+void ASMGameState::SetBuildTimeRemaining(int32 WaveIndex, float TimeRemaining, float InMaxTime)
 {
     ReplicatedWaveIndex = WaveIndex;
     BuildTimeRemaining = TimeRemaining;
+    MaxBuildTime         = InMaxTime;
 }
 
-void ASMGameState::SetCombatInfo(int32 WaveIndex, float TimeRemaining)
+void ASMGameState::SetCombatInfo(int32 WaveIndex, float TimeRemaining, float InMaxTime)
 {
     ReplicatedWaveIndex = WaveIndex;
     CombatTimeRemaining = TimeRemaining;
+    MaxCombatTime        = InMaxTime;
+    
+    BroadcastWaveMsg(EWaveUIState::Inprogress, WaveIndex, TimeRemaining, InMaxTime);
 }
 
 void ASMGameState::OnRep_CurrentState()
@@ -68,27 +77,12 @@ void ASMGameState::OnRep_CurrentState()
 void ASMGameState::OnRep_WaveIndex()
 {
     //TODO 현 : 현재 WaveIndex 브로드케스트
-    //예시
-    // FBuildPhaseMsg Msg;
-    // Msg.WaveIndex = ReplicatedWaveIndex;
-    // Msg.TimeRemaining = BuildTimeRemaining;
-    //
-    // UGameplayMessageSubsystem::Get(this).BroadcastMessage(
-    //     FGameplayTag::RequestGameplayTag(FName("UI.Event.Wave.Build"), false), Msg
-    // );
+    EWaveUIState CurrentUIState = (CurrentState == EGameState::Build) ? EWaveUIState::Preparing : EWaveUIState::Inprogress;
     
-    //GamePlayTag.h에 추가할  Struct는 이런 느낌??
-    // USTRUCT(BlueprintType)
-    // struct FBuildPhaseMsg
-    // {
-    //     GENERATED_BODY()
-    //
-    //     UPROPERTY(BlueprintReadOnly)
-    //     int32 WaveIndex = 0;
-    //
-    //     UPROPERTY(BlueprintReadOnly)
-    //     float TimeRemaining = 0.f;  // 빌드 준비 카운트다운
-    // };
+    float CurrentTimeRemaining = (CurrentState == EGameState::Build) ? BuildTimeRemaining : CombatTimeRemaining;
+    float CurrentMaxTime = (CurrentState == EGameState::Build) ? MaxBuildTime : MaxCombatTime;
+
+    BroadcastWaveMsg(CurrentUIState, ReplicatedWaveIndex, CurrentTimeRemaining, CurrentMaxTime);
 }
 
 void ASMGameState::OnRep_BuildTimeRemaining()
@@ -96,6 +90,9 @@ void ASMGameState::OnRep_BuildTimeRemaining()
     //TODO 현 : 현재 정비 시간 브로드케스트
     SM_LOG(this, LogSM, Log, TEXT("[Build] 클라이언트 수신 - WaveIndex=%d TimeRemaining=%.1f"),
         ReplicatedWaveIndex, BuildTimeRemaining);
+    
+    // 정비 상태, 동기화된 시간들로 UI 업데이트
+    BroadcastWaveMsg(EWaveUIState::Preparing, ReplicatedWaveIndex, BuildTimeRemaining, MaxBuildTime);
 }
 
 void ASMGameState::OnRep_CombatTimeRemaining()
@@ -103,6 +100,9 @@ void ASMGameState::OnRep_CombatTimeRemaining()
     //TODO 현 : 현재 전투 시간 브로드케스트
     SM_LOG(this, LogSM, Log, TEXT("[Combat] 클라이언트 수신 - WaveIndex=%d TimeRemaining=%.1f"),
         ReplicatedWaveIndex, CombatTimeRemaining);
+    
+    // 전투 진행 중 상태, 동기화된 시간들로 UI 업데이트
+    BroadcastWaveMsg(EWaveUIState::Inprogress, ReplicatedWaveIndex, CombatTimeRemaining, MaxCombatTime);
 }
 
 void ASMGameState::OnRep_AssetsToLoad()
@@ -134,4 +134,15 @@ void ASMGameState::OnRep_AssetsToLoad()
             
         })
     );
+}
+
+void ASMGameState::BroadcastWaveMsg(EWaveUIState InState, int32 InWaveIndex, float InTimeRemaining, float InMaxTime)
+{
+    FWaveMsg Msg;
+    Msg.State         = InState; // 현재 웨이브의 진행 상태
+    Msg.WaveIndex     = InWaveIndex; // 현재 웨이브 번호
+    Msg.TimeRemaining = InTimeRemaining; // 해당 페이즈의 남은 시간
+    Msg.MaxTime       = InMaxTime; // 해당 페이즈 전체 시간 - 프로그래스바 비율 계산을 위한 용도!
+
+    UGameplayMessageSubsystem::Get(this).BroadcastMessage(SMUITag::Event_Wave, Msg);
 }

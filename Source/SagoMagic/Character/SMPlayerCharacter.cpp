@@ -121,16 +121,14 @@ void ASMPlayerCharacter::Attack()
 	{
 		if (USMInventoryComponent* InventoryComp = PS->GetInventoryComponent())
 		{
-			// 퀵슬롯에 있는 태그를 받아와 해당 어빌리티 발동
-			// TODO: 인벤토리 컴포넌트에서 현재 퀵슬롯에 장착된 태그 받아오면 주석 제거.
-			/*FGameplayTag ActiveSkillTag = InventoryComp->GetActiveSkillTag();
+			FGameplayTag ActiveSkillTag = InventoryComp->GetActiveSkillTag();
 			
 			if (ActiveSkillTag.IsValid())
 			{
-				SMAbilitySystemComponent->TryActivateAbilitiesByTag(ActiveSKillTag));
+				SMAbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(ActiveSkillTag));
 				
 				SM_LOG(this, LogSM, Log, TEXT("%s 마법 발동"), *ActiveSkillTag.ToString());
-			}*/
+			}
 		}
 	}
 }

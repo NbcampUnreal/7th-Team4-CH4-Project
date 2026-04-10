@@ -18,6 +18,9 @@ void ASMGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
     DOREPLIFETIME(ASMGameState, ReplicatedWaveIndex);
     DOREPLIFETIME(ASMGameState, BuildTimeRemaining);
     DOREPLIFETIME(ASMGameState, CombatTimeRemaining);
+    DOREPLIFETIME(ASMGameState, AssetsToLoad);
+    DOREPLIFETIME(ASMGameState, AssetsLoadSerial);
+    
 }
 
 void ASMGameState::PostNetInit()
@@ -33,6 +36,12 @@ void ASMGameState::SetCurrentState(EGameState NewState)
     OnGameStateChanged.Broadcast(NewState);
 }
 
+void ASMGameState::SetAssetsToLoad(const TArray<FPrimaryAssetId>& InAssets)
+{
+    AssetsToLoad = InAssets;
+    AssetsLoadSerial++;
+}
+
 void ASMGameState::SetBuildTimeRemaining(int32 WaveIndex, float TimeRemaining)
 {
     ReplicatedWaveIndex = WaveIndex;
@@ -43,42 +52,6 @@ void ASMGameState::SetCombatInfo(int32 WaveIndex, float TimeRemaining)
 {
     ReplicatedWaveIndex = WaveIndex;
     CombatTimeRemaining = TimeRemaining;
-}
-
-void ASMGameState::MulticastPreloadClientAssets_Implementation(const TArray<FPrimaryAssetId>& AssetIds)
-{
-    // 서버는 WaveManagerSubsystem에서 이미 처리
-    if (HasAuthority()) return;
-
-    UE_LOG(LogTemp, Log, TEXT("[GameState] 클라이언트 Multicast 수신 - 로드 시작"));
-
-    USMAsyncDataManager* AM = USMAsyncDataManager::Get(this);
-    if (!AM)
-    {
-        UE_LOG(LogTemp, Error, TEXT("[GameState] AsyncDataManager nullptr!"));
-        return;
-    }
-    
-    AM->LoadAssetsByIDWithBundles(AssetIds, TArray<FName>{"Client"},
-        FOnAssetLoadComplete::CreateLambda([this]()
-        {
-            UE_LOG(LogTemp, Log, TEXT("[GameState] 클라이언트 DataAsset 로드 완료 - PC 탐색"));
-
-            // GetFirstPlayerController() 대신 로컬 컨트롤러 직접 탐색
-            for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-            {
-                ASMPlayerController* PC = Cast<ASMPlayerController>(It->Get());
-                if (PC && PC->IsLocalController())
-                {
-                    UE_LOG(LogTemp, Log, TEXT("[GameState] ServerNotifyClientLoadComplete 호출"));
-                    PC->ServerNotifyClientLoadComplete();
-                    return;
-                }
-            }
-
-            UE_LOG(LogTemp, Error, TEXT("[GameState] 로컬 ASMPlayerController를 찾지 못함!"));
-        })
-    );
 }
 
 void ASMGameState::OnRep_CurrentState()
@@ -124,4 +97,36 @@ void ASMGameState::OnRep_CombatTimeRemaining()
     //TODO 현 : 현재 전투 시간 브로드케스트
     SM_LOG(this, LogSM, Log, TEXT("[Combat] 클라이언트 수신 - WaveIndex=%d TimeRemaining=%.1f"),
         ReplicatedWaveIndex, CombatTimeRemaining);
+}
+
+void ASMGameState::OnRep_AssetsToLoad()
+{
+    UE_LOG(LogTemp, Log, TEXT("[GameState] OnRep_AssetsToLoad 발동 - Serial=%d, Assets=%d개"),
+        AssetsLoadSerial, AssetsToLoad.Num());
+    
+    if (AssetsToLoad.IsEmpty()) return;
+    
+    USMAsyncDataManager* AM = USMAsyncDataManager::Get(this);
+    if (!AM) return;
+    
+    AM->LoadAssetsByIDWithBundles(AssetsToLoad, TArray<FName>{"Client"},
+        FOnAssetLoadComplete::CreateLambda([this]()
+        {
+            //이 월드에 존재하는 모든 PlayerController를 순회
+            for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+            {
+                UE_LOG(LogTemp, Log, TEXT("[GameState] 클라이언트 에셋 로드 완료 - PC 탐색"));
+                ASMPlayerController* PC = Cast<ASMPlayerController>(It->Get());
+                
+                if (PC && PC->IsLocalController())
+                {
+                    UE_LOG(LogTemp, Log, TEXT("[GameState] ServerNotifyClientLoadComplete 호출"));
+                    PC->ServerNotifyClientLoadComplete();
+                    return;
+                }
+                UE_LOG(LogTemp, Error, TEXT("[GameState] 로컬 PC를 찾지 못함!"));
+            }
+            
+        })
+    );
 }

@@ -37,8 +37,6 @@ struct FWaveMsg
     UPROPERTY(BlueprintReadOnly)
     int32 WaveIndex = 0;
     UPROPERTY(BlueprintReadOnly)
-    int32 EnemyRemaining = 0;
-    UPROPERTY(BlueprintReadOnly)
     float TimeRemaining = 0.0f;
 };
 
@@ -71,6 +69,10 @@ struct FBaseCampMsg
     EBaseCampEvent EventType = EBaseCampEvent::Attacked;
     UPROPERTY(BlueprintReadOnly)
     float BaseCampHP = 1.0f;
+    UPROPERTY(BlueprintReadOnly)
+    float CurrentHP = 100.0f;
+    UPROPERTY(BlueprintReadOnly)
+    float MaxHP = 100.0f;
 };
 
 /**

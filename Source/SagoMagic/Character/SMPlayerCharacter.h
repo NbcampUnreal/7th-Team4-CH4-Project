@@ -97,6 +97,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	USMInteractionScannerComponent* GetInteractionScanner() const { return InteractionScannerComp; }
+	
+	UFUNCTION(BlueprintCallable, Category = "Dead")
+	FORCEINLINE bool IsDead() const { return bIsDead; }
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 	

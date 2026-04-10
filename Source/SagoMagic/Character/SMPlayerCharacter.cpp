@@ -147,7 +147,7 @@ void ASMPlayerCharacter::UseQuickSlot(const FInputActionValue& InValue)
 {
 	if (!IsLocallyControlled()) return;
 	
-	const int32 SlotIndex = FMath::RoundToInt(InValue.Get<float>());
+	const int32 SlotIndex = FMath::RoundToInt(InValue.Get<float>() - 1);
 	
 	
 	if (ASMPlayerState* PS = GetPlayerState<ASMPlayerState>())

@@ -170,31 +170,34 @@ void ASMPlayerCharacter::ToggleBuildMode()
 		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
 	if (!Subsystem || !BuildPlaceIMC || !SMAbilitySystemComponent) return;
 	
-	// 편집 모드라면 토글 함수를 호출해 종료
-	if (SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit))
-	{
-		ToggleEditMode();
-	}
-	
-	// 현재 건축모드인지 확인
 	bool bIsBuildMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place);
+	bool bIsEditMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit);
 	
-	if (!bIsBuildMode)
-	{
-		Subsystem->AddMappingContext(BuildPlaceIMC, 1);
-		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
-		SM_LOG(this, LogSM, Log, TEXT("건축 모드 ON"));
-		
-		// TODO: 나중에 BuildComponent 구현 후 건축모드 활성화 로직 추가
-	}
-	else
+	// 건축 모드에서 B입력 시 건축 모드 종료
+	if (bIsBuildMode)
 	{
 		Subsystem->RemoveMappingContext(BuildPlaceIMC);
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
-		SM_LOG(this, LogSM, Log, TEXT("건축 모드 OFF"));
+		ServerRPC_SetBuildModeTag(false);
 		
-		// TODO: 나중에 BuildComponent 구현 후 건축모드 아래 비활성화 로직 추가
+		SM_LOG(this, LogSM, Log, TEXT("건축 모드 종료"));
+		return;
 	}
+	
+	// 편집모드라면 편집모드 종료
+	if (bIsEditMode)
+	{
+		Subsystem->RemoveMappingContext(BuildEditIMC);
+		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
+		ServerRPC_SetEditModeTag(false);
+	}
+	
+	// 건축모드 켜기
+	Subsystem->AddMappingContext(BuildPlaceIMC, 1);
+	SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
+	ServerRPC_SetBuildModeTag(true);
+	
+	SM_LOG(this, LogSM, Log, TEXT("건축 모드 ON"));
 }
 
 void ASMPlayerCharacter::ToggleEditMode()
@@ -206,28 +209,60 @@ void ASMPlayerCharacter::ToggleEditMode()
 		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
 	if (!Subsystem || !BuildEditIMC || !SMAbilitySystemComponent) return;
 	
-	// 건축 모드가 켜져 있다면 종료
-	if (SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place))
-	{
-		ToggleBuildMode();
-	}
-	
-	// 현재 편집 모드인지 확인
+	bool bIsBuildMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place);
 	bool bIsEditMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit);
 	
-	if (!bIsEditMode)
-	{
-		Subsystem->AddMappingContext(BuildEditIMC, 1);
-		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Edit);
-		SM_LOG(this, LogSM, Log, TEXT("편집 모드 ON"));
-		
-		// TODO: 나중에 BuildComponent 구현 후 편집모드 활성화 로직 추가
-	}
-	else
+	// 이미 편집 모드라면 편집모드 종료
+	if (bIsEditMode)
 	{
 		Subsystem->RemoveMappingContext(BuildEditIMC);
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
+		ServerRPC_SetEditModeTag(false);
+		
 		SM_LOG(this, LogSM, Log, TEXT("편집 모드 OFF"));
+		return;
+	}
+	
+	// 건축 모드라면 건축모드 종료
+	if (bIsBuildMode)
+	{
+		Subsystem->RemoveMappingContext(BuildPlaceIMC);
+		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
+		ServerRPC_SetBuildModeTag(false);
+	}
+	
+	Subsystem->AddMappingContext(BuildEditIMC, 1);
+	SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Edit);
+	ServerRPC_SetEditModeTag(true);
+	
+	SM_LOG(this, LogSM, Log, TEXT("편집 모드 ON"));
+}
+
+void ASMPlayerCharacter::ServerRPC_SetBuildModeTag_Implementation(bool bEnable)
+{
+	if (!SMAbilitySystemComponent) return;
+	
+	if (bEnable)
+	{
+		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
+	}
+	else
+	{
+		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
+	}
+}
+
+void ASMPlayerCharacter::ServerRPC_SetEditModeTag_Implementation(bool bEnable)
+{
+	if (!SMAbilitySystemComponent) return;
+	
+	if (bEnable)
+	{
+		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Edit);
+	}
+	else
+	{
+		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 	}
 }
 
@@ -273,7 +308,7 @@ void ASMPlayerCharacter::Tick(float DeltaTime)
 			FHitResult Hit;
 
 			// TODO: 채널 설정을 바닥으로만 할 필요 있음
-			bool bHit = PC->GetHitResultUnderCursor(ECC_Visibility, true, Hit);
+			bool bHit = PC->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, Hit);
 
 			if (bHit)
 			{
@@ -321,7 +356,7 @@ void ASMPlayerCharacter::InitializeAbilitySystem()
 	SMAbilitySystemComponent = PS->GetSMAbilitySystemComponent();
 	AttributeSet = PS->GetAttributeSet();
 	
-	if (SMAbilitySystemComponent)
+	if (SMAbilitySystemComponent && AttributeSet)
 	{
 		// Owner는 PlayerState
 		SMAbilitySystemComponent->InitAbilityActorInfo(PS, this);
@@ -437,22 +472,6 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 	if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
-		{
-			if (PC->IsLocalController() && DefaultIMC)
-			{
-				if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
-				{
-					if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
-							ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
-					{
-						Subsystem->RemoveMappingContext(DefaultIMC);
-						Subsystem->AddMappingContext(DefaultIMC, 0);
-					}
-				}
-			}
-		}
-
 		if (MoveAction)
 		{
 			EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
@@ -491,6 +510,27 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		if (EditSelectAction)
 		{
 			EIC->BindAction(EditSelectAction, ETriggerEvent::Started, this, &ThisClass::OnEditSelect);
+		}
+	}
+}
+
+void ASMPlayerCharacter::PawnClientRestart()
+{
+	Super::PawnClientRestart();
+	
+	if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
+	{
+		if (PC->IsLocalController() && DefaultIMC)
+		{
+			if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
+			{
+				if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+						ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
+				{
+					Subsystem->RemoveMappingContext(DefaultIMC);
+					Subsystem->AddMappingContext(DefaultIMC, 0);
+				}
+			}
 		}
 	}
 }

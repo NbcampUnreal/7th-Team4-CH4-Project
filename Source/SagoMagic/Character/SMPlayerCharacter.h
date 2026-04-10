@@ -144,6 +144,8 @@ protected:
 public:
 	/** Adds inputs bindings */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
+	virtual void PawnClientRestart() override;
 
 protected:
 	void Move(const FInputActionValue& Value);
@@ -157,6 +159,12 @@ protected:
 	// B버튼 및 V버튼을 누르면 모드가 바뀌는 함수
 	void ToggleBuildMode();
 	void ToggleEditMode();
+	
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_SetBuildModeTag(bool bEnable);
+
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_SetEditModeTag(bool bEnable);
 	
 	// 건축모드나 편집 모드일시 좌클릭 누르면 실행될 함수
 	void OnBuildPlace();

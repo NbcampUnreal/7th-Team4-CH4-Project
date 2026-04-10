@@ -18,7 +18,7 @@ class SAGOMAGIC_API USMGameResultWidget : public UUserWidget
 public:
 	/** 결과 위젯 초기화  */
 	UFUNCTION(BlueprintCallable)
-	void ShowResult(bool bIsVictory);
+	void ShowResult(bool bIsVictory, float InReturnDelay);
 
 protected:
 	virtual void NativeDestruct() override;
@@ -43,22 +43,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Game Result|Settings")
 	FText DefeatText = FText::FromString(TEXT("방어 실패.."));
 	
-	/** 로비 복귀까지 대기 시간(초) */
-	UPROPERTY(EditDefaultsOnly, Category = "Game Result|Settings")
-	float ReturnToLobbyDelay = 5.0f;
 	/** 카운트다운 표시 포맷 */
 	UPROPERTY(EditDefaultsOnly, Category = "Game Result|Settings")
 	FText CountdownFormat = FText::FromString(TEXT("{0}초 후 로비로 이동합니다..."));
-	/** 로비 맵 이름 */
-	UPROPERTY(EditDefaultsOnly, Category = "Game Result|Settings")
-	FName LobbyLevelName = FName(TEXT("L_Lobby"));
 	
 private:
 	/** 1초마다 실행되어 텍스트를 갱신할 함수 */
 	UFUNCTION()
 	void UpdateCountdown();
-	/** 로비 이동 실행 */
-	void ReturnToLobby();
 
 	/** 남은 시간 */
 	float RemainingTime = 0.0f;

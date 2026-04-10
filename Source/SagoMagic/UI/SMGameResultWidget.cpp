@@ -1,6 +1,5 @@
 ﻿#include "SMGameResultWidget.h"
 #include "Components/TextBlock.h"
-#include "Kismet/GameplayStatics.h"
 
 void USMGameResultWidget::NativeDestruct()
 {
@@ -11,7 +10,7 @@ void USMGameResultWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-void USMGameResultWidget::ShowResult(bool bIsVictory)
+void USMGameResultWidget::ShowResult(bool bIsVictory, float InReturnDelay)
 {
 	if (UWorld* World = GetWorld())
 	{
@@ -28,13 +27,15 @@ void USMGameResultWidget::ShowResult(bool bIsVictory)
 	if (APlayerController* PC = GetOwningPlayer())
 	{
 		PC->SetShowMouseCursor(true);
-		PC->SetInputMode(FInputModeUIOnly());
+		FInputModeUIOnly InputMode;
+		InputMode.SetWidgetToFocus(TakeWidget());
+		PC->SetInputMode(InputMode);
 	}
 
 	if (bIsVictory) BP_OnVictory();
 	else BP_OnDefeat();
 	
-	RemainingTime = ReturnToLobbyDelay; // 카운트다운 초기화
+	RemainingTime = InReturnDelay; // 서버에서 전달받은 시간 셋팅
  	
 	UpdateCountdown();
 	
@@ -59,15 +60,7 @@ void USMGameResultWidget::UpdateCountdown()
 		{
 			World->GetTimerManager().ClearTimer(CountdownTimerHandle);
 		}
-		ReturnToLobby();
 		return;
 	}
 	RemainingTime -= 1.0f;
-}
-
-void USMGameResultWidget::ReturnToLobby()
-{
-	if (LobbyLevelName.IsNone()) return;
-	// 로비 레벨로 자동 이동
-	UGameplayStatics::OpenLevel(GetWorld(), LobbyLevelName, true);
 }

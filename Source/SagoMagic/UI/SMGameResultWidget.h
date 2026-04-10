@@ -4,7 +4,6 @@
 #include "Blueprint/UserWidget.h"
 #include "SMGameResultWidget.generated.h"
 
-class UButton;
 class UTextBlock;
 
 /**
@@ -19,21 +18,17 @@ class SAGOMAGIC_API USMGameResultWidget : public UUserWidget
 public:
 	/** 결과 위젯 초기화  */
 	UFUNCTION(BlueprintCallable)
-	void ShowResult(bool bIsVictory);
+	void ShowResult(bool bIsVictory, float InReturnDelay);
 
 protected:
-	virtual bool Initialize() override;
 	virtual void NativeDestruct() override;
 
 	/** 승리,패배 텍스트 */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> TextBlock_ResultTitle;
-	/** 다시 시작 버튼 (로비로 이동) */
+	/** 다시시작 카운트다운 텍스트 */
 	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UButton> Button_Restart;
-	/** 게임 종료 버튼 */
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UButton> Button_Exit;
+	TObjectPtr<UTextBlock> TextBlock_RestartTime;
 	
 	/** 승리 시 & 패배 시 블루프린트 이벤트 */
 	UFUNCTION(BlueprintImplementableEvent, Category = "Game Result")
@@ -47,13 +42,18 @@ protected:
 	/** 에디터에서 지정할 패배 텍스트 */
 	UPROPERTY(EditDefaultsOnly, Category = "Game Result|Settings")
 	FText DefeatText = FText::FromString(TEXT("방어 실패.."));
-	/** 재시작 시 이동할 로비 맵 이름 */
+	
+	/** 카운트다운 표시 포맷 */
 	UPROPERTY(EditDefaultsOnly, Category = "Game Result|Settings")
-	FName LobbyLevelName = FName(TEXT("L_Lobby"));
-
+	FText CountdownFormat = FText::FromString(TEXT("{0}초 후 로비로 이동합니다..."));
+	
 private:
+	/** 1초마다 실행되어 텍스트를 갱신할 함수 */
 	UFUNCTION()
-	void OnRestartClicked();
-	UFUNCTION()
-	void OnQuitClicked();
+	void UpdateCountdown();
+
+	/** 남은 시간 */
+	float RemainingTime = 0.0f;
+	/** 카운트다운용 타이머 핸들 */
+	FTimerHandle CountdownTimerHandle;
 };

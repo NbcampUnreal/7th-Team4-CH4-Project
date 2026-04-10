@@ -117,9 +117,24 @@ void ASMGameMode::BroadcastGameResult(bool bIsVictory)
 	{
 		if (IsValid(PC))
 		{
-			PC->ClientRPC_ShowGameResult(bIsVictory);
+			PC->ClientRPC_ShowGameResult(bIsVictory, ReturnToLobbyDelay);
 		}
 	}
+	// 서버에서 로비 이동 타이머 가동
+	GetWorldTimerManager().SetTimer(
+		ReturnToLobbyTimerHandle,
+		this,
+		&ThisClass::ServerTravelToLobby,
+		ReturnToLobbyDelay,
+		false
+	);
+}
+
+void ASMGameMode::ServerTravelToLobby()
+{
+	SM_LOG(this, LogSM, Log, TEXT("[GameMode] 시간이 초과되어 모든 플레이어를 로비로 이동시킵니다."));
+	
+	GetWorld()->ServerTravel(LobbyMapName);
 }
 
 void ASMGameMode::OnBaseCampDestroyed()
@@ -186,8 +201,6 @@ void ASMGameMode::RespawnPlayer(TWeakObjectPtr<ASMPlayerController> InPlayerCont
     {
         SM_LOG(this, LogSM, Error, TEXT("[GameMode] 맵에 PlayerStart가 아예 존재하지 않아 부활에 실패했습니다!"));
     }
-	RestartPlayerAtPlayerStart(PC, SpawnPoint);
-
 	InPlayerController->ClientRPC_HideDeathUI();
 	
 	// 부활시 타이머 정리

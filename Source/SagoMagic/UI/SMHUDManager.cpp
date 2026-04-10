@@ -70,12 +70,12 @@ void USMHUDManager::RefreshHUD(UAbilitySystemComponent* InPlayerASC)
 	InitializeHUD(InPlayerASC);
 }
 
-void USMHUDManager::ShowGameResult(bool bIsVictory)
+void USMHUDManager::ShowGameResult(bool bIsVictory, float InReturnDelay)
 {
 	if (WBP_GameResult)
 	{
 		WBP_GameResult->SetVisibility(ESlateVisibility::Visible);
-		WBP_GameResult->ShowResult(bIsVictory);
+		WBP_GameResult->ShowResult(bIsVictory, InReturnDelay);
 	}
 }
 

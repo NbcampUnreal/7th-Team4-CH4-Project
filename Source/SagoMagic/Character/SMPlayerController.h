@@ -89,7 +89,7 @@ public:
 	
 	/** 게임 결과 UI 표시용 */
 	UFUNCTION(Client, Reliable)
-	void ClientRPC_ShowGameResult(bool bIsVictory);
+	void ClientRPC_ShowGameResult(bool bIsVictory, float InReturnDelay);
 	
 private:
 	/** 컨트롤러 입력 매핑 컨텍스트 적용 */

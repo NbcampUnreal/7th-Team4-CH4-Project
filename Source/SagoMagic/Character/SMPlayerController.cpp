@@ -148,7 +148,7 @@ void ASMPlayerController::LoginNotify_Implementation()
 	
 }
 
-void ASMPlayerController::ClientRPC_ShowGameResult_Implementation(bool bIsVictory)
+void ASMPlayerController::ClientRPC_ShowGameResult_Implementation(bool bIsVictory, float InReturnDelay)
 {
 	SM_LOG(this, LogSM, Log, TEXT("게임 결과 UI - %s"), bIsVictory ? TEXT("승리") : TEXT("패배"));
 
@@ -156,7 +156,7 @@ void ASMPlayerController::ClientRPC_ShowGameResult_Implementation(bool bIsVictor
 	{
 		if (USMHUDManager* HUDMgr = HUD->GetHUDManager())
 		{
-			HUDMgr->ShowGameResult(bIsVictory);
+			HUDMgr->ShowGameResult(bIsVictory, InReturnDelay);
 		}
 	}
 }

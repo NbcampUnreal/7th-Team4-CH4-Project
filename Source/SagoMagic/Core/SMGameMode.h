@@ -73,4 +73,17 @@ private:
 	// 관전 모드 대기 시간과 리스폰 타이머를 플레이어 별로 저장하기 위한 Map
 	TMap<TObjectPtr<ASMPlayerController>, FTimerHandle> SpectatorTimerMap;
 	TMap<TObjectPtr<ASMPlayerController>, FTimerHandle> RespawnTimerMap;
+	
+	/** 결과창을 보여준 후 로비로 강제 이동시킬 대기 시간 */
+	UPROPERTY(EditDefaultsOnly, Category = "Game Result")
+	float ReturnToLobbyDelay = 10.0f;
+	/** 다 같이 이동할 로비 맵 이름 */
+	UPROPERTY(EditDefaultsOnly, Category = "Game Result")
+	FString LobbyMapName = TEXT("L_Lobby");
+
+	/** 로비 이동용 타이머 핸들 */
+	FTimerHandle ReturnToLobbyTimerHandle;
+
+	/** 실제로 로비로 서버 트래블을 실행하는 함수 */
+	void ServerTravelToLobby();
 };

@@ -73,8 +73,6 @@ void USMCombatState::Tick(float DeltaTime)
 
         if (CachedGameState)
         {
-            SM_LOG(this, LogSM, Log, TEXT("[Combat] WaveIndex=%d TimeRemaining=%.1f 서버→GameState 세팅"),
-            StateMachine->GetCurrentWaveIndex(), Duration - Elapsed);
             CachedGameState->SetCombatInfo(
                 StateMachine->GetCurrentWaveIndex(),
                 FMath::Max(0.f, Duration - Elapsed)

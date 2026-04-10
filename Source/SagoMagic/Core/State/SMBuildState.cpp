@@ -36,8 +36,6 @@ void USMBuildState::Tick(float DeltaTime)
         SyncElapsed = 0.f;
         if (CachedGameState)
         {
-            SM_LOG(this, LogSM, Log, TEXT("[Build] WaveIndex=%d TimeRemaining=%.1f 서버→GameState 세팅"),
-            StateMachine->GetCurrentWaveIndex(), Duration-Elapsed);
             CachedGameState->SetBuildTimeRemaining(CurrentWaveIndex,
                 FMath::Max(0.f,Duration-Elapsed));
         }

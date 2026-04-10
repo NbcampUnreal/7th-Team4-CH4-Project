@@ -26,7 +26,9 @@ public:
 	virtual void BeginPlay() override;
 	/** 매 프레임 StateMachine에 Tick 위임  */
 	virtual void Tick(float DeltaSeconds) override;
-
+	
+	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
+	
 	/** 플레이어 사망시 호출되는 함수 */
 	void OnPlayerDead(ASMPlayerController* InPlayerController);
 	

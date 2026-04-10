@@ -49,19 +49,34 @@ void ASMGameState::MulticastPreloadClientAssets_Implementation(const TArray<FPri
 {
     // 서버는 WaveManagerSubsystem에서 이미 처리
     if (HasAuthority()) return;
+
     UE_LOG(LogTemp, Log, TEXT("[GameState] 클라이언트 Multicast 수신 - 로드 시작"));
+
     USMAsyncDataManager* AM = USMAsyncDataManager::Get(this);
-    if (!AM) return;
+    if (!AM)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[GameState] AsyncDataManager nullptr!"));
+        return;
+    }
     
     AM->LoadAssetsByIDWithBundles(AssetIds, TArray<FName>{"Client"},
         FOnAssetLoadComplete::CreateLambda([this]()
         {
-            UE_LOG(LogTemp, Log, TEXT("[GameState] 클라이언트 DataAsset 로드 완료"));
-            // PlayerController를 통해 Server RPC 호출
-            if (ASMPlayerController* PC = Cast<ASMPlayerController>(GetWorld()->GetFirstPlayerController()))
+            UE_LOG(LogTemp, Log, TEXT("[GameState] 클라이언트 DataAsset 로드 완료 - PC 탐색"));
+
+            // GetFirstPlayerController() 대신 로컬 컨트롤러 직접 탐색
+            for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
             {
-                PC->ServerNotifyClientLoadComplete();
+                ASMPlayerController* PC = Cast<ASMPlayerController>(It->Get());
+                if (PC && PC->IsLocalController())
+                {
+                    UE_LOG(LogTemp, Log, TEXT("[GameState] ServerNotifyClientLoadComplete 호출"));
+                    PC->ServerNotifyClientLoadComplete();
+                    return;
+                }
             }
+
+            UE_LOG(LogTemp, Error, TEXT("[GameState] 로컬 ASMPlayerController를 찾지 못함!"));
         })
     );
 }

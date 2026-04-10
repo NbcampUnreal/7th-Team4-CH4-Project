@@ -24,9 +24,6 @@ protected:
 	                        const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility,
 	                        bool bWasCancelled) override;
 	
-	/** 히트된 대상에 데미지 적용 */
-	virtual void ApplyDamageToActor(AActor* HitActor);
-	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Debug")
 	bool bShowDebugTrace = true;
 	

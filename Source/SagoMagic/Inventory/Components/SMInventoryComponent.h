@@ -153,9 +153,13 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Inventory|Query")
 	bool CanDropItem(const FGuid& InItemInstanceId) const;
 
-	/** 스킬 요약 데이터 조회 요청 */
+	/** 현재 활성 퀵슬롯의 스킬 요약 데이터 조회 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory|Query")
-	bool GetSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const;
+	bool GetActiveSkillSummary(FSMCompiledSkillSummary& OutSummary) const;
+
+	/** 현재 활성 퀵슬롯의 스킬 실행 태그 조회 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|Query")
+	FGameplayTag GetActiveSkillTag() const;
 
 	/** 컨테이너 데이터 조회 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory|Query")

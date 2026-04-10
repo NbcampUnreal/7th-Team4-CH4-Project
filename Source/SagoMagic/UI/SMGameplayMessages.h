@@ -71,6 +71,10 @@ struct FBaseCampMsg
     EBaseCampEvent EventType = EBaseCampEvent::Attacked;
     UPROPERTY(BlueprintReadOnly)
     float BaseCampHP = 1.0f;
+    UPROPERTY(BlueprintReadOnly)
+    float CurrentHP = 100.0f;
+    UPROPERTY(BlueprintReadOnly)
+    float MaxHP = 100.0f;
 };
 
 /**

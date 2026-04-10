@@ -202,6 +202,9 @@ public:
 	/** 퀵슬롯 엔트리 포인터 조회 */
 	const FSMQuickSlotEntry* FindQuickSlotEntry(int32 InSlotIndex) const;
 
+	/** 퀵슬롯 컨테이너 ID 기준 슬롯 인덱스 조회 */
+	bool GetQuickSlotIndexByContainerId(const FGuid& InContainerId, int32& OutSlotIndex) const;
+
 	/** 아이템 정의 로드 */
 	const USMItemDefinition* ResolveItemDefinition(const FSMItemInstanceData& InItemData) const;
 

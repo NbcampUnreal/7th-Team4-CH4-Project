@@ -10,6 +10,7 @@
 class USMInventoryComponent;
 class UBorder;
 class UCanvasPanel;
+class UDragDropOperation;
 
 
 /**
@@ -40,6 +41,16 @@ public:
 
 	/** NativeDestruct 오버라이드 */
 	virtual void NativeDestruct() override;
+
+	virtual FReply NativeOnPreviewMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
+	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
+	                                  UDragDropOperation*& OutOperation) override;
+	virtual bool NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
+	                              UDragDropOperation* InOperation) override;
+	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
+	                          UDragDropOperation* InOperation) override;
 
 	/** 인벤토리 컴포넌트 Getter */
 	USMInventoryComponent* GetInventoryComponent() const
@@ -101,6 +112,16 @@ protected:
 	/** 퀵슬롯 슬롯 프리뷰 재구성 */
 	void RebuildSlotPreviewVisuals();
 
+	/** 화면 좌표 기준 슬롯 인덱스 계산 */
+	bool FindSlotIndexAtScreenPosition(const FVector2D& InScreenPosition, int32& OutSlotIndex) const;
+
+	/** 화면 좌표 기준 슬롯 아이템 조회 */
+	bool FindSlotItemAtScreenPosition(const FVector2D& InScreenPosition, int32& OutSlotIndex, FGuid& OutSkillInstanceId) const;
+
+	/** 퀵슬롯 스킬 드래그 드롭 오퍼레이션 생성 */
+	UDragDropOperation* CreateDragDropOperationForQuickSlotSkill(int32 InSlotIndex, const FGeometry& InGeometry,
+	                                                             const FPointerEvent& InMouseEvent);
+
 	/** 퀵슬롯 갱신 메시지 리스너 등록 */
 	void RegisterQuickSlotMessageListener();
 
@@ -152,6 +173,14 @@ protected:
 	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Quick Slot Bar Widget")
 	TObjectPtr<UBorder> Slot2_ActiveOutline;
 
+	/** 첫 번째 슬롯 기본 배경 */
+	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Quick Slot Bar Widget")
+	TObjectPtr<UBorder> Slot1_BaseBackground;
+
+	/** 두 번째 슬롯 기본 배경 */
+	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Quick Slot Bar Widget")
+	TObjectPtr<UBorder> Slot2_BaseBackground;
+
 	/** 슬롯 내부 프리뷰 가용 크기 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Quick Slot Bar Widget")
 	FVector2D PreviewAreaSize = FVector2D(72.0f, 72.0f);
@@ -162,8 +191,9 @@ protected:
 
 	/** 프리뷰 셀 최대 크기 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Quick Slot Bar Widget")
-	float MaxPreviewCellSize = 24.0f;
+	float MaxPreviewCellSize = 48.0f;
 
 private:
 	FGameplayMessageListenerHandle QuickSlotUpdatedListenerHandle;
+	int32 PendingDragSlotIndex = INDEX_NONE;
 };

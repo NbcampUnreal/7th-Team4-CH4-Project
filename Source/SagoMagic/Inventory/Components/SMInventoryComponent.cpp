@@ -1426,6 +1426,29 @@ const FSMQuickSlotEntry* USMInventoryComponent::FindQuickSlotEntry(int32 InSlotI
 	return nullptr;
 }
 
+bool USMInventoryComponent::GetQuickSlotIndexByContainerId(const FGuid& InContainerId, int32& OutSlotIndex) const
+{
+	OutSlotIndex = INDEX_NONE;
+
+	if (InContainerId.IsValid() == false)
+	{
+		return false;
+	}
+
+	for (const FSMQuickSlotEntry& Entry : QuickSlots.Slots)
+	{
+		if (Entry.GetContainerId() != InContainerId)
+		{
+			continue;
+		}
+
+		OutSlotIndex = Entry.GetSlotIndex();
+		return true;
+	}
+
+	return false;
+}
+
 const USMItemDefinition* USMInventoryComponent::ResolveItemDefinition(const FSMItemInstanceData& InItemData) const
 {
 	if (InItemData.Definition.IsNull())

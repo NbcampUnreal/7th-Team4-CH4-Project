@@ -37,8 +37,6 @@ struct FWaveMsg
     UPROPERTY(BlueprintReadOnly)
     int32 WaveIndex = 0;
     UPROPERTY(BlueprintReadOnly)
-    int32 EnemyRemaining = 0;
-    UPROPERTY(BlueprintReadOnly)
     float TimeRemaining = 0.0f;
 };
 

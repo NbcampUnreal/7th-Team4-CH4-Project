@@ -6,9 +6,7 @@
 void USMResultState::Enter()
 {
     Super::Enter();
-
-    //승리 조건 : WaveIndex가 Max에 도달한 상태로 Enter
-    //패배 조건 : NotifyDefeat()를 통해 강제 진입
+    
     bool bIsVictory = StateMachine->GetPendingVictory();
 
     UE_LOG(LogTemp, Log, TEXT("[ResultState] Enter - %s"),

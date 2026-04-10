@@ -38,8 +38,14 @@ void ASMGameState::SetCurrentState(EGameState NewState)
 
 void ASMGameState::SetAssetsToLoad(const TArray<FPrimaryAssetId>& InAssets)
 {
+    if (!HasAuthority())
+    {
+        ensureMsgf(false, TEXT("ASMGameState::SetAssetsToLoad must be called on the server only."));
+        return;
+    }
     AssetsToLoad = InAssets;
     AssetsLoadSerial++;
+    ForceNetUpdate();
 }
 
 void ASMGameState::SetBuildTimeRemaining(int32 WaveIndex, float TimeRemaining)
@@ -124,7 +130,6 @@ void ASMGameState::OnRep_AssetsToLoad()
                     PC->ServerNotifyClientLoadComplete();
                     return;
                 }
-                UE_LOG(LogTemp, Error, TEXT("[GameState] 로컬 PC를 찾지 못함!"));
             }
             
         })

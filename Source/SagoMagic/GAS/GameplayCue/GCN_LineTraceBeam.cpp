@@ -2,11 +2,13 @@
 
 
 #include "GAS/GameplayCue/GCN_LineTraceBeam.h"
-
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
 #include "GameFramework/Character.h"
-#include "GameplayTags/Character/SMSkillTag.h"
+#include "GameplayTags/GameFlow/SMGameFlowTag.h"
+
 
 AGCN_LineTraceBeam::AGCN_LineTraceBeam()
 {
@@ -37,12 +39,12 @@ bool AGCN_LineTraceBeam::WhileActive_Implementation(AActor* MyTarget, const FGam
 bool AGCN_LineTraceBeam::OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
 	SetActorTickEnabled(false);
-	
+
 	if (IsValid(BeamNiagaraComponent) == true)
 	{
 		BeamNiagaraComponent->Deactivate();
 	}
-	
+
 	return Super::OnRemove_Implementation(MyTarget, Parameters);
 }
 
@@ -54,7 +56,6 @@ void AGCN_LineTraceBeam::Tick(float DeltaTime)
 
 void AGCN_LineTraceBeam::InitializeBeam(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
-	//UE_LOG(LogTemp,Warning,TEXT("BeamNiagaraComponent::InitializeBeam()"));
 	if (IsValid(BeamNiagaraComponent) && BeamNiagaraComponent->IsActive())
 	{
 		return;
@@ -74,7 +75,7 @@ void AGCN_LineTraceBeam::InitializeBeam(AActor* MyTarget, const FGameplayCuePara
 		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 		AttachSocketName
 	);
-	
+
 	BeamNiagaraComponent->Activate(true);
 	SetActorTickEnabled(true);
 }
@@ -82,31 +83,42 @@ void AGCN_LineTraceBeam::InitializeBeam(AActor* MyTarget, const FGameplayCuePara
 void AGCN_LineTraceBeam::UpdateBeam()
 {
 	if (IsValid(BeamNiagaraComponent) == false || TargetActor.IsValid() == false) return;
-	
+
 	ACharacter* Character = Cast<ACharacter>(TargetActor.Get());
 	if (IsValid(Character) == false) return;
-	
-	AController* Controller = Character->GetController();
-	if (IsValid(Controller) == false) return;
-	
+
 	const FVector Origin = Character->GetActorLocation();
-	const FVector AimDirection = Controller->GetControlRotation().Vector();
+	const FVector AimDirection = Character->GetBaseAimRotation().Vector();
 	const FVector TraceEnd = Origin + AimDirection * BeamRange;
-	
-	FHitResult HitResult;
+
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(TargetActor.Get());
-	
-	FVector BeamEndPoint;
-	if (GetWorld()->LineTraceSingleByChannel(HitResult,Origin,TraceEnd,ECC_Pawn,Params))
+
+	//LineTraceMulti로 아군 관통 처리
+	TArray<FHitResult> HitResults;
+	GetWorld()->LineTraceMultiByChannel(HitResults, Origin, TraceEnd, ECC_Pawn, Params);
+
+	FVector BeamEndPoint = TraceEnd;
+	for (const FHitResult& Hit : HitResults)
 	{
-		BeamEndPoint = HitResult.ImpactPoint;
+		AActor* HitActor = Hit.GetActor();
+		if (IsValid(HitActor) == false) continue;
+
+		if (HasAnyTeamTag(HitActor) == true) continue;
+
+		BeamEndPoint = Hit.ImpactPoint;
+		break;
 	}
-	else
-	{
-		BeamEndPoint = TraceEnd;
-	}
-	
 	//Niagara USER파라미터 "BeamEnd" 갱신
-	BeamNiagaraComponent->SetVariableVec3(TEXT("BeamEnd"),BeamEndPoint);
+	BeamNiagaraComponent->SetVariableVec3(TEXT("BeamEnd"), BeamEndPoint);
+}
+
+bool AGCN_LineTraceBeam::HasAnyTeamTag(AActor* Actor) const
+{
+	if (IsValid(Actor) == false) return false;
+
+	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
+	if (IsValid(ASC) == false) return false;
+
+	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Team);
 }

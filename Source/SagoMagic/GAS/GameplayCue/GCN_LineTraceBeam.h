@@ -45,6 +45,7 @@ private:
 
 	// OnActive/ WhileActive 공유 초기화 로직
 	void InitializeBeam(AActor* MyTarget, const FGameplayCueParameters& Parameters);
-	
 	void UpdateBeam();
+
+	bool HasAnyTeamTag(AActor* Actor) const;
 };

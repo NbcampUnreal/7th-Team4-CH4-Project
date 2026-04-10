@@ -10,4 +10,7 @@ namespace SMUITag
     *예시
     *UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Reload_Ammo);
     */
+    
+    /** 베이스캠프 UI 이벤트 태그 선언 */
+    UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_BaseCamp);
 }

@@ -24,7 +24,7 @@ void UGA_ApplyInstantDamage::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 	}
 
 	// 1. DT에서 스킬 수치 로드
-	if (LoadSkillStats() == false)
+	if (LoadActiveSkillSummary(ActorInfo) == false)
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;

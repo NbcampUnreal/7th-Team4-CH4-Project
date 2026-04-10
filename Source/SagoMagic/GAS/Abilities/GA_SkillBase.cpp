@@ -3,6 +3,7 @@
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameFramework/Character.h"
 #include "Data/SMSkillData.h"
+#include "Inventory/Components/SMInventoryComponent.h"
 #include "GameplayEffectTypes.h"
 
 
@@ -37,8 +38,9 @@ void UGA_SkillBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		return;
 	}
 
-	// DT에서 스킬 수치 로드
-	if (!LoadSkillStats())
+	// 기존 - LoadSkillStats에서 DT 읽기
+	// 변경 - 인벤에서 미리 계산된 최종값 받아오기
+	if (!LoadActiveSkillSummary(ActorInfo))
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
@@ -139,6 +141,38 @@ FGameplayEffectSpecHandle UGA_SkillBase::MakeDamageSpec(const FGameplayAbilityAc
 	return SpecHandle;
 }
 
+
+bool UGA_SkillBase::LoadActiveSkillSummary(const FGameplayAbilityActorInfo* ActorInfo)
+{
+	if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
+	{
+		return false;
+	}
+
+	const APawn* Pawn = Cast<APawn>(ActorInfo->AvatarActor.Get());
+	const APlayerState* PS = Pawn ? Pawn->GetPlayerState() : nullptr;
+	const USMInventoryComponent* InventoryComp =
+		PS ? PS->FindComponentByClass<USMInventoryComponent>() : nullptr;
+
+	if (!InventoryComp)
+	{
+		return false;
+	}
+
+	FSMCompiledSkillSummary ActiveSummary;
+	if (!InventoryComp->GetActiveSkillSummary(ActiveSummary))
+	{
+		return false;
+	}
+
+	CachedSummary = ActiveSummary;
+	BaseDamage = CachedSummary.GetFinalDamage();
+	RangeCm = CachedSummary.GetFinalRangeOrArea();
+	CooldownSeconds = CachedSummary.GetFinalCooldown();
+	return true;
+}
+
+/*
 bool UGA_SkillBase::LoadSkillStats()
 {
 	const FSMSkillData* Row = SkillStatRow.GetRow<FSMSkillData>(TEXT("LoadSkillStats"));
@@ -149,6 +183,7 @@ bool UGA_SkillBase::LoadSkillStats()
 	CooldownSeconds = Row->Cooldown;
 	return true;
 }
+*/
 
 void UGA_SkillBase::ExtractAimData(const FGameplayAbilityActorInfo* ActorInfo)
 {

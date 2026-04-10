@@ -5,6 +5,7 @@
 #include "GameplayEffectTypes.h"
 #include "Abilities/GameplayAbility.h"
 #include "Engine/DataTable.h"
+#include "Inventory/Core/SMSkillRuntimeTypes.h"
 #include "GA_SkillBase.generated.h"
 
 class UGameplayEffect;
@@ -64,14 +65,20 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
 
-	// ActivateAbility 시 DT에서 읽어서 채워지는 수치
+	// ActivateAbility시 채워지는 수치
 	float BaseDamage = 0.f;
 	float RangeCm = 0.f;
 	float CooldownSeconds = 0.f;
+	
+	//인벤토리에서 받아온 최종 요약 캐시
+	FSMCompiledSkillSummary CachedSummary;
+	
+	//인벤토리에서 최종 계산값 로드
+	bool LoadActiveSkillSummary(const FGameplayAbilityActorInfo* ActorInfo);
 
 	FVector CurrentAimOrigin = FVector::ZeroVector;
 	FVector CurrentAimDirection = FVector::ForwardVector;
 	
 	// DT에서 스킬 수치 로드 ActivateAbility 시작 시 호출
-	bool LoadSkillStats();
+	//bool LoadSkillStats();
 };

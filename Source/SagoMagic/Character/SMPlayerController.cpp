@@ -354,6 +354,44 @@ void ASMPlayerController::ServerRPCSetActiveQuickSlot_Implementation(int32 InSlo
 	InventoryComponent->SetActiveQuickSlot(InSlotIndex);
 }
 
+void ASMPlayerController::ServerRPCEquipSkillToQuickSlot_Implementation(const FGuid& InSkillInstanceId, int32 InSlotIndex)
+{
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	InventoryComponent->EquipSkillToQuickSlot(InSkillInstanceId, InSlotIndex);
+}
+
+void ASMPlayerController::ServerRPCUnequipSkillFromQuickSlotToMainInventory_Implementation(
+	int32 InSlotIndex,
+	int32 InGridX,
+	int32 InGridY,
+	ESMGridRotation InRotation)
+{
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	InventoryComponent->UnequipSkillFromQuickSlotToMainInventory(InSlotIndex, InGridX, InGridY, InRotation);
+}
+
 void ASMPlayerController::ToggleInventory()
 {
 	if (IsLocalController() == false)

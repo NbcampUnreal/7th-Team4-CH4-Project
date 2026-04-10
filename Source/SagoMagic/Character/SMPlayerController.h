@@ -80,6 +80,15 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerRPCSetActiveQuickSlot(int32 InSlotIndex);
 
+	/** ServerRPC - 스킬 퀵슬롯 장착 요청 */
+	UFUNCTION(Server, Reliable)
+	void ServerRPCEquipSkillToQuickSlot(const FGuid& InSkillInstanceId, int32 InSlotIndex);
+
+	/** ServerRPC - 퀵슬롯 스킬 지정 위치 해제 요청 */
+	UFUNCTION(Server, Reliable)
+	void ServerRPCUnequipSkillFromQuickSlotToMainInventory(int32 InSlotIndex, int32 InGridX, int32 InGridY,
+	                                                       ESMGridRotation InRotation);
+
 public:
 	/** 로컬 플레이어 인벤토리 UI 토글 */
 	UFUNCTION(BlueprintCallable, Category="UI|Inventory")

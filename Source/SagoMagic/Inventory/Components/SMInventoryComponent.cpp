@@ -112,6 +112,27 @@ FGuid USMInventoryComponent::AddItemFromDefinition(const TSoftObjectPtr<USMItemD
 	return AddItemFromDropPayload(DropPayload);
 }
 
+void USMInventoryComponent::ResetInventory()
+{
+	if (GetOwner() == nullptr || GetOwner()->HasAuthority() == false)
+	{
+		return;
+	}
+
+	MainInventory = FSMGridContainerState();
+	QuickSlots = FSMQuickSlotSetState();
+	ItemEntries.Reset();
+	SkillEntries.Reset();
+	SkillInternalContainers.Reset();
+
+	InitializeMainInventory();
+	InitializeQuickSlots();
+
+	PublishInventoryUpdatedMessage(MainInventory.ContainerId);
+	PublishQuickSlotUpdatedMessage(0);
+	PublishQuickSlotUpdatedMessage(1);
+}
+
 FGuid USMInventoryComponent::AddItemFromDropPayload(const FSMItemDropPayload& InDropPayload)
 {
 	if (GetOwner() == nullptr)

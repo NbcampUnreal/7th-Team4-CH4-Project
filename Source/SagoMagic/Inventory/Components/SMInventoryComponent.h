@@ -80,6 +80,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Inventory")
 	FGuid AddItemFromDefinition(const TSoftObjectPtr<USMItemDefinition>& InItemDefinition);
 
+	/** 인벤토리 전체 초기화 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory")
+	void ResetInventory();
+
 	/** 아이템 드랍 페이로드 기반 아이템 추가 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory")
 	FGuid AddItemFromDropPayload(const FSMItemDropPayload& InDropPayload);

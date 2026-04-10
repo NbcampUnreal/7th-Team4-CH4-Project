@@ -337,6 +337,23 @@ void ASMPlayerController::ServerRPCDetachEmbeddedItem_Implementation(const FGuid
 	InventoryComponent->DetachEmbeddedItem(InItemInstanceId);
 }
 
+void ASMPlayerController::ServerRPCSetActiveQuickSlot_Implementation(int32 InSlotIndex)
+{
+	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
+	if (OwningPlayerState == nullptr)
+	{
+		return;
+	}
+
+	USMInventoryComponent* InventoryComponent = OwningPlayerState->FindComponentByClass<USMInventoryComponent>();
+	if (InventoryComponent == nullptr)
+	{
+		return;
+	}
+
+	InventoryComponent->SetActiveQuickSlot(InSlotIndex);
+}
+
 void ASMPlayerController::ToggleInventory()
 {
 	if (IsLocalController() == false)

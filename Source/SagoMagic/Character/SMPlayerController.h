@@ -76,6 +76,10 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerRPCDetachEmbeddedItem(const FGuid& InItemInstanceId);
 
+	/** ServerRPC - 활성 퀵슬롯 변경 요청 */
+	UFUNCTION(Server, Reliable)
+	void ServerRPCSetActiveQuickSlot(int32 InSlotIndex);
+
 public:
 	/** 로컬 플레이어 인벤토리 UI 토글 */
 	UFUNCTION(BlueprintCallable, Category="UI|Inventory")

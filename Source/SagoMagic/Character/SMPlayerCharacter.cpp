@@ -149,15 +149,10 @@ void ASMPlayerCharacter::UseQuickSlot(const FInputActionValue& InValue)
 	
 	const int32 SlotIndex = FMath::RoundToInt(InValue.Get<float>() - 1);
 	
-	
-	if (ASMPlayerState* PS = GetPlayerState<ASMPlayerState>())
+	if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 	{
-		if (USMInventoryComponent* InventoryComp = PS->GetInventoryComponent())
-		{
-			InventoryComp->SetActiveQuickSlot(SlotIndex);
-			
-			SM_LOG(this, LogSM, Log, TEXT("퀵슬롯 %d번 장착"), SlotIndex);
-		}
+		PC->ServerRPCSetActiveQuickSlot(SlotIndex);
+		SM_LOG(this, LogSM, Log, TEXT("퀵슬롯 %d번 장착"), SlotIndex);
 	}
 }
 

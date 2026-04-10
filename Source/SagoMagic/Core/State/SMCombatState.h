@@ -39,9 +39,6 @@ private:
     /** 1초마다 복제시간 */
     float SyncElapsed = 0.f;
     
-    /** 총 웨이브 수 - StateMachine의 MaxWaveCount와 동일하게 유지 */
-    static constexpr int32 MaxWaveCount = 3;
-    
     UPROPERTY()
     TObjectPtr<ASMGameState> CachedGameState = nullptr;
     

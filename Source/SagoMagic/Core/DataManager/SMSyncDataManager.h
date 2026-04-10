@@ -41,7 +41,9 @@ public:
 	/** Skill 데이터 조회 - SkillTag 키 */
 	UFUNCTION(BlueprintCallable, Category = "Data")
 	FSMSkillData GetSkillData(FGameplayTag SkillTag) const;
-
+	
+	/**WaveDataTable의 전체 Row 수 반환 */
+	int32 GetWaveCount() const {return WaveCache.Num();}
 public:
  	template<typename RowType, typename KeyType>
  	static void LoadAndCacheTable(const TCHAR* Path, TMap<KeyType, RowType>& OutCache,

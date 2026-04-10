@@ -23,10 +23,4 @@ public:
     virtual void Exit() override;
 
     virtual EGameState GetStateType() const override {return EGameState::Result;}
-
-    /**
-     *패배 경로 진입점
-     *베이스캠프 파괴 시 외부(베이스캠프 Actor 등)에서 호출
-     */
-    void NotifyDefeat();
 };

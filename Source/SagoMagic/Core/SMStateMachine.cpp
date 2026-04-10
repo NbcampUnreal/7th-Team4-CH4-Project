@@ -1,6 +1,7 @@
 ﻿#include "SMStateMachine.h"
 #include "SMGameMode.h"
 #include "SMGameState.h"
+#include "DataManager/SMSyncDataManager.h"
 #include "State/SMBaseState.h"
 #include "State/SMBuildState.h"
 #include "State/SMCombatState.h"
@@ -9,6 +10,13 @@
 void USMStateMachine::Initialize(ASMGameMode* InOwner)
 {
     Owner = InOwner;
+    
+    if (USMSyncDataManager* DM = USMSyncDataManager::Get(InOwner->GetWorld()))
+    {
+        MaxWaveCount = DM->GetWaveCount();
+        UE_LOG(LogTemp, Log, TEXT("[StateMachine] MaxWaveCount: %d"), MaxWaveCount);
+    }
+    
     RegisterStatus();
     //첫 번째 시작 부분
     ApplyState(EGameState::Build);
@@ -22,6 +30,9 @@ void USMStateMachine::Tick(float DeltaTime)
 
 void USMStateMachine::ChangeState(EGameState NextState)
 {
+    //이미 해당 State면 무시 (BaseCamp 파괴 + Wave클리어 동시 발동 방어)
+    if (CurrentStateType == NextState) return;
+    
     if (CurrentStateType == EGameState::Combat && NextState == EGameState::Build)
     {
         CurrentWaveIndex++;

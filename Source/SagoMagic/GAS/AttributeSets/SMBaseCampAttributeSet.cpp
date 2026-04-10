@@ -1,6 +1,7 @@
 #include "SMBaseCampAttributeSet.h"
 
 #include "GameplayEffectExtension.h"
+#include "Core/SMGameMode.h"
 #include "Net/UnrealNetwork.h"
 USMBaseCampAttributeSet::USMBaseCampAttributeSet()
 {
@@ -36,7 +37,17 @@ void USMBaseCampAttributeSet::PostGameplayEffectExecute(const struct FGameplayEf
 		SetHealth(NewHealth);
 		if (NewHealth <=0)
 		{
-			//TODO 은서 : BaseCamp 죽었을 때 처리
+			UE_LOG(LogTemp, Log, TEXT("[BaseCampAttributeSet] HP 0 - 패배 처리"));
+			if (AActor* OwnerActor = Cast<AActor>(GetOwningActor()))
+			{
+				if (UWorld* World = OwnerActor->GetWorld())
+				{
+					if (ASMGameMode* GM = World->GetAuthGameMode<ASMGameMode>())
+					{
+						GM->OnBaseCampDestroyed();
+					}
+				}
+			}
 		}
 	}
 }

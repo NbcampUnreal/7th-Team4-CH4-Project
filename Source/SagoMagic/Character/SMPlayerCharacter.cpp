@@ -173,38 +173,31 @@ void ASMPlayerCharacter::ToggleBuildMode()
 	bool bIsBuildMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place);
 	bool bIsEditMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit);
 	
-	// 편집 모드에서 B입력 시 건축 모드 종료
+	// 건축 모드에서 B입력 시 건축 모드 종료
+	if (bIsBuildMode)
+	{
+		Subsystem->RemoveMappingContext(BuildPlaceIMC);
+		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
+		ServerRPC_SetEditModeTag(false);
+		
+		SM_LOG(this, LogSM, Log, TEXT("건축 모드 종료"));
+		return;
+	}
+	
+	// 편집모드라면 편집모드 종료
 	if (bIsEditMode)
 	{
 		Subsystem->RemoveMappingContext(BuildEditIMC);
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
-		ServerRPC_SetEditModeTag(false);
-		
-		SM_LOG(this, LogSM, Log, TEXT("건축(편집) 모드 종료"));
-		return;
+		ServerRPC_SetBuildModeTag(false);
 	}
 	
-	// 일반 상태에서 B입력 시 건축 모드 ON
-	if (!bIsBuildMode)
-	{
-		Subsystem->AddMappingContext(BuildPlaceIMC, 1);
-		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
-		ServerRPC_SetBuildModeTag(true);
-		
-		SM_LOG(this, LogSM, Log, TEXT("건축 모드 ON"));
-		
-		// TODO: 나중에 BuildComponent 구현 후 건축모드 활성화 로직 추가
-	}
-	else
-	{
-		Subsystem->RemoveMappingContext(BuildPlaceIMC);
-		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
-		ServerRPC_SetBuildModeTag(false);
-		
-		SM_LOG(this, LogSM, Log, TEXT("건축 모드 OFF"));
-		
-		// TODO: 나중에 BuildComponent 구현 후 건축모드 아래 비활성화 로직 추가
-	}
+	// 건축모드 켜기
+	Subsystem->AddMappingContext(BuildPlaceIMC, 1);
+	SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
+	ServerRPC_SetBuildModeTag(true);
+	
+	SM_LOG(this, LogSM, Log, TEXT("건축 모드 ON"));
 }
 
 void ASMPlayerCharacter::ToggleEditMode()
@@ -219,38 +212,30 @@ void ASMPlayerCharacter::ToggleEditMode()
 	bool bIsBuildMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place);
 	bool bIsEditMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit);
 	
-	if (!bIsBuildMode&& !bIsEditMode)
-	{
-		SM_LOG(this, LogSM, Warning, TEXT("건축 모드가 아니므로 편집모드 진입 불가"));
-		return;
-	}
-	
-	// 건축모드에서 V입력한 경우
-	if (bIsBuildMode)
-	{
-		Subsystem->RemoveMappingContext(BuildPlaceIMC);
-		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
-		ServerRPC_SetBuildModeTag(false);
-		
-		Subsystem->AddMappingContext(BuildEditIMC, 1);
-		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Edit);
-		ServerRPC_SetEditModeTag(true);
-		
-		SM_LOG(this, LogSM, Log, TEXT("편집 모드 ON (건축 모드에서 전환)"));
-	}
-	// 편집 모드에서 V 입력한 경우
-	else if (bIsEditMode)
+	// 이미 편집 모드라면 편집모드 종료
+	if (bIsEditMode)
 	{
 		Subsystem->RemoveMappingContext(BuildEditIMC);
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 		ServerRPC_SetEditModeTag(false);
 		
-		Subsystem->AddMappingContext(BuildPlaceIMC, 1);
-		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
-		ServerRPC_SetBuildModeTag(true);
-		
-		SM_LOG(this, LogSM, Log, TEXT("건축 모드 ON (편집 모드에서 복귀)"));
+		SM_LOG(this, LogSM, Log, TEXT("편집 모드 OFF"));
+		return;
 	}
+	
+	// 건축 모드라면 건축모드 종료
+	if (bIsBuildMode)
+	{
+		Subsystem->RemoveMappingContext(BuildPlaceIMC);
+		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
+		ServerRPC_SetBuildModeTag(false);
+	}
+	
+	Subsystem->AddMappingContext(BuildEditIMC, 1);
+	SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Edit);
+	ServerRPC_SetEditModeTag(true);
+	
+	SM_LOG(this, LogSM, Log, TEXT("편집 모드 ON"));
 }
 
 void ASMPlayerCharacter::ServerRPC_SetBuildModeTag_Implementation(bool bEnable)

@@ -16,7 +16,6 @@
  * - 적용 우선순위
  * - 장착 대상 요구 태그
  * - 장착 대상 차단 태그
- * - 장착시 스킬 효과 변동을 적용할 태그 컨테이너(추후 확장성 대비용)
  *
  * 역할:
  * - 젬 장착 시 적용할 효과와 장착 가능 조건 제공
@@ -70,12 +69,6 @@ public:
 		return BlockedTargetTags;
 	}
 
-	/** 부여 행동 태그 Getter */
-	const FGameplayTagContainer& GetGrantedBehaviorTags() const
-	{
-		return GrantedBehaviorTags;
-	}
-
 	/** 효과 종류 Setter */
 	void SetModifierType(const ESMGemModifierType InModifierType)
 	{
@@ -106,12 +99,6 @@ public:
 		BlockedTargetTags = InBlockedTargetTags;
 	}
 
-	/** 부여 행동 태그 Setter */
-	void SetGrantedBehaviorTags(const FGameplayTagContainer& InGrantedBehaviorTags)
-	{
-		GrantedBehaviorTags = InGrantedBehaviorTags;
-	}
-
 public:
 	/** 효과 종류 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Gem Modifier Fragment")
@@ -132,8 +119,4 @@ public:
 	/** 장착 대상 스킬 차단 태그 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Gem Modifier Fragment")
 	FGameplayTagContainer BlockedTargetTags;
-
-	/** 장착 시 스킬 요약에 추가할 특수 동작 태그 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Gem Modifier Fragment")
-	FGameplayTagContainer GrantedBehaviorTags;
 };

@@ -28,7 +28,7 @@ public:
 	void RefreshHUD(UAbilitySystemComponent* InPlayerASC);
 	/** 게임 결과 위젯 표시 */
 	UFUNCTION(BlueprintCallable, Category = "HUD")
-	void ShowGameResult(bool bIsVictory);
+	void ShowGameResult(bool bIsVictory, float InReturnDelay);
 	/** 플레이어 사망 위젯 표시 */
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void ShowPlayerDeath(float RespawnTime);

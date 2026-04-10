@@ -48,6 +48,7 @@ void UGA_LineTrace::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 			SkillDuration,
 			false
 		);
+		return;
 	}
 	//반복 데미지 타이머 - 매 Tick마다 LineTrace발사
 	World->GetTimerManager().SetTimer(

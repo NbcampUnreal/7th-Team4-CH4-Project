@@ -164,6 +164,27 @@ bool USMInventoryGridWidget::NativeOnDrop(
 		PlacementGridY -= PivotOffsetY;
 	}
 
+	int32 SourceQuickSlotIndex = INDEX_NONE;
+	const bool bDraggedFromQuickSlot =
+		InventoryComponent->GetQuickSlotIndexByContainerId(InventoryOperation->GetSourceContainerId(), SourceQuickSlotIndex);
+
+	if (bDraggedFromQuickSlot)
+	{
+		if (ContainerId != InventoryComponent->GetMainInventory().ContainerId)
+		{
+			if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+			{
+				OwningPanel->ClearActiveDragState();
+			}
+			else
+			{
+				ClearActiveDragState();
+			}
+
+			return false;
+		}
+	}
+
 	const bool bCanPlace = InventoryComponent->CanPlaceItem(
 		InventoryOperation->GetItemInstanceId(),
 		ContainerId,
@@ -200,12 +221,23 @@ bool USMInventoryGridWidget::NativeOnDrop(
 		return false;
 	}
 
-	OwningPlayerController->ServerRPCMoveInventoryItem(
-		InventoryOperation->GetItemInstanceId(),
-		ContainerId,
-		PlacementGridX,
-		PlacementGridY,
-		InventoryOperation->GetCurrentRotation());
+	if (bDraggedFromQuickSlot)
+	{
+		OwningPlayerController->ServerRPCUnequipSkillFromQuickSlotToMainInventory(
+			SourceQuickSlotIndex,
+			PlacementGridX,
+			PlacementGridY,
+			InventoryOperation->GetCurrentRotation());
+	}
+	else
+	{
+		OwningPlayerController->ServerRPCMoveInventoryItem(
+			InventoryOperation->GetItemInstanceId(),
+			ContainerId,
+			PlacementGridX,
+			PlacementGridY,
+			InventoryOperation->GetCurrentRotation());
+	}
 
 	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 	{

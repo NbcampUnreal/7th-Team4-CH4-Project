@@ -92,6 +92,64 @@ public:
 
 /** 퀵슬롯 상태 데이터(추후 로직 재정의 필요 가능성 있음) */
 USTRUCT(BlueprintType)
+struct SAGOMAGIC_API FSMQuickSlotEntry
+{
+	GENERATED_BODY()
+
+public:
+	FSMQuickSlotEntry()
+		: SlotIndex(INDEX_NONE)
+	{
+	}
+
+	const FGuid& GetContainerId() const
+	{
+		return ContainerId;
+	}
+
+	int32 GetSlotIndex() const
+	{
+		return SlotIndex;
+	}
+
+	const FGuid& GetEquippedSkillId() const
+	{
+		return EquippedSkillId;
+	}
+
+	void SetContainerId(const FGuid& InContainerId)
+	{
+		ContainerId = InContainerId;
+	}
+
+	void SetSlotIndex(const int32 InSlotIndex)
+	{
+		SlotIndex = InSlotIndex;
+	}
+
+	void SetEquippedSkillId(const FGuid& InEquippedSkillId)
+	{
+		EquippedSkillId = InEquippedSkillId;
+	}
+
+	bool IsValidSlot() const
+	{
+		return ContainerId.IsValid() && SlotIndex != INDEX_NONE;
+	}
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|QuickSlot")
+	FGuid ContainerId;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|QuickSlot")
+	int32 SlotIndex;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|QuickSlot")
+	FGuid EquippedSkillId;
+};
+
+/** 퀵슬롯 상태 데이터(장착형 슬롯 배열 + 기존 호환 필드) */
+USTRUCT(BlueprintType)
 struct SAGOMAGIC_API FSMQuickSlotSetState
 {
 	GENERATED_BODY()
@@ -123,6 +181,10 @@ public:
 	/** 2번 슬롯 스킬 인스턴스 ID */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|QuickSlot")
 	FGuid Slot2SkillId;
+
+	/** 퀵슬롯 엔트리 배열 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|QuickSlot")
+	TArray<FSMQuickSlotEntry> Slots;
 
 	/** 현재 활성 슬롯 인덱스 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|QuickSlot")

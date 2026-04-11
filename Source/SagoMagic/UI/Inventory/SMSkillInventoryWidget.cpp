@@ -14,7 +14,7 @@ void USMSkillInventoryWidget::InitializeSkillInventoryWidget(
 {
 	SkillInstanceId = InSkillInstanceId;
 	InitializeGridWidget(InContainerId, InInventoryComponent);
-	SetVisibility(InSkillInstanceId.IsValid() && InContainerId.IsValid() ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Collapsed);
+	SetVisibility(InSkillInstanceId.IsValid() && InContainerId.IsValid() ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Hidden);
 	BP_OnSkillInventoryUpdated();
 }
 
@@ -53,7 +53,7 @@ void USMSkillInventoryWidget::ClearTargetSkill()
 
 	if (bAlreadyCleared)
 	{
-		SetVisibility(ESlateVisibility::Collapsed);
+		SetVisibility(ESlateVisibility::Hidden);
 		BP_OnSkillInventoryUpdated();
 		return;
 	}
@@ -65,7 +65,7 @@ void USMSkillInventoryWidget::ClearTargetSkill()
 	ClearActiveDragState();
 	ClearItemWidgets();
 	ClearCellWidgets();
-	SetVisibility(ESlateVisibility::Collapsed);
+	SetVisibility(ESlateVisibility::Hidden);
 	BP_OnGridRefreshed();
 	BP_OnSkillInventoryUpdated();
 }

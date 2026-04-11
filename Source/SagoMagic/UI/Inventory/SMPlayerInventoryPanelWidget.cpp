@@ -1,5 +1,6 @@
 ﻿#include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
+#include "Blueprint/SlateBlueprintLibrary.h"
 #include "GameFramework/PlayerController.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Inventory/Core/SMItemInstanceTypes.h"
@@ -335,7 +336,10 @@ void USMPlayerInventoryPanelWidget::OpenContextMenuForItem(const FGuid& InItemIn
 		return;
 	}
 
-	ContextMenuScreenPosition = InScreenPosition;
+	FVector2D PixelPosition = InScreenPosition;
+	FVector2D ViewportPosition = InScreenPosition;
+	USlateBlueprintLibrary::AbsoluteToViewport(this, InScreenPosition, PixelPosition, ViewportPosition);
+	ContextMenuScreenPosition = ViewportPosition;
 	ContextMenuWidget->InitializeContextMenu(InItemInstanceId, InventoryComponent);
 	BP_OnContextMenuStateChanged();
 }
@@ -362,16 +366,19 @@ void USMPlayerInventoryPanelWidget::ShowHoveredItemInfo(const FGuid& InItemInsta
 
 	const bool bHoveredItemChanged = HoveredItemInstanceId != InItemInstanceId;
 	HoveredItemInstanceId = InItemInstanceId;
+	FVector2D PixelPosition = InScreenPosition;
+	FVector2D ViewportPosition = InScreenPosition;
+	USlateBlueprintLibrary::AbsoluteToViewport(this, InScreenPosition, PixelPosition, ViewportPosition);
 
 	if (ItemHoverInfoWidget != nullptr)
 	{
 		if (ItemHoverInfoWidget->GetItemInstanceId() == InItemInstanceId && ItemHoverInfoWidget->IsShowingItemInfo())
 		{
-			ItemHoverInfoWidget->UpdateScreenPosition(InScreenPosition);
+			ItemHoverInfoWidget->UpdateScreenPosition(ViewportPosition);
 		}
 		else
 		{
-			ItemHoverInfoWidget->ShowItemInfo(InItemInstanceId, InScreenPosition);
+			ItemHoverInfoWidget->ShowItemInfo(InItemInstanceId, ViewportPosition);
 		}
 	}
 

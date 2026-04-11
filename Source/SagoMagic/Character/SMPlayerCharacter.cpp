@@ -486,15 +486,15 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		{
 			EIC->BindAction(QuickSlotAction, ETriggerEvent::Started, this, &ThisClass::UseQuickSlot);
 		}
-
-		if (BuildAction)
+		
+		if (BuildModeAction)
 		{
-			EIC->BindAction(BuildAction, ETriggerEvent::Started, this, &ThisClass::ToggleBuildMode);
+			EIC->BindAction(BuildModeAction, ETriggerEvent::Started, this, &ThisClass::ToggleBuildMode);
 		}
-
-		if (EditAction)
+		
+		if (EditModeAction)
 		{
-			EIC->BindAction(EditAction, ETriggerEvent::Started, this, &ThisClass::ToggleEditMode);
+			EIC->BindAction(EditModeAction, ETriggerEvent::Started, this, &ThisClass::ToggleEditMode);
 		}
 
 		if (BuildPlaceAction)
@@ -520,7 +520,7 @@ void ASMPlayerCharacter::PawnClientRestart()
 			if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
 			{
 				if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
-					ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
+						ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
 				{
 					// 기존 IMC 전부 초기화
 					if (LobbyIMC) Subsystem->RemoveMappingContext(LobbyIMC);

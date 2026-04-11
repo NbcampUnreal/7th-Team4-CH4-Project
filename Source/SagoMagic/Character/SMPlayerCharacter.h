@@ -58,10 +58,10 @@ protected:
 	TObjectPtr<UInputAction> InteractAction;
 	
 	UPROPERTY(EditAnywhere, Category = "Input|Build|Place")
-	TObjectPtr<UInputAction> BuildAction;
+	TObjectPtr<UInputAction> BuildModeAction;
 	
 	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
-	TObjectPtr<UInputAction> EditAction;
+	TObjectPtr<UInputAction> EditModeAction;
 	
 	UPROPERTY(EditAnywhere, Category = "Input|Build|Place")
 	TObjectPtr<UInputAction> BuildPlaceAction;

@@ -3,6 +3,7 @@
 
 #include "Character/SMPlayerAnimInstance.h"
 
+#include "KismetAnimationLibrary.h"
 #include "SMPlayerCharacter.h"
 
 void USMPlayerAnimInstance::NativeInitializeAnimation()
@@ -22,7 +23,7 @@ void USMPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Velocity.Z = 0.0f;
 	Speed = Velocity.Size();
 	
-	Direction = CalculateDirection(Velocity, SMCharacter->GetActorRotation());
+	Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, SMCharacter->GetActorRotation());
 	
 	bIsDead = SMCharacter->IsDead();
 }

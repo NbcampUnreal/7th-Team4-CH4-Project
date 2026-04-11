@@ -485,14 +485,14 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 			EIC->BindAction(QuickSlotAction, ETriggerEvent::Started, this, &ThisClass::UseQuickSlot);
 		}
 		
-		if (BuildAction)
+		if (BuildModeAction)
 		{
-			EIC->BindAction(BuildAction, ETriggerEvent::Started, this, &ThisClass::ToggleBuildMode);
+			EIC->BindAction(BuildModeAction, ETriggerEvent::Started, this, &ThisClass::ToggleBuildMode);
 		}
 		
-		if (EditAction)
+		if (EditModeAction)
 		{
-			EIC->BindAction(EditAction, ETriggerEvent::Started, this, &ThisClass::ToggleEditMode);
+			EIC->BindAction(EditModeAction, ETriggerEvent::Started, this, &ThisClass::ToggleEditMode);
 		}
 		
 		if (BuildPlaceAction)

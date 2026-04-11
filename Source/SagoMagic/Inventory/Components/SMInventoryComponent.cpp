@@ -1181,6 +1181,11 @@ bool USMInventoryComponent::UnequipSkillFromQuickSlotToMainInventory(
 
 void USMInventoryComponent::SetActiveQuickSlot(int32 InSlotIndex)
 {
+	if (GetOwner() == nullptr || GetOwner()->HasAuthority() == false)
+	{
+		return;
+	}
+
 	if (IsValidQuickSlotIndex(InSlotIndex) == false)
 	{
 		return;

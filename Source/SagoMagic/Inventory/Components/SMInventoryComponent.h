@@ -147,7 +147,7 @@ public:
 	                                              ESMGridRotation InRotation);
 
 	/** 활성 퀵슬롯 설정 요청 */
-	UFUNCTION(BlueprintCallable, Category="Inventory|QuickSlot")
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Inventory|QuickSlot")
 	void SetActiveQuickSlot(int32 InSlotIndex);
 
 	/** 스킬 요약 재계산 요청 */

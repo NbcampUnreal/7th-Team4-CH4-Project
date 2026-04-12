@@ -12,6 +12,7 @@ USMInventoryContextMenuWidget::USMInventoryContextMenuWidget(const FObjectInitia
 	  , bCanOpenSkillInventory(false)
 	  , bCanDropItem(false)
 	  , bCanDeleteItem(false)
+	  , bEquippedInQuickSlot(false)
 {
 }
 
@@ -30,6 +31,11 @@ bool USMInventoryContextMenuWidget::CanDeleteItem() const
 	return bCanDeleteItem;
 }
 
+bool USMInventoryContextMenuWidget::IsEquippedInQuickSlot() const
+{
+	return bEquippedInQuickSlot;
+}
+
 void USMInventoryContextMenuWidget::InitializeContextMenu(const FGuid& InItemInstanceId,
                                                           USMInventoryComponent* InInventoryComponent)
 {
@@ -38,6 +44,7 @@ void USMInventoryContextMenuWidget::InitializeContextMenu(const FGuid& InItemIns
 	bCanOpenSkillInventory = false;
 	bCanDropItem = false;
 	bCanDeleteItem = false;
+	bEquippedInQuickSlot = false;
 
 	if (InventoryComponent != nullptr && ItemInstanceId.IsValid())
 	{
@@ -45,6 +52,14 @@ void USMInventoryContextMenuWidget::InitializeContextMenu(const FGuid& InItemIns
 		bCanOpenSkillInventory = InventoryComponent->GetSkillData(ItemInstanceId, SkillData);
 		bCanDropItem = InventoryComponent->CanDropItem(ItemInstanceId);
 		bCanDeleteItem = InventoryComponent->HasItem(ItemInstanceId);
+
+		if (bCanOpenSkillInventory)
+		{
+			int32 QuickSlotIndex = INDEX_NONE;
+			bEquippedInQuickSlot = InventoryComponent->GetQuickSlotIndexByContainerId(
+				SkillData.BaseItem.ParentContainerId,
+				QuickSlotIndex);
+		}
 	}
 
 	BP_OnContextMenuUpdated();
@@ -69,6 +84,7 @@ void USMInventoryContextMenuWidget::RequestDropItem()
 	bCanOpenSkillInventory = false;
 	bCanDropItem = false;
 	bCanDeleteItem = false;
+	bEquippedInQuickSlot = false;
 
 	if (OwningPanelWidget != nullptr)
 	{
@@ -119,6 +135,7 @@ void USMInventoryContextMenuWidget::RequestDeleteItem()
 	bCanOpenSkillInventory = false;
 	bCanDropItem = false;
 	bCanDeleteItem = false;
+	bEquippedInQuickSlot = false;
 
 	if (OwningPanelWidget != nullptr)
 	{
@@ -154,5 +171,54 @@ void USMInventoryContextMenuWidget::RequestDetachEmbeddedItem()
 	bCanOpenSkillInventory = false;
 	bCanDropItem = false;
 	bCanDeleteItem = false;
+	bEquippedInQuickSlot = false;
+	BP_OnContextMenuUpdated();
+}
+
+void USMInventoryContextMenuWidget::RequestToggleSkillQuickSlot()
+{
+	if (InventoryComponent == nullptr || bCanOpenSkillInventory == false)
+	{
+		return;
+	}
+
+	ASMPlayerController* OwningPlayerController = GetOwningPlayer<ASMPlayerController>();
+	if (OwningPlayerController == nullptr)
+	{
+		return;
+	}
+
+	if (bEquippedInQuickSlot)
+	{
+		FSMSkillItemInstanceData SkillData;
+		if (InventoryComponent->GetSkillData(ItemInstanceId, SkillData) == false)
+		{
+			return;
+		}
+
+		int32 QuickSlotIndex = INDEX_NONE;
+		if (InventoryComponent->GetQuickSlotIndexByContainerId(SkillData.BaseItem.ParentContainerId, QuickSlotIndex) == false)
+		{
+			return;
+		}
+
+		OwningPlayerController->ServerRPCUnequipSkillFromQuickSlot(QuickSlotIndex);
+	}
+	else
+	{
+		OwningPlayerController->ServerRPCEquipSkillToFirstAvailableQuickSlot(ItemInstanceId);
+	}
+
+	if (OwningPanelWidget != nullptr)
+	{
+		OwningPanelWidget->CloseContextMenu();
+		return;
+	}
+
+	ItemInstanceId.Invalidate();
+	bCanOpenSkillInventory = false;
+	bCanDropItem = false;
+	bCanDeleteItem = false;
+	bEquippedInQuickSlot = false;
 	BP_OnContextMenuUpdated();
 }

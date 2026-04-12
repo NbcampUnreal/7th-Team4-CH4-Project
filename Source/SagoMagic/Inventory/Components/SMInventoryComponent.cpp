@@ -973,7 +973,8 @@ bool USMInventoryComponent::GetSkillAbilityData(
 
 bool USMInventoryComponent::HasQuickSlotSkillTag(
 	const FGameplayTag& InAbilityTag,
-	const FGuid& InIgnoreSkillInstanceId) const
+	const FGuid& InIgnoreSkillInstanceId,
+	const FGuid& InAdditionalIgnoreSkillInstanceId) const
 {
 	if (InAbilityTag.IsValid() == false)
 	{
@@ -983,7 +984,8 @@ bool USMInventoryComponent::HasQuickSlotSkillTag(
 	for (const FSMQuickSlotEntry& SlotEntry : QuickSlots.Slots)
 	{
 		if (SlotEntry.GetEquippedSkillId().IsValid() == false ||
-			SlotEntry.GetEquippedSkillId() == InIgnoreSkillInstanceId)
+			SlotEntry.GetEquippedSkillId() == InIgnoreSkillInstanceId ||
+			SlotEntry.GetEquippedSkillId() == InAdditionalIgnoreSkillInstanceId)
 		{
 			continue;
 		}
@@ -1068,6 +1070,41 @@ void USMInventoryComponent::RemoveQuickSlotAbility(const FGameplayTag& InAbility
 	}
 }
 
+bool USMInventoryComponent::FindMainInventorySwapPosition(
+	const FSMSkillItemInstanceData& InIncomingSkill,
+	const FSMSkillItemInstanceData& InEquippedQuickSlotSkill,
+	int32& OutGridX,
+	int32& OutGridY)
+{
+	if (InIncomingSkill.BaseItem.ParentContainerId != MainInventory.ContainerId)
+	{
+		return false;
+	}
+
+	const FGuid SavedParentContainerId = InIncomingSkill.BaseItem.ParentContainerId;
+	const int32 SavedGridX = InIncomingSkill.BaseItem.GridX;
+	const int32 SavedGridY = InIncomingSkill.BaseItem.GridY;
+
+	FSMSkillItemInstanceData* EditableIncomingSkill = FindEditableSkill(InIncomingSkill.BaseItem.InstanceId);
+	if (EditableIncomingSkill == nullptr)
+	{
+		return false;
+	}
+
+	EditableIncomingSkill->BaseItem.ParentContainerId = FGuid();
+
+	const bool bFoundPosition = FindAvailablePosition(
+		InEquippedQuickSlotSkill.BaseItem.InstanceId,
+		MainInventory.ContainerId,
+		OutGridX,
+		OutGridY);
+
+	EditableIncomingSkill->BaseItem.ParentContainerId = SavedParentContainerId;
+	EditableIncomingSkill->BaseItem.GridX = SavedGridX;
+	EditableIncomingSkill->BaseItem.GridY = SavedGridY;
+	return bFoundPosition;
+}
+
 bool USMInventoryComponent::EquipSkillToQuickSlot(const FGuid& InSkillInstanceId, int32 InSlotIndex)
 {
 	if (GetOwner() == nullptr || GetOwner()->HasAuthority() == false)
@@ -1106,12 +1143,30 @@ bool USMInventoryComponent::EquipSkillToQuickSlot(const FGuid& InSkillInstanceId
 		return true;
 	}
 
+	FSMSkillItemInstanceData* EquippedQuickSlotSkill = nullptr;
+	FGameplayTag EquippedQuickSlotAbilityTag;
+	int32 SwapGridX = INDEX_NONE;
+	int32 SwapGridY = INDEX_NONE;
 	if (TargetSlot->GetEquippedSkillId().IsValid())
 	{
-		return false;
+		EquippedQuickSlotSkill = FindEditableSkill(TargetSlot->GetEquippedSkillId());
+		if (EquippedQuickSlotSkill == nullptr)
+		{
+			return false;
+		}
+
+		GetSkillAbilityData(*EquippedQuickSlotSkill, EquippedQuickSlotAbilityTag);
+
+		if (FindMainInventorySwapPosition(*EditableSkill, *EquippedQuickSlotSkill, SwapGridX, SwapGridY) == false)
+		{
+			return false;
+		}
 	}
 
-	if (HasQuickSlotSkillTag(SkillAbilityTag, InSkillInstanceId))
+	if (HasQuickSlotSkillTag(
+		SkillAbilityTag,
+		InSkillInstanceId,
+		EquippedQuickSlotSkill != nullptr ? EquippedQuickSlotSkill->BaseItem.InstanceId : FGuid()))
 	{
 		return false;
 	}
@@ -1164,6 +1219,14 @@ bool USMInventoryComponent::EquipSkillToQuickSlot(const FGuid& InSkillInstanceId
 	EditableSkill->BaseItem.GridX = 0;
 	EditableSkill->BaseItem.GridY = 0;
 
+	if (EquippedQuickSlotSkill != nullptr)
+	{
+		EquippedQuickSlotSkill->BaseItem.ParentContainerId = MainInventory.ContainerId;
+		EquippedQuickSlotSkill->BaseItem.GridX = SwapGridX;
+		EquippedQuickSlotSkill->BaseItem.GridY = SwapGridY;
+		MainInventory.ContainedItemIds.AddUnique(EquippedQuickSlotSkill->BaseItem.InstanceId);
+	}
+
 	TargetSlot->SetEquippedSkillId(InSkillInstanceId);
 	if (InSlotIndex == 0)
 	{
@@ -1177,6 +1240,11 @@ bool USMInventoryComponent::EquipSkillToQuickSlot(const FGuid& InSkillInstanceId
 	if (AddQuickSlotAbility(SkillAbilityTag, SkillAbilityClass) == false)
 	{
 		return false;
+	}
+
+	if (EquippedQuickSlotSkill != nullptr && HasQuickSlotSkillTag(EquippedQuickSlotAbilityTag, FGuid()) == false)
+	{
+		RemoveQuickSlotAbility(EquippedQuickSlotAbilityTag);
 	}
 
 	if (PreviousContainer != nullptr)

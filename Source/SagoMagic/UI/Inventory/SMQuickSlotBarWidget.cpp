@@ -162,7 +162,7 @@ bool USMQuickSlotBarWidget::NativeOnDragOver(
 		return false;
 	}
 
-	return TargetSlot->GetEquippedSkillId().IsValid() == false;
+	return true;
 }
 
 bool USMQuickSlotBarWidget::NativeOnDrop(
@@ -208,7 +208,7 @@ bool USMQuickSlotBarWidget::NativeOnDrop(
 
 	const FSMQuickSlotEntry* TargetSlot = InventoryComponent->FindQuickSlotEntry(TargetSlotIndex);
 	ASMPlayerController* OwningPlayerController = GetOwningPlayer<ASMPlayerController>();
-	if (TargetSlot == nullptr || TargetSlot->GetEquippedSkillId().IsValid() || OwningPlayerController == nullptr)
+	if (TargetSlot == nullptr || OwningPlayerController == nullptr)
 	{
 		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 		{

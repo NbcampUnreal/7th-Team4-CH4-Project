@@ -277,7 +277,8 @@ private:
 	                         TSubclassOf<UGameplayAbility>* OutAbilityClass = nullptr) const;
 
 	/** 동일 태그 스킬이 퀵슬롯에 장착됐는지 검사 */
-	bool HasQuickSlotSkillTag(const FGameplayTag& InAbilityTag, const FGuid& InIgnoreSkillInstanceId) const;
+	bool HasQuickSlotSkillTag(const FGameplayTag& InAbilityTag, const FGuid& InIgnoreSkillInstanceId,
+	                          const FGuid& InAdditionalIgnoreSkillInstanceId = FGuid()) const;
 
 	/** 퀵슬롯 스킬 어빌리티 등록 */
 	bool AddQuickSlotAbility(const FGameplayTag& InAbilityTag,
@@ -285,6 +286,12 @@ private:
 
 	/** 퀵슬롯 스킬 어빌리티 해제 */
 	void RemoveQuickSlotAbility(const FGameplayTag& InAbilityTag);
+
+	/** 메인 인벤토리 스킬과 퀵슬롯 스킬 스왑 시 해제 위치 탐색 */
+	bool FindMainInventorySwapPosition(const FSMSkillItemInstanceData& InIncomingSkill,
+	                                   const FSMSkillItemInstanceData& InEquippedQuickSlotSkill,
+	                                   int32& OutGridX,
+	                                   int32& OutGridY);
 
 	/** 슬롯 인덱스 유효성 검사 */
 	bool IsValidQuickSlotIndex(int32 InSlotIndex) const;

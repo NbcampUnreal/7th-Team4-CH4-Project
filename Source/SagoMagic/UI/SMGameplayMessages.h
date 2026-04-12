@@ -10,9 +10,7 @@ UENUM(BlueprintType)
 enum class EWaveUIState : uint8
 {
     Preparing,
-    Started,
-    Inprogress,
-    Cleared,
+    Inprogress
 };
 
 UENUM(BlueprintType)
@@ -38,6 +36,8 @@ struct FWaveMsg
     int32 WaveIndex = 0;
     UPROPERTY(BlueprintReadOnly)
     float TimeRemaining = 0.0f;
+    UPROPERTY(BlueprintReadOnly)
+    float MaxTime = 0.0f;
 };
 
 /**

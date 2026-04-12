@@ -88,7 +88,8 @@ void USMCombatState::Tick(float DeltaTime)
         {
             CachedGameState->SetCombatInfo(
                 StateMachine->GetCurrentWaveIndex(),
-                FMath::Max(0.f, Duration - Elapsed)
+                FMath::Max(0.f, Duration - Elapsed),
+                Duration
             );
         }
     }

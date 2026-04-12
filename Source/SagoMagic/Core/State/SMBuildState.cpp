@@ -37,7 +37,8 @@ void USMBuildState::Tick(float DeltaTime)
         if (CachedGameState)
         {
             CachedGameState->SetBuildTimeRemaining(CurrentWaveIndex,
-                FMath::Max(0.f,Duration-Elapsed));
+                FMath::Max(0.f,Duration-Elapsed),
+                Duration);
         }
     }
     

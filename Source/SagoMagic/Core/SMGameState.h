@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
+#include "UI/SMGameplayMessages.h"
 #include "SMGameState.generated.h"
 
 UENUM(BlueprintType)
@@ -39,9 +40,9 @@ public:
     
     void SetAssetsToLoad(const TArray<FPrimaryAssetId>& InAssets);
     
-    void SetBuildTimeRemaining(int32 WaveIndex, float TimeRemaining);
+    void SetBuildTimeRemaining(int32 WaveIndex, float TimeRemaining, float InMaxTime);
     
-    void SetCombatInfo(int32 WaveIndex, float TimeRemaining);
+    void SetCombatInfo(int32 WaveIndex, float TimeRemaining, float InMaxTime);
     
     //클라이언트 구독용
     FOnGameStateChanged OnGameStateChanged;
@@ -62,6 +63,9 @@ private:
     UFUNCTION()
     void OnRep_AssetsToLoad();
     
+    /** GMS를 통해 UI에 웨이브 정보를 브로드캐스트하는 헬퍼 함수 */
+    void BroadcastWaveMsg(EWaveUIState InState, int32 InWaveIndex, float InTimeRemaining, float InMaxTime);
+    
 private:
     /** 현재 게임 페이즈 - 서버에서 쓰고 클라이언트에 복제됨 */
     UPROPERTY(ReplicatedUsing = OnRep_CurrentState)
@@ -71,6 +75,9 @@ private:
     UPROPERTY(ReplicatedUsing = OnRep_BuildTimeRemaining)
     float BuildTimeRemaining = 0.f;
     
+    UPROPERTY(Replicated)
+    float MaxBuildTime = 0.f;
+    
     /** 현재 웨이브 인덱스 */
     UPROPERTY(ReplicatedUsing = OnRep_WaveIndex)
     int32 ReplicatedWaveIndex = 0;
@@ -78,6 +85,9 @@ private:
     /** 전투 페이즈 남은 시간 */
     UPROPERTY(ReplicatedUsing = OnRep_CombatTimeRemaining)
     float CombatTimeRemaining = 0.f;
+    
+    UPROPERTY(Replicated)
+    float MaxCombatTime = 0.f;
     
     UPROPERTY(ReplicatedUsing = OnRep_AssetsToLoad)
     uint8 AssetsLoadSerial = 0;

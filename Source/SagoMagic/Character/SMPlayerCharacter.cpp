@@ -300,7 +300,7 @@ void ASMPlayerCharacter::Tick(float DeltaTime)
 		{
 			FHitResult Hit;
 
-			// TODO: 채널 설정을 바닥으로만 할 필요 있음
+			// Ground 채널만 처리
 			bool bHit = PC->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, Hit);
 
 			if (bHit)
@@ -440,11 +440,9 @@ void ASMPlayerCharacter::HandleDeath()
 	{
 		if (ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>())
 		{
-			// TODO: PC에서 사망 시 UI 띄우게 하기 
 			// GameMode에 사망 통보 - RPC 호출은 GameMode에서 RespawnTime과 함께 처리
 			if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 			{
-				// TODO: GM에게 사망시 처리 함수 호출하게 하기
 				GM->OnPlayerDead(PC);
 			}
 		}

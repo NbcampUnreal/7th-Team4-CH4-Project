@@ -10,5 +10,9 @@ namespace SMEventTag
     *예시
     *UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Reload_Ammo);
     */
+	//AnimNotify → GAS 이벤트 전달
     UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Monster_HitCheck);
+	
+	// 플레이어 스킬 AnimNotify 이벤트 전달용
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Skill_Projectile);
 }

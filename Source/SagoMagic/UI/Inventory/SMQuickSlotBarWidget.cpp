@@ -28,6 +28,16 @@ USMQuickSlotBarWidget::USMQuickSlotBarWidget(const FObjectInitializer& ObjectIni
 void USMQuickSlotBarWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	if (Slot1_PreviewCanvas != nullptr)
+	{
+		Slot1_PreviewCanvas->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	}
+
+	if (Slot2_PreviewCanvas != nullptr)
+	{
+		Slot2_PreviewCanvas->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	}
 }
 
 void USMQuickSlotBarWidget::NativeDestruct()
@@ -68,6 +78,11 @@ FReply USMQuickSlotBarWidget::NativeOnPreviewMouseButtonDown(const FGeometry& In
 	if (InMouseEvent.GetEffectingButton() != EKeys::LeftMouseButton)
 	{
 		return Super::NativeOnPreviewMouseButtonDown(InGeometry, InMouseEvent);
+	}
+
+	if (ASMPlayerController* OwningPlayerController = GetOwningPlayer<ASMPlayerController>())
+	{
+		OwningPlayerController->ServerRPCSetActiveQuickSlot(SlotIndex);
 	}
 
 	PendingDragSlotIndex = SlotIndex;
@@ -342,16 +357,24 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 	for (const FSMQuickSlotEntry& SlotEntry : Slots)
 	{
 		UCanvasPanel* TargetPreviewCanvas = nullptr;
+		UWidget* TargetPreviewBoundsWidget = nullptr;
 		if (SlotEntry.GetSlotIndex() == 0)
 		{
 			TargetPreviewCanvas = Slot1_PreviewCanvas;
+			TargetPreviewBoundsWidget = Slot1_BaseBackground != nullptr
+				                           ? static_cast<UWidget*>(Slot1_BaseBackground)
+				                           : static_cast<UWidget*>(Slot1_PreviewCanvas);
 		}
 		else if (SlotEntry.GetSlotIndex() == 1)
 		{
 			TargetPreviewCanvas = Slot2_PreviewCanvas;
+			TargetPreviewBoundsWidget = Slot2_BaseBackground != nullptr
+				                           ? static_cast<UWidget*>(Slot2_BaseBackground)
+				                           : static_cast<UWidget*>(Slot2_PreviewCanvas);
 		}
 
-		if (TargetPreviewCanvas == nullptr || SlotEntry.GetEquippedSkillId().IsValid() == false)
+		if (TargetPreviewCanvas == nullptr || TargetPreviewBoundsWidget == nullptr ||
+			SlotEntry.GetEquippedSkillId().IsValid() == false)
 		{
 			continue;
 		}
@@ -439,21 +462,38 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 		const int32 PreviewWidth = FMath::Max(1, MaxX - MinX + 1);
 		const int32 PreviewHeight = FMath::Max(1, MaxY - MinY + 1);
 		FVector2D EffectivePreviewAreaSize = PreviewAreaSize;
-		if (const FVector2D CanvasSize = TargetPreviewCanvas->GetCachedGeometry().GetLocalSize();
-			CanvasSize.X > 0.0f && CanvasSize.Y > 0.0f)
+		if (const FVector2D BoundsSize = TargetPreviewBoundsWidget->GetCachedGeometry().GetLocalSize();
+			BoundsSize.X > 0.0f && BoundsSize.Y > 0.0f)
 		{
-			EffectivePreviewAreaSize = CanvasSize;
+			EffectivePreviewAreaSize = BoundsSize;
 		}
 
+		const float PreviewCellSpacing = PreviewCellPadding * 2.0f;
+		const float PreviewOuterPadding = PreviewCellPadding * 2.0f;
+		const FVector2D AvailablePreviewAreaSize(
+			FMath::Max(0.0f, EffectivePreviewAreaSize.X - (PreviewOuterPadding * 2.0f)),
+			FMath::Max(0.0f, EffectivePreviewAreaSize.Y - (PreviewOuterPadding * 2.0f)));
 		const float WidthCellSize = EffectivePreviewAreaSize.X / static_cast<float>(PreviewWidth);
 		const float HeightCellSize = EffectivePreviewAreaSize.Y / static_cast<float>(PreviewHeight);
-		const float PreviewCellSize = FMath::Clamp(
+		const float BasePreviewCellSize = FMath::Clamp(
 			FMath::Min(WidthCellSize, HeightCellSize),
 			MinPreviewCellSize,
 			MaxPreviewCellSize);
+		const float MaxContentWidth =
+			(AvailablePreviewAreaSize.X - ((PreviewWidth - 1) * PreviewCellSpacing)) / static_cast<float>(PreviewWidth);
+		const float MaxContentHeight =
+			(AvailablePreviewAreaSize.Y - ((PreviewHeight - 1) * PreviewCellSpacing)) / static_cast<float>(PreviewHeight);
+		const float PreviewCellContentSize = FMath::Clamp(
+			BasePreviewCellSize,
+			MinPreviewCellSize,
+			FMath::Max(0.0f, FMath::Min(FMath::Min(MaxContentWidth, MaxContentHeight), MaxPreviewCellSize)));
+		const float OccupiedPreviewWidth =
+			(PreviewWidth * PreviewCellContentSize) + ((PreviewWidth - 1) * PreviewCellSpacing);
+		const float OccupiedPreviewHeight =
+			(PreviewHeight * PreviewCellContentSize) + ((PreviewHeight - 1) * PreviewCellSpacing);
 		const FVector2D PreviewOffset(
-			(EffectivePreviewAreaSize.X - (PreviewWidth * PreviewCellSize)) * 0.5f,
-			(EffectivePreviewAreaSize.Y - (PreviewHeight * PreviewCellSize)) * 0.5f);
+			(EffectivePreviewAreaSize.X - OccupiedPreviewWidth) * 0.5f,
+			(EffectivePreviewAreaSize.Y - OccupiedPreviewHeight) * 0.5f);
 
 		for (const FIntPoint& OccupiedCell : OccupiedCells)
 		{
@@ -463,8 +503,9 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 				continue;
 			}
 
-			PreviewCellSizeBox->SetWidthOverride(PreviewCellSize);
-			PreviewCellSizeBox->SetHeightOverride(PreviewCellSize);
+			PreviewCellSizeBox->SetVisibility(ESlateVisibility::HitTestInvisible);
+			PreviewCellSizeBox->SetWidthOverride(PreviewCellContentSize);
+			PreviewCellSizeBox->SetHeightOverride(PreviewCellContentSize);
 
 			UBorder* PreviewCellBorder = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass());
 			if (PreviewCellBorder == nullptr)
@@ -472,16 +513,17 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 				continue;
 			}
 
+			PreviewCellBorder->SetVisibility(ESlateVisibility::HitTestInvisible);
 			PreviewCellBorder->SetBrushColor(PreviewAccentColor);
 			PreviewCellSizeBox->SetContent(PreviewCellBorder);
 
 			if (UCanvasPanelSlot* PreviewCanvasSlot = Cast<UCanvasPanelSlot>(TargetPreviewCanvas->AddChild(PreviewCellSizeBox)))
 			{
 				PreviewCanvasSlot->SetAutoSize(false);
-				PreviewCanvasSlot->SetSize(FVector2D(PreviewCellSize, PreviewCellSize));
+				PreviewCanvasSlot->SetSize(FVector2D(PreviewCellContentSize, PreviewCellContentSize));
 				PreviewCanvasSlot->SetPosition(FVector2D(
-					PreviewOffset.X + ((OccupiedCell.X - MinX) * PreviewCellSize),
-					PreviewOffset.Y + ((OccupiedCell.Y - MinY) * PreviewCellSize)));
+					PreviewOffset.X + ((OccupiedCell.X - MinX) * (PreviewCellContentSize + PreviewCellSpacing)),
+					PreviewOffset.Y + ((OccupiedCell.Y - MinY) * (PreviewCellContentSize + PreviewCellSpacing))));
 			}
 		}
 	}

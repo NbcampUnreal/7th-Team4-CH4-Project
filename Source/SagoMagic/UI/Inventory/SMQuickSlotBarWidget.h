@@ -193,6 +193,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Quick Slot Bar Widget")
 	float MaxPreviewCellSize = 48.0f;
 
+	/** 프리뷰 셀 패딩 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Quick Slot Bar Widget")
+	float PreviewCellPadding = 2.0f;
+
 private:
 	FGameplayMessageListenerHandle QuickSlotUpdatedListenerHandle;
 	int32 PendingDragSlotIndex = INDEX_NONE;

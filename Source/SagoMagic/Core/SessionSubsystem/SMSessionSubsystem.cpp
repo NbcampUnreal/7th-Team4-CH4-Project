@@ -12,6 +12,12 @@ USMSessionSubsystem::USMSessionSubsystem()
 void USMSessionSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
+	
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (Subsystem && Subsystem->GetSubsystemName().ToString() == "NULL")
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SMSessionSubsystem] Steam 미연결 - NULL 서브시스템 사용 중"));
+	}
 
 	if (IsValidSessionInterface())
 	{
@@ -55,7 +61,8 @@ void USMSessionSubsystem::CreateSession(int32 MaxPlayer)
 	Settings->bUseLobbiesIfAvailable = !bIsDedicated;
 	Settings->bShouldAdvertise = true;
 	Settings->bAllowJoinViaPresence = !bIsDedicated;
-	Settings->bAllowJoinInProgress = false;
+	Settings->bAllowJoinInProgress = true;
+	Settings->BuildUniqueId = 1; 
 	Settings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL";
 
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
@@ -133,6 +140,9 @@ void USMSessionSubsystem::OnSessionUserInviteAcceptedInternal(bool bWasSuccessfu
                                                               FUniqueNetIdPtr UserId,
                                                               const FOnlineSessionSearchResult& InviteResult)
 {
+	UE_LOG(LogTemp, Log, TEXT("[SessionSubsystem] Steam 초대 수락 - bWasSuccessful: %s"),
+	   bWasSuccessful ? TEXT("true") : TEXT("false"));
+	
 	if (bWasSuccessful == true)
 	{
 		JoinSession(InviteResult);

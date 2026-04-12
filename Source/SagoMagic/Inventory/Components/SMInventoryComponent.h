@@ -11,6 +11,8 @@
 
 class USMItemDefinition;
 class USMGemModifierFragment;
+class USMAbilitySystemComponent;
+class UGameplayAbility;
 class ASMBaseItemDropActor;
 
 /**
@@ -266,6 +268,23 @@ private:
 
 	/** 스킬 요약 계산 */
 	bool BuildSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const;
+
+	/** 소유 플레이어의 ASC 조회 */
+	USMAbilitySystemComponent* GetOwnerAbilitySystemComponent() const;
+
+	/** 스킬 인스턴스의 어빌리티 데이터 조회 */
+	bool GetSkillAbilityData(const FSMSkillItemInstanceData& InSkillData, FGameplayTag& OutAbilityTag,
+	                         TSubclassOf<UGameplayAbility>* OutAbilityClass = nullptr) const;
+
+	/** 동일 태그 스킬이 퀵슬롯에 장착됐는지 검사 */
+	bool HasQuickSlotSkillTag(const FGameplayTag& InAbilityTag, const FGuid& InIgnoreSkillInstanceId) const;
+
+	/** 퀵슬롯 스킬 어빌리티 등록 */
+	bool AddQuickSlotAbility(const FGameplayTag& InAbilityTag,
+	                         const TSubclassOf<UGameplayAbility>& InAbilityClass);
+
+	/** 퀵슬롯 스킬 어빌리티 해제 */
+	void RemoveQuickSlotAbility(const FGameplayTag& InAbilityTag);
 
 	/** 슬롯 인덱스 유효성 검사 */
 	bool IsValidQuickSlotIndex(int32 InSlotIndex) const;

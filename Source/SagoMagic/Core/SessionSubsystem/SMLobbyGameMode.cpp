@@ -2,7 +2,8 @@
 
 
 #include "SMLobbyGameMode.h"
-
+#include "Interfaces/OnlineIdentityInterface.h"
+#include "OnlineSubsystem.h"
 #include "SMLobbyGameState.h"
 #include "SMPlayerSlotInfo.h"
 #include "Core/SMPlayerState.h"
@@ -27,7 +28,29 @@ void ASMLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	//bIsHost는 Replicated이므로 클라이언트에 자동 전파
 	NewPlayerState->bIsHost = PlayerList.Num() == 1;
 	NewPlayerState->bIsReady = false;
+	
+	//Steam 닉네임 가져오기, 실패 시 "Player N 설정"
 	FString NewPlayerName = FString::Printf(TEXT("Player %d"),PlayerList.Num());
+	
+	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+	if (OnlineSubsystem)
+	{
+		IOnlineIdentityPtr IdentityInterface = OnlineSubsystem->GetIdentityInterface();
+		if (IdentityInterface.IsValid() == true)
+		{
+			//NewPlayer의 UniqueNetId로 닉네임 조회
+			FUniqueNetIdRepl UniqueNetId = NewPlayer->GetPlayerState<APlayerState>()->GetUniqueId();
+			if (UniqueNetId.IsValid() == true)
+			{
+				FString SteamName = IdentityInterface->GetPlayerNickname(*UniqueNetId);
+				if (SteamName.IsEmpty() == false)
+				{
+					NewPlayerName = SteamName;
+				}
+			}
+		}
+	}
+	
 	NewPlayerState->SetPlayerName(NewPlayerName);
 
 	if (PlayerList.Num() == 1)

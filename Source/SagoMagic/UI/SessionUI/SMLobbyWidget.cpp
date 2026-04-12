@@ -80,11 +80,20 @@ void USMLobbyWidget::OnStartButtonClicked()
 void USMLobbyWidget::OnInviteButtonClicked()
 {
 	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
-	if (!Subsystem) return;
+	if (!Subsystem)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[LobbyWidget] OnlineSubsystem 없음 - 초대 불가"));
+		return;
+	}
 
 	IOnlineSessionPtr SI = Subsystem->GetSessionInterface();
-	if (SI.IsValid() == false) return;
+	if (SI.IsValid() == false)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[LobbyWidget] SessionInterface 없음 - 초대 불가"));
+		return;
+	}
 
+	UE_LOG(LogTemp, Log, TEXT("[LobbyWidget] Steam 친구 초대 오버레이 요청"));
 	SI->SendSessionInviteToFriends(
 		0, NAME_GameSession, TArray<FUniqueNetIdRef>());
 }

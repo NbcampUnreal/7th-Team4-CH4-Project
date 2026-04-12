@@ -149,6 +149,13 @@ bool USMQuickSlotBarWidget::NativeOnDragOver(
 		return false;
 	}
 
+	FSMSkillItemInstanceData SkillData;
+	if (InventoryOperation->GetItemInstanceId().IsValid() == false ||
+		InventoryComponent->GetSkillData(InventoryOperation->GetItemInstanceId(), SkillData) == false)
+	{
+		return false;
+	}
+
 	const FSMQuickSlotEntry* TargetSlot = InventoryComponent->FindQuickSlotEntry(TargetSlotIndex);
 	if (TargetSlot == nullptr)
 	{
@@ -180,6 +187,17 @@ bool USMQuickSlotBarWidget::NativeOnDrop(
 	}
 
 	if (InventoryOperation->GetSourceContainerId() != InventoryComponent->GetMainInventory().ContainerId)
+	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->ClearActiveDragState();
+		}
+		return false;
+	}
+
+	FSMSkillItemInstanceData SkillData;
+	if (InventoryOperation->GetItemInstanceId().IsValid() == false ||
+		InventoryComponent->GetSkillData(InventoryOperation->GetItemInstanceId(), SkillData) == false)
 	{
 		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 		{

@@ -13,6 +13,7 @@ class USMQuickSlotBarWidget;
 class USMInventoryContextMenuWidget;
 class USMItemHoverInfoWidget;
 class USMInventoryDragDropOperation;
+class USMDragItemPreviewWidget;
 
 
 /**
@@ -130,6 +131,15 @@ public:
 	/** 현재 활성 드래그 그리드 설정 */
 	void SetActiveDragGrid(USMInventoryGridWidget* InActiveGrid, USMInventoryDragDropOperation* InOperation);
 
+	/** 수동 드래그 프리뷰 시작 */
+	void BeginActiveDragPreview(USMInventoryDragDropOperation* InOperation, FVector2D InScreenPosition);
+
+	/** 수동 드래그 프리뷰 위치 갱신 */
+	void UpdateActiveDragPreviewPosition(USMInventoryDragDropOperation* InOperation, FVector2D InScreenPosition);
+
+	/** 수동 드래그 프리뷰 제거 */
+	void ClearActiveDragPreview();
+
 	/** 현재 호버 아이템 설정 요청 */
 	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
 	void SetHoveredItem(const FGuid& InItemInstanceId);
@@ -227,4 +237,6 @@ private:
 	FGameplayMessageListenerHandle MainInventoryUpdatedListenerHandle;
 	FGameplayMessageListenerHandle SkillContainerUpdatedListenerHandle;
 	FGameplayMessageListenerHandle SkillSummaryUpdatedListenerHandle;
+	TObjectPtr<USMInventoryDragDropOperation> ActiveDragPreviewOperation;
+	TObjectPtr<USMDragItemPreviewWidget> ActiveDragPreviewWidget;
 };

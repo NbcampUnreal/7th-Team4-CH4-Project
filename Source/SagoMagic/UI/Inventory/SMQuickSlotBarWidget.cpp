@@ -139,6 +139,15 @@ void USMQuickSlotBarWidget::NativeOnDragDetected(
 	}
 
 	OutOperation = CreateDragDropOperationForQuickSlotSkill(PendingDragSlotIndex, InGeometry, InMouseEvent);
+
+	if (USMInventoryDragDropOperation* InventoryOperation = Cast<USMInventoryDragDropOperation>(OutOperation))
+	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->BeginActiveDragPreview(InventoryOperation, InMouseEvent.GetScreenSpacePosition());
+		}
+	}
+
 	PendingDragSlotIndex = INDEX_NONE;
 }
 
@@ -159,7 +168,12 @@ bool USMQuickSlotBarWidget::NativeOnDragOver(
 		return false;
 	}
 
-	if (InventoryOperation->GetSourceContainerId() != InventoryComponent->GetMainInventory().ContainerId)
+	int32 SourceQuickSlotIndex = INDEX_NONE;
+	const bool bDraggedFromQuickSlot =
+		InventoryComponent->GetQuickSlotIndexByContainerId(InventoryOperation->GetSourceContainerId(), SourceQuickSlotIndex);
+	const bool bDraggedFromMainInventory =
+		InventoryOperation->GetSourceContainerId() == InventoryComponent->GetMainInventory().ContainerId;
+	if (bDraggedFromMainInventory == false && bDraggedFromQuickSlot == false)
 	{
 		return false;
 	}
@@ -201,7 +215,12 @@ bool USMQuickSlotBarWidget::NativeOnDrop(
 		return false;
 	}
 
-	if (InventoryOperation->GetSourceContainerId() != InventoryComponent->GetMainInventory().ContainerId)
+	int32 SourceQuickSlotIndex = INDEX_NONE;
+	const bool bDraggedFromQuickSlot =
+		InventoryComponent->GetQuickSlotIndexByContainerId(InventoryOperation->GetSourceContainerId(), SourceQuickSlotIndex);
+	const bool bDraggedFromMainInventory =
+		InventoryOperation->GetSourceContainerId() == InventoryComponent->GetMainInventory().ContainerId;
+	if (bDraggedFromMainInventory == false && bDraggedFromQuickSlot == false)
 	{
 		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 		{
@@ -615,7 +634,12 @@ UDragDropOperation* USMQuickSlotBarWidget::CreateDragDropOperationForQuickSlotSk
 		return nullptr;
 	}
 
-	USMDragItemPreviewWidget* PreviewWidget = CreateWidget<USMDragItemPreviewWidget>(this, USMDragItemPreviewWidget::StaticClass());
+	TSubclassOf<USMDragItemPreviewWidget> PreviewWidgetClass = DragPreviewWidgetClass;
+	if (PreviewWidgetClass == nullptr)
+	{
+		PreviewWidgetClass = USMDragItemPreviewWidget::StaticClass();
+	}
+	USMDragItemPreviewWidget* PreviewWidget = CreateWidget<USMDragItemPreviewWidget>(this, PreviewWidgetClass);
 	if (PreviewWidget != nullptr)
 	{
 		PreviewWidget->InitializePreviewFromInventory(SkillData.BaseItem.InstanceId, SkillData.BaseItem.Rotation, InventoryComponent);
@@ -636,19 +660,56 @@ UDragDropOperation* USMQuickSlotBarWidget::CreateDragDropOperationForQuickSlotSk
 		}
 	}
 
+	const UWidget* SourceSlotWidget = this;
+	if (InSlotIndex == 0 && Slot1_BaseBackground != nullptr)
+	{
+		SourceSlotWidget = Slot1_BaseBackground;
+	}
+	else if (InSlotIndex == 1 && Slot2_BaseBackground != nullptr)
+	{
+		SourceSlotWidget = Slot2_BaseBackground;
+	}
+
+	int32 PivotShapeLocalX = 0;
+	int32 PivotShapeLocalY = 0;
+	FVector2D PivotCellFraction(0.5f, 0.5f);
+	if (SourceSlotWidget != nullptr)
+	{
+		const FGeometry& SourceGeometry = SourceSlotWidget->GetCachedGeometry();
+		const FVector2D LocalMousePosition = SourceGeometry.AbsoluteToLocal(InMouseEvent.GetScreenSpacePosition());
+		const FVector2D LocalSize = SourceGeometry.GetLocalSize();
+		if (LocalSize.X > 0.0f && LocalSize.Y > 0.0f)
+		{
+			const float NormalizedX = FMath::Clamp(LocalMousePosition.X / LocalSize.X, 0.0f, 0.9999f);
+			const float NormalizedY = FMath::Clamp(LocalMousePosition.Y / LocalSize.Y, 0.0f, 0.9999f);
+			const float ShapeSpaceX = NormalizedX * static_cast<float>(FMath::Max(1, ShapeWidth));
+			const float ShapeSpaceY = NormalizedY * static_cast<float>(FMath::Max(1, ShapeHeight));
+
+			PivotShapeLocalX = FMath::Clamp(FMath::FloorToInt(ShapeSpaceX), 0, FMath::Max(0, ShapeWidth - 1));
+			PivotShapeLocalY = FMath::Clamp(FMath::FloorToInt(ShapeSpaceY), 0, FMath::Max(0, ShapeHeight - 1));
+			PivotCellFraction.X = FMath::Clamp(ShapeSpaceX - static_cast<float>(PivotShapeLocalX), 0.0f, 1.0f);
+			PivotCellFraction.Y = FMath::Clamp(ShapeSpaceY - static_cast<float>(PivotShapeLocalY), 0.0f, 1.0f);
+		}
+	}
+
 	NewOperation->InitializeOperation(
 		SkillData.BaseItem.InstanceId,
 		SlotEntry->GetContainerId(),
 		0,
 		0,
 		SkillData.BaseItem.Rotation,
-		0,
-		0,
+		PivotShapeLocalX,
+		PivotShapeLocalY,
 		ShapeWidth,
 		ShapeHeight,
-		FVector2D(0.5f, 0.5f),
+		PivotCellFraction,
 		PreviewWidget);
-	NewOperation->DefaultDragVisual = PreviewWidget;
+
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		NewOperation->SetOwningInventoryPanel(OwningPanel);
+	}
+
 	return NewOperation;
 }
 

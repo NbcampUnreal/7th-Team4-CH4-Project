@@ -99,6 +99,14 @@ void USMItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPoi
 	}
 
 	OutOperation = CreateDragDropOperation();
+
+	if (USMInventoryDragDropOperation* InventoryOperation = Cast<USMInventoryDragDropOperation>(OutOperation))
+	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->BeginActiveDragPreview(InventoryOperation, InMouseEvent.GetScreenSpacePosition());
+		}
+	}
 }
 
 void USMItemWidget::InitializeItemWidget(
@@ -153,7 +161,10 @@ USMInventoryDragDropOperation* USMItemWidget::CreateDragDropOperation()
 		FVector2D(0.5f, 0.5f),
 		PreviewWidget);
 
-	NewOperation->DefaultDragVisual = PreviewWidget;
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		NewOperation->SetOwningInventoryPanel(OwningPanel);
+	}
 
 	return NewOperation;
 }

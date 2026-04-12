@@ -473,7 +473,11 @@ USMInventoryDragDropOperation* USMInventoryGridWidget::CreateDragDropOperationFo
 		InPivotCellFraction,
 		PreviewWidget);
 
-	NewOperation->DefaultDragVisual = PreviewWidget;
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		NewOperation->SetOwningInventoryPanel(OwningPanel);
+	}
+
 	SetActiveDragOperation(NewOperation);
 	return NewOperation;
 }

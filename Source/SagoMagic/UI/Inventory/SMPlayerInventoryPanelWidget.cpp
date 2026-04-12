@@ -12,6 +12,8 @@
 #include "UI/Inventory/SMQuickSlotBarWidget.h"
 #include "UI/Inventory/SMInventoryContextMenuWidget.h"
 #include "UI/Inventory/SMItemHoverInfoWidget.h"
+#include "UI/Inventory/SMInventoryDragDropOperation.h"
+#include "UI/Inventory/SMDragItemPreviewWidget.h"
 
 USMPlayerInventoryPanelWidget::USMPlayerInventoryPanelWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -22,6 +24,8 @@ USMPlayerInventoryPanelWidget::USMPlayerInventoryPanelWidget(const FObjectInitia
 	  , ContextMenuWidget(nullptr)
 	  , ItemHoverInfoWidget(nullptr)
 	  , ContextMenuScreenPosition(FVector2D::ZeroVector)
+	  , ActiveDragPreviewOperation(nullptr)
+	  , ActiveDragPreviewWidget(nullptr)
 {
 }
 
@@ -32,6 +36,7 @@ void USMPlayerInventoryPanelWidget::NativeConstruct()
 
 void USMPlayerInventoryPanelWidget::NativeDestruct()
 {
+	ClearActiveDragPreview();
 	UnregisterInventoryMessageListeners();
 	Super::NativeDestruct();
 }
@@ -276,6 +281,8 @@ bool USMPlayerInventoryPanelWidget::RequestRotateCurrentDraggedItem()
 
 void USMPlayerInventoryPanelWidget::ClearActiveDragState()
 {
+	ClearActiveDragPreview();
+
 	if (MainInventoryGridWidget != nullptr)
 	{
 		MainInventoryGridWidget->ClearActiveDragState();
@@ -304,6 +311,82 @@ void USMPlayerInventoryPanelWidget::SetActiveDragGrid(
 	if (InActiveGrid != nullptr)
 	{
 		InActiveGrid->SetActiveDragOperation(InOperation);
+	}
+}
+
+void USMPlayerInventoryPanelWidget::BeginActiveDragPreview(
+	USMInventoryDragDropOperation* InOperation,
+	FVector2D InScreenPosition)
+{
+	if (InOperation == nullptr)
+	{
+		ClearActiveDragPreview();
+		return;
+	}
+
+	USMDragItemPreviewWidget* PreviewWidget = InOperation->GetDragPreviewWidget();
+	if (PreviewWidget == nullptr)
+	{
+		ClearActiveDragPreview();
+		return;
+	}
+
+	if (ActiveDragPreviewWidget != nullptr && ActiveDragPreviewWidget != PreviewWidget)
+	{
+		ActiveDragPreviewWidget->RemoveFromParent();
+	}
+
+	ActiveDragPreviewOperation = InOperation;
+	ActiveDragPreviewWidget = PreviewWidget;
+
+	if (PreviewWidget->IsInViewport() == false)
+	{
+		PreviewWidget->AddToViewport(1000);
+	}
+
+	PreviewWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+	PreviewWidget->SetIsEnabled(false);
+	UpdateActiveDragPreviewPosition(InOperation, InScreenPosition);
+}
+
+void USMPlayerInventoryPanelWidget::UpdateActiveDragPreviewPosition(
+	USMInventoryDragDropOperation* InOperation,
+	FVector2D InScreenPosition)
+{
+	if (InOperation == nullptr || ActiveDragPreviewWidget == nullptr)
+	{
+		return;
+	}
+
+	if (ActiveDragPreviewOperation != InOperation)
+	{
+		BeginActiveDragPreview(InOperation, InScreenPosition);
+		if (ActiveDragPreviewOperation != InOperation || ActiveDragPreviewWidget == nullptr)
+		{
+			return;
+		}
+	}
+
+	FVector2D PixelPosition = InScreenPosition;
+	FVector2D ViewportPosition = InScreenPosition;
+	USlateBlueprintLibrary::AbsoluteToViewport(this, InScreenPosition, PixelPosition, ViewportPosition);
+
+	ActiveDragPreviewWidget->ForceLayoutPrepass();
+	const FVector2D PreviewSize = ActiveDragPreviewWidget->GetDesiredSize();
+	const FVector2D PreviewPosition = ViewportPosition + (PreviewSize * InOperation->Offset);
+
+	ActiveDragPreviewWidget->SetAlignmentInViewport(FVector2D::ZeroVector);
+	ActiveDragPreviewWidget->SetPositionInViewport(PreviewPosition, false);
+}
+
+void USMPlayerInventoryPanelWidget::ClearActiveDragPreview()
+{
+	ActiveDragPreviewOperation = nullptr;
+
+	if (ActiveDragPreviewWidget != nullptr)
+	{
+		ActiveDragPreviewWidget->RemoveFromParent();
+		ActiveDragPreviewWidget = nullptr;
 	}
 }
 

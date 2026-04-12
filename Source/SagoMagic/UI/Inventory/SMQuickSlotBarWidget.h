@@ -11,6 +11,7 @@ class USMInventoryComponent;
 class UBorder;
 class UCanvasPanel;
 class UDragDropOperation;
+class USMDragItemPreviewWidget;
 
 
 /**
@@ -196,6 +197,10 @@ protected:
 	/** 프리뷰 셀 패딩 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Quick Slot Bar Widget")
 	float PreviewCellPadding = 2.0f;
+
+	/** 드래그 미리보기 위젯 클래스 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Quick Slot Bar Widget")
+	TSubclassOf<USMDragItemPreviewWidget> DragPreviewWidgetClass;
 
 private:
 	FGameplayMessageListenerHandle QuickSlotUpdatedListenerHandle;

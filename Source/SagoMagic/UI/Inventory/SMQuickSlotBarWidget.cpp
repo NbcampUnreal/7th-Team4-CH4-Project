@@ -2,6 +2,7 @@
 
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Blueprint/WidgetTree.h"
+#include "Abilities/GameplayAbility.h"
 #include "Character/SMPlayerController.h"
 #include "Components/Border.h"
 #include "Components/CanvasPanel.h"
@@ -12,6 +13,7 @@
 #include "Inventory/Core/SMContainerTypes.h"
 #include "Inventory/Core/SMItemInstanceTypes.h"
 #include "Inventory/Items/Definitions/SMItemDefinition.h"
+#include "Inventory/Items/Fragments/SMAbilityFragment.h"
 #include "Inventory/Items/Fragments/SMDisplayInfoFragment.h"
 #include "Inventory/Items/Fragments/SMGridShapeFragment.h"
 #include "UI/Inventory/SMDragItemPreviewWidget.h"
@@ -191,7 +193,7 @@ bool USMQuickSlotBarWidget::NativeOnDragOver(
 		return false;
 	}
 
-	return true;
+	return CanEquipDraggedSkillToQuickSlot(InventoryOperation, TargetSlotIndex);
 }
 
 bool USMQuickSlotBarWidget::NativeOnDrop(
@@ -251,11 +253,108 @@ bool USMQuickSlotBarWidget::NativeOnDrop(
 		return false;
 	}
 
+	if (CanEquipDraggedSkillToQuickSlot(InventoryOperation, TargetSlotIndex) == false)
+	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->ClearActiveDragState();
+		}
+		return false;
+	}
+
 	OwningPlayerController->ServerRPCEquipSkillToQuickSlot(InventoryOperation->GetItemInstanceId(), TargetSlotIndex);
 
 	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 	{
 		OwningPanel->ClearActiveDragState();
+	}
+
+	return true;
+}
+
+bool USMQuickSlotBarWidget::CanEquipDraggedSkillToQuickSlot(
+	USMInventoryDragDropOperation* InInventoryOperation,
+	int32 InTargetSlotIndex) const
+{
+	if (InInventoryOperation == nullptr || InventoryComponent == nullptr)
+	{
+		return false;
+	}
+
+	int32 SourceQuickSlotIndex = INDEX_NONE;
+	const bool bDraggedFromQuickSlot =
+		InventoryComponent->GetQuickSlotIndexByContainerId(InInventoryOperation->GetSourceContainerId(), SourceQuickSlotIndex);
+	const bool bDraggedFromMainInventory =
+		InInventoryOperation->GetSourceContainerId() == InventoryComponent->GetMainInventory().ContainerId;
+	if (bDraggedFromMainInventory == false && bDraggedFromQuickSlot == false)
+	{
+		return false;
+	}
+
+	FSMSkillItemInstanceData DraggedSkillData;
+	if (InInventoryOperation->GetItemInstanceId().IsValid() == false ||
+		InventoryComponent->GetSkillData(InInventoryOperation->GetItemInstanceId(), DraggedSkillData) == false)
+	{
+		return false;
+	}
+
+	const FSMQuickSlotEntry* TargetSlot = InventoryComponent->FindQuickSlotEntry(InTargetSlotIndex);
+	if (TargetSlot == nullptr)
+	{
+		return false;
+	}
+
+	if (TargetSlot->GetEquippedSkillId() == InInventoryOperation->GetItemInstanceId())
+	{
+		return true;
+	}
+
+	const USMItemDefinition* DraggedSkillDefinition = InventoryComponent->ResolveItemDefinition(DraggedSkillData.BaseItem);
+	if (DraggedSkillDefinition == nullptr)
+	{
+		return false;
+	}
+
+	const USMAbilityFragment* DraggedAbilityFragment = DraggedSkillDefinition->FindFragmentByClass<USMAbilityFragment>();
+	if (DraggedAbilityFragment == nullptr || DraggedAbilityFragment->GetAbilityInputTag().IsValid() == false ||
+		DraggedAbilityFragment->GetAbilityClass() == nullptr)
+	{
+		return false;
+	}
+
+	for (const FSMQuickSlotEntry& SlotEntry : InventoryComponent->GetQuickSlots().Slots)
+	{
+		const FGuid& EquippedSkillId = SlotEntry.GetEquippedSkillId();
+		if (EquippedSkillId.IsValid() == false ||
+			EquippedSkillId == InInventoryOperation->GetItemInstanceId() ||
+			EquippedSkillId == TargetSlot->GetEquippedSkillId())
+		{
+			continue;
+		}
+
+		FSMSkillItemInstanceData EquippedSkillData;
+		if (InventoryComponent->GetSkillData(EquippedSkillId, EquippedSkillData) == false)
+		{
+			continue;
+		}
+
+		const USMItemDefinition* EquippedSkillDefinition = InventoryComponent->ResolveItemDefinition(EquippedSkillData.BaseItem);
+		if (EquippedSkillDefinition == nullptr)
+		{
+			continue;
+		}
+
+		const USMAbilityFragment* EquippedAbilityFragment =
+			EquippedSkillDefinition->FindFragmentByClass<USMAbilityFragment>();
+		if (EquippedAbilityFragment == nullptr)
+		{
+			continue;
+		}
+
+		if (EquippedAbilityFragment->GetAbilityInputTag().MatchesTagExact(DraggedAbilityFragment->GetAbilityInputTag()))
+		{
+			return false;
+		}
 	}
 
 	return true;

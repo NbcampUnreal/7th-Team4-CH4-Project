@@ -12,6 +12,7 @@ class UBorder;
 class UCanvasPanel;
 class UDragDropOperation;
 class USMDragItemPreviewWidget;
+class USMInventoryDragDropOperation;
 
 
 /**
@@ -118,6 +119,9 @@ protected:
 
 	/** 화면 좌표 기준 슬롯 아이템 조회 */
 	bool FindSlotItemAtScreenPosition(const FVector2D& InScreenPosition, int32& OutSlotIndex, FGuid& OutSkillInstanceId) const;
+
+	/** 현재 드래그 오퍼레이션의 퀵슬롯 장착 가능 여부 검사 */
+	bool CanEquipDraggedSkillToQuickSlot(USMInventoryDragDropOperation* InInventoryOperation, int32 InTargetSlotIndex) const;
 
 	/** 퀵슬롯 스킬 드래그 드롭 오퍼레이션 생성 */
 	UDragDropOperation* CreateDragDropOperationForQuickSlotSkill(int32 InSlotIndex, const FGeometry& InGeometry,

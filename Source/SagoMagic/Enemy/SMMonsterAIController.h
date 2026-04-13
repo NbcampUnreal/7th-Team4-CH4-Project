@@ -61,7 +61,7 @@ public:
 
     /** 구조물 감지 반경 (경로 위 장애물 탐색) **/
     UPROPERTY(EditAnywhere, Category = "AI|Attack")
-    float StructureDetectRadius = 300.0f;
+    float BuildingDetectRadius = 300.0f;
 
 private:
     FTimerHandle AttackCheckTimerHandle;

@@ -335,6 +335,7 @@ void ASMPlayerCharacter::OnRep_PlayerState()
 	// 클라에서 호출
 	// Ability 부여는 서버에서만(클라는 복제)
 	InitializeAbilitySystem();
+	ApplyCustomization();
 }
 
 void ASMPlayerCharacter::InitializeAbilitySystem()
@@ -526,4 +527,73 @@ void ASMPlayerCharacter::PawnClientRestart()
 			}
 		}
 	}
+}
+
+//================================
+// 캐릭터 커스터마이징
+//================================
+
+void ASMPlayerCharacter::SetCustomizeMode(bool bEndable)
+{
+	if (IsLocallyControlled() == false) return;
+	if (IsValid(SpringArmComp) == false) return;
+	
+	UCharacterMovementComponent* MovementComp = GetCharacterMovement();
+	if (IsValid(MovementComp) == false) return;
+	
+	if (bEndable == true)
+	{
+		//이동 잠금
+		MovementComp->DisableMovement();
+		
+		//캐릭터 정면 뷰
+		SpringArmComp->SetUsingAbsoluteRotation(false);
+		SpringArmComp->SetRelativeRotation(CustomizeCameraRotation);
+		SpringArmComp->TargetArmLength = CustomizeCameraLength;
+	}
+	else
+	{
+		MovementComp->SetMovementMode(MOVE_Walking);
+		
+		
+		SpringArmComp->SetUsingAbsoluteRotation(true);
+		SpringArmComp->bInheritPitch = false;
+		SpringArmComp->bInheritYaw = false;
+		SpringArmComp->bInheritRoll = false;
+		SpringArmComp->SetRelativeRotation(FRotator(-CameraAngle,0.0f,0.0f));
+		SpringArmComp->TargetArmLength = CameraLength;
+	}
+}
+
+void ASMPlayerCharacter::ApplyCustomizationLocal(int32 WeaponIndex, int32 MaterialIndex)
+{
+	// Blueprint에서 WeaponSocket에 붙어있는 StaticMeshComponent 탐색
+	TArray<UStaticMeshComponent*> Comps;
+	GetComponents<UStaticMeshComponent>(Comps);
+	for (UStaticMeshComponent* Comp : Comps)
+	{
+		if (IsValid(Comp) == false) continue;
+		if (Comp->GetAttachSocketName() != FName("WeaponSocket")) continue;
+		
+		if (WeaponMeshOptions.IsValidIndex(WeaponIndex))
+		{
+			Comp->SetStaticMesh(WeaponMeshOptions[WeaponIndex]);
+		}
+		break;
+	}
+	
+	//캐릭터 스켈레탈 메시 머티리얼 적용
+	USkeletalMeshComponent* MeshComp = GetMesh();
+	if (IsValid(MeshComp) && MaterialOptions.IsValidIndex(MaterialIndex))
+	{
+		MeshComp->SetMaterial(0, MaterialOptions[MaterialIndex]);
+	}
+}
+
+void ASMPlayerCharacter::ApplyCustomization()
+{
+	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
+	if (IsValid(PS) == false) return;
+	
+	ApplyCustomizationLocal(PS->GetSelectedWeaponIndex(), PS->GetSelectedMaterialIndex());	
 }

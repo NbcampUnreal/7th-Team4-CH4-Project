@@ -83,6 +83,7 @@ bool ASMGridManager::IsValidGridPosition(int32 GridX, int32 GridY) const
 
 bool ASMGridManager::IsCellEmpty(int32 GridX, int32 GridY) const
 {
+	
 	//범위 밖은 점유로 간주
 	if (!IsValidGridPosition(GridX, GridY)) return false;
 	
@@ -159,7 +160,7 @@ void ASMGridManager::UpdateActorAtCell(int32 GridX, int32 GridY, AActor* NewActo
 {
 	//서버 전용
 	if (!HasAuthority()) return;
-	if (!IsValidGridPosition(GridX, GridX)) return;
+	if (!IsValidGridPosition(GridX, GridY)) return;
 	
 	GridData[GetCellIndex(GridX, GridY)].PlacedActor = NewActor;
 }
@@ -168,7 +169,7 @@ void ASMGridManager::ClearCell(int32 GridX, int32 GridY)
 {
 	//서버 전용
 	if (!HasAuthority()) return;
-	if (!IsValidGridPosition(GridX, GridX)) return;
+	if (!IsValidGridPosition(GridX, GridY)) return;
 	
 	//셀 모든 필드 초기화 (bIsOccupied = false로 변경 -> 클라 동기화)
 	GridData[GetCellIndex(GridX, GridY)].Clear();
@@ -260,7 +261,7 @@ TArray<FIntPoint> ASMGridManager::FindPath(FIntPoint Start, FIntPoint End)
 			//점유된 셀은 장애물 처리 (단, 목표 셀은 통과 허용)
 			if (!IsCellEmpty(NeighborGrid.X, NeighborGrid.Y) && NeighborGrid != End) continue;
 			
-			//방향 전환 패널티 : 직선 경롤르 우선하기 위해 꺽이면 +5
+			//방향 전환 패널티 : 직선 경로를 우선하기 위해 꺽이면 +5
 			FIntPoint NewDir = NeighborGrid - Current.Grid;
 			bool bTurned = (Current.Direction != FIntPoint(0,0)) && (NewDir != Current.Direction);
 			int32 TurnPenalty = bTurned ? 5 : 0;
@@ -285,6 +286,20 @@ TArray<FIntPoint> ASMGridManager::FindPath(FIntPoint Start, FIntPoint End)
 	
 	//경로를 찾지 못한 경우
 	return {};
+}
+
+void ASMGridManager::ClearCellsByActor(AActor* Actor)
+{
+	if (!HasAuthority()) return;
+	if (!Actor) return;
+	
+	for (FGridCell& Cell : GridData)
+	{
+		if (Cell.PlacedActor.Get() == Actor)
+		{
+			Cell.Clear();
+		}
+	}
 }
 
 //-------------내부 헬퍼-------------

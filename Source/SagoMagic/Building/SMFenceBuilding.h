@@ -29,4 +29,7 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_bIsCorner)
 	bool bIsCorner = false;
 	
+	UPROPERTY(Replicated)
+	float CornerYaw = 0.f;
+	
 };

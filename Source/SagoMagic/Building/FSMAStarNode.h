@@ -1,4 +1,5 @@
 #pragma once
+#include "CoreMinimal.h"
 
 /** A* 경로탐색 노드 - 서버 전용 계산, 복제 불필요 */
 struct FSMAStarNode

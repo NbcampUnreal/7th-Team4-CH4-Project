@@ -60,7 +60,7 @@ protected:
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Building")
 	bool bIsDestructible = true;
 	
-	UPROPERTY(ReplicatedUsing = OnRep_isDead)
+	UPROPERTY(ReplicatedUsing = OnRep_IsDead)
 	bool bIsDead = false;
 private:
 	ASMGridManager* GetGridManager() const;

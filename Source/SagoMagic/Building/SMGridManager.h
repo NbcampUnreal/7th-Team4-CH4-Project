@@ -20,7 +20,7 @@ DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnSMBuildingPlaced, int32, int32, AActor
  * 
  * [역할]
  * - 레벨에 1개만 배치되며, 전체 셀 점유 상태를 2D 배열(1D 저장)로 관리
- * - 자표 변환, 유효성 검사, 배치/제거, 경로 탐색 담당
+ * - 좌표 변환, 유효성 검사, 배치/제거, 경로 탐색 담당
  * 
  * [네트워크]
  *  - 서버(Authority) : 배치/제거/갱신 등 상태 변경 권한 보유
@@ -185,6 +185,16 @@ public:
 	 * @return		시작~끝을 잇는 셀 인덱스 배열 (순서대로)
 	 */
 	TArray<FIntPoint> FindPath(FIntPoint Start, FIntPoint End);
+	
+	/**
+	 * 특정 액터가 점유한 모든 셀을 한 번에 해제
+	 * 서버 전용
+	 * PlaceBuilding()은 GridSize 크기만큼 여러 셀을 점유하는데,
+	 * PlaceActor가 일치하는 셀을 모두 해제함
+	 * @param Actor 해제할 건물 액터
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Grid")
+	void ClearCellsByActor(AActor* Actor);
 public:
 	// 그리드 설정
 	

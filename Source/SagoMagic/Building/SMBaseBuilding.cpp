@@ -65,7 +65,7 @@ void ASMBaseBuilding::HandleDestruction_Implementation()
 
 	if (ASMGridManager* GM = GetGridManager())
 	{
-		GM->ClearCell(GridPos.X, GridPos.Y);
+		GM->ClearCellsByActor(this);
 		SM_LOG(this, LogSM, Log, TEXT("[BaseBuilding] 파괴 - GridPos(%d, %d)"), GridPos.X, GridPos.Y);
 	}
 	SetLifeSpan(2.f);

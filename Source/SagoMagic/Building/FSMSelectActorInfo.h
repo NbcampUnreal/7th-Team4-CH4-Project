@@ -4,6 +4,9 @@
 #include "FGridCell.h"
 #include "FSMSelectActorInfo.generated.h"
 
+class AActor;
+class UMaterialInterface;
+
 /** 편집 모드 선택 액터 정보 - 클라이언트 전용 UI 상태 */
 USTRUCT()
 struct FSMSelectActorInfo

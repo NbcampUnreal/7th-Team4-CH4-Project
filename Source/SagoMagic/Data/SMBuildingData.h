@@ -5,6 +5,10 @@
 #include "Engine/DataTable.h"
 #include "SMBuildingData.generated.h"
 
+class UTexture2D;
+class USoundBase;
+class AActor;
+
 USTRUCT(BlueprintType)
 struct FSMBuildingData : public FTableRowBase
 {

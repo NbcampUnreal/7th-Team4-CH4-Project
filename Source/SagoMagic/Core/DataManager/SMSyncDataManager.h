@@ -5,6 +5,7 @@
 #include "Data/SMWaveData.h"
 #include "Data/SMSkillData.h"
 #include "Data/SMBuildingData.h"
+#include "Data/SMItemDropTableData.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "SMSyncDataManager.generated.h"
 /**
@@ -42,6 +43,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Data")
 	FSMSkillData GetSkillData(FGameplayTag SkillTag) const;
 	
+	/** DropTable 데이터 조회 - ItemDefinition 키 */
+	UFUNCTION(BlueprintCallable, Category = "Data")
+	FSMItemDropTableData GetItemDropTableData(const TSoftObjectPtr<USMItemDefinition> ItemDefinition) const;
+
+	/** DropTable 전체 캐시 반환 */
+	const TMap<TSoftObjectPtr<USMItemDefinition>, FSMItemDropTableData>& GetItemDropTableCache() const
+	{
+		return ItemDropTableCache;
+	}
+	
 	/**WaveDataTable의 전체 Row 수 반환 */
 	int32 GetWaveCount() const {return WaveCache.Num();}
 	
@@ -68,6 +79,9 @@ private:
 	UPROPERTY()
 	TMap<EGridBuildingType, FSMBuildingData> BuildingCache;
 	
+	UPROPERTY()
+	TMap<TSoftObjectPtr<USMItemDefinition>, FSMItemDropTableData> ItemDropTableCache;
+	
 	/** Monster DT 실제 경로 */
 	FString MonsterDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/MonsterData/DT_Monster.DT_Monster");
 	/** Wave DT 실제 경로 */
@@ -76,6 +90,9 @@ private:
 	FString SkillDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/Skill_GemData/DT_Skill.DT_Skill");
 	/** Building DT 경로 */
 	FString BuildingDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/BuildingData/DT_Building.DT_Building");
+	/** DropTable DT 실제 경로 */
+	FString ItemDropTableDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/MonsterData/DT_DropTable.DT_DropTable");
+	
 };
 
 template <typename RowType, typename KeyType>

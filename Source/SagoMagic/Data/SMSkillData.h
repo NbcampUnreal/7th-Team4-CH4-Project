@@ -26,6 +26,14 @@ struct FSMSkillLevelData
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Level")
     float RangeCm = 0.0f;
 
+    /** 레벨별 추가 데미지 적용 간격 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Level")
+    float TickInterval = 0.0f;
+
+    /** 레벨별 추가 지속 시간 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Level")
+    float Duration = 0.0f;
+
     /** 레벨 도달 시 적용되는 스킬 동작 태그(추후 레벨에 따른 메커니즘 변화가 필요할 시 사용) */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Level")
     FGameplayTagContainer BehaviorTags;
@@ -55,6 +63,14 @@ struct FSMSkillData : public FTableRowBase
     /** 투사체 최대 사거리 */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Combat")
     float RangeCm = 3000.0f;
+
+    /** 데미지 적용 간격 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Combat")
+    float TickInterval = 0.0f;
+
+    /** 지속 시간 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Combat")
+    float Duration = 0.0f;
 
     /** 레벨별 상세 수치 데이터 구조체 배열 */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Combat")

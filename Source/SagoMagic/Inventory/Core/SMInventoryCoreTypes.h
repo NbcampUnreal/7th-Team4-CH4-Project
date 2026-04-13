@@ -56,7 +56,7 @@ enum class ESMGemModifierType : uint8
 	Effect UMETA(DisplayName="Effect"),
 	RangeOrArea UMETA(DisplayName="RangeOrArea"),
 	Cooldown UMETA(DisplayName="Cooldown"),
-	DamageTick UMETA(DisplayName="DamageTick"),
+	TickInterval UMETA(DisplayName="TickInterval"),
 	Duration UMETA(DisplayName="Duration")
 };
 

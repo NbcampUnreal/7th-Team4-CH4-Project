@@ -11,7 +11,9 @@
  * 포함 내용:
  * - 스킬 레벨
  * - 최종 데미지
+ * - 최종 데미지 적용 간격
  * - 최종 사거리/범위
+ * - 최종 지속 시간
  * - 최종 쿨타임
  * - 특수 동작 태그
  * - 장착된 젬/보조 스킬 ID 목록(디버그/추적용)
@@ -32,7 +34,9 @@ public:
 	FSMCompiledSkillSummary()
 		: CurrentLevel(1)
 		  , FinalDamage(0.0f)
+		  , FinalTickInterval(0.0f)
 		  , FinalRangeOrArea(0.0f)
+		  , FinalDuration(0.0f)
 		  , FinalCooldown(0.0f)
 	{
 	}
@@ -49,10 +53,22 @@ public:
 		return FinalDamage;
 	}
 
+	/** 최종 데미지 적용 간격 Getter */
+	float GetFinalTickInterval() const
+	{
+		return FinalTickInterval;
+	}
+
 	/** 최종 사거리/범위 Getter */
 	float GetFinalRangeOrArea() const
 	{
 		return FinalRangeOrArea;
+	}
+
+	/** 최종 지속 시간 Getter */
+	float GetFinalDuration() const
+	{
+		return FinalDuration;
 	}
 
 	/** 최종 쿨타임 Getter */
@@ -79,10 +95,22 @@ public:
 		FinalDamage = InFinalDamage;
 	}
 
+	/** 최종 데미지 적용 간격 Setter */
+	void SetFinalTickInterval(const float InFinalTickInterval)
+	{
+		FinalTickInterval = InFinalTickInterval;
+	}
+
 	/** 최종 사거리/범위 Setter */
 	void SetFinalRangeOrArea(const float InFinalRangeOrArea)
 	{
 		FinalRangeOrArea = InFinalRangeOrArea;
+	}
+
+	/** 최종 지속 시간 Setter */
+	void SetFinalDuration(const float InFinalDuration)
+	{
+		FinalDuration = InFinalDuration;
 	}
 
 	/** 최종 쿨타임 Setter */
@@ -103,7 +131,9 @@ public:
 	{
 		CurrentLevel = 1;
 		FinalDamage = 0.0f;
+		FinalTickInterval = 0.0f;
 		FinalRangeOrArea = 0.0f;
+		FinalDuration = 0.0f;
 		FinalCooldown = 0.0f;
 		BehaviorTags.Reset();
 		EmbeddedGemIds.Reset();
@@ -119,9 +149,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")
 	float FinalDamage;
 
+	/** 장착 결과 반영 후 최종 데미지 적용 간격 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")
+	float FinalTickInterval;
+
 	/** 장착 결과 반영 후 최종 사거리/범위 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")
 	float FinalRangeOrArea;
+
+	/** 장착 결과 반영 후 최종 지속 시간 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")
+	float FinalDuration;
 
 	/** 장착 결과 반영 후 최종 쿨타임 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventory|Skill")

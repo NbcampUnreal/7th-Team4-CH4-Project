@@ -1894,7 +1894,7 @@ bool USMInventoryComponent::CanApplyGemToSkillByTags(const USMGemModifierFragmen
 
 	const FGameplayTagContainer& RequiredAllTargetTags = InGemModifierFragment->GetRequiredAllTargetTags();
 	const FGameplayTagContainer& RequiredAnyTargetTags = InGemModifierFragment->GetRequiredAnyTargetTags();
-	const FGameplayTagContainer& BlockedTargetTags = InGemModifierFragment->BlockedTargetTags;
+	const FGameplayTagContainer& BlockedTargetTags = InGemModifierFragment->GetBlockedTargetTags();
 
 	if (RequiredAllTargetTags.IsEmpty() && RequiredAnyTargetTags.IsEmpty() && BlockedTargetTags.IsEmpty())
 	{

@@ -45,7 +45,7 @@ public:
 	
 	/** DropTable 데이터 조회 - ItemDefinition 키 */
 	UFUNCTION(BlueprintCallable, Category = "Data")
-	FSMItemDropTableData GetItemDropTableData(const TSoftObjectPtr<USMItemDefinition> ItemDefinition) const;
+	FSMItemDropTableData GetItemDropTableData(const TSoftObjectPtr<USMItemDefinition>& ItemDefinition) const;
 
 	/** DropTable 전체 캐시 반환 */
 	const TMap<TSoftObjectPtr<USMItemDefinition>, FSMItemDropTableData>& GetItemDropTableCache() const

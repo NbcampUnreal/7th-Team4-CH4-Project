@@ -101,7 +101,7 @@ FSMBuildingData USMSyncDataManager::GetBuildData(EGridBuildingType BuildingType)
 	return *Found;
 }
 
-FSMItemDropTableData USMSyncDataManager::GetItemDropTableData(const TSoftObjectPtr<USMItemDefinition> ItemDefinition) const
+FSMItemDropTableData USMSyncDataManager::GetItemDropTableData(const TSoftObjectPtr<USMItemDefinition>& ItemDefinition) const
 {
 	const FSMItemDropTableData* Found = ItemDropTableCache.Find(ItemDefinition);
 	if (!Found)

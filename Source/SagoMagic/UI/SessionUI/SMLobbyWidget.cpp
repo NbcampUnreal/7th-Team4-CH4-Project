@@ -32,18 +32,19 @@ bool USMLobbyWidget::Initialize()
 
 	if (IsValid(ReadyButton) == true)
 	{
-		ReadyButton->OnClicked.AddDynamic(
-			this, &ThisClass::OnReadyButtonClicked);
+		ReadyButton->OnClicked.AddDynamic(this, &ThisClass::OnReadyButtonClicked);
 	}
 	if (IsValid(StartButton) == true)
 	{
-		StartButton->OnClicked.AddDynamic(
-			this, &ThisClass::OnStartButtonClicked);
+		StartButton->OnClicked.AddDynamic(this, &ThisClass::OnStartButtonClicked);
 	}
 	if (IsValid(InviteButton) == true)
 	{
-		InviteButton->OnClicked.AddDynamic(
-			this, &ThisClass::OnInviteButtonClicked);
+		InviteButton->OnClicked.AddDynamic(this, &ThisClass::OnInviteButtonClicked);
+	}
+	if (IsValid(CustomizeButton))
+	{
+		CustomizeButton->OnClicked.AddDynamic(this, &ThisClass::OnCustomizeButtonClicked);
 	}
 
 	return true;
@@ -108,7 +109,7 @@ void USMLobbyWidget::UpdateSlotUI(const TArray<FSMPlayerSlotInfo>& Slots)
 	{
 		UTextBlock* SlotText = NewObject<UTextBlock>(this);
 		if (!SlotText) continue;
-		
+
 		FString Role = PlayerSlot.bIsHost ? TEXT("[Host]") : TEXT("[Player]");
 		FString Ready = PlayerSlot.bIsReady ? TEXT(" Ready") : TEXT(" Not Ready");
 		FString Display = Role + TEXT(" ") + PlayerSlot.PlayerName + Ready;
@@ -142,6 +143,14 @@ void USMLobbyWidget::TearDown()
 	{
 		GS->OnPlayerSlotChanged.RemoveDynamic(this, &ThisClass::OnPlayerSlotsUpdated);
 	}
+}
+
+void USMLobbyWidget::OnCustomizeButtonClicked()
+{
+	ASMPlayerController* PC = GetSMPlayerController();
+	if (IsValid(PC) == false) return;
+
+	PC->OpenCustomizeWidget();
 }
 
 ASMPlayerController* USMLobbyWidget::GetSMPlayerController() const

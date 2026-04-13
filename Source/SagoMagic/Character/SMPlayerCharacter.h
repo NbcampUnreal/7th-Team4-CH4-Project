@@ -175,7 +175,7 @@ protected:
 	//================================
 public:
 	/** 커스터마이즈 모드 진입/죵료 (이동 잠금 + 카메라 전환) 로컬 전용 */
-	void SetCustomizeMode(bool bEndable);
+	void SetCustomizeMode(bool bEnable);
 
 	/** PlayerState 인덱스 읽어서 무기/머티리얼 즉시 적용. 로컬 미리보기용 */
 	void ApplyCustomizationLocal(int32 WeaponIndex, int32 MaterialIndex);

@@ -533,7 +533,7 @@ void ASMPlayerCharacter::PawnClientRestart()
 // 캐릭터 커스터마이징
 //================================
 
-void ASMPlayerCharacter::SetCustomizeMode(bool bEndable)
+void ASMPlayerCharacter::SetCustomizeMode(bool bEnable)
 {
 	if (IsLocallyControlled() == false) return;
 	if (IsValid(SpringArmComp) == false) return;
@@ -541,7 +541,7 @@ void ASMPlayerCharacter::SetCustomizeMode(bool bEndable)
 	UCharacterMovementComponent* MovementComp = GetCharacterMovement();
 	if (IsValid(MovementComp) == false) return;
 	
-	if (bEndable == true)
+	if (bEnable == true)
 	{
 		//이동 잠금
 		MovementComp->DisableMovement();

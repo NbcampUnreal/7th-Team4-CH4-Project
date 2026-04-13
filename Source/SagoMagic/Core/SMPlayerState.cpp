@@ -40,6 +40,8 @@ void ASMPlayerState::CopyProperties(APlayerState* PlayerState)
 
 	NewPS->bIsHost = bIsHost;
 	NewPS->bIsReady = bIsReady;
+	NewPS->SelectedWeaponIndex = SelectedWeaponIndex;
+	NewPS->SelectedMaterialIndex = SelectedMaterialIndex;
 	NewPS->SetPlayerName(GetPlayerName());
 }
 
@@ -78,14 +80,14 @@ void ASMPlayerState::SetSelectedWeaponIndex(int32 NewIndex)
 
 void ASMPlayerState::SetSelectedMaterialIndex(int32 NewIndex)
 {
-	ensureMsgf(HasAuthority(), TEXT("[SetSelectedMaterialIndex must be called on server"));
+	ensureMsgf(HasAuthority(), TEXT("SetSelectedMaterialIndex must be called on server"));
 	if (HasAuthority() == false) return;
 	SelectedMaterialIndex = NewIndex;
 }
 
 void ASMPlayerState::OnRep_SelectedWeaponIndex()
 {
-	ASMPlayerCharacter* PlayerCharacter = Cast<ASMPlayerCharacter>(GetOwner());
+	ASMPlayerCharacter* PlayerCharacter = Cast<ASMPlayerCharacter>(GetPawn());
 	if (IsValid(PlayerCharacter) == false) return;
 
 	PlayerCharacter->ApplyCustomization();
@@ -93,7 +95,7 @@ void ASMPlayerState::OnRep_SelectedWeaponIndex()
 
 void ASMPlayerState::OnRep_SelectedMaterialIndex()
 {
-	ASMPlayerCharacter* PlayerCharacter = Cast<ASMPlayerCharacter>(GetOwner());
+	ASMPlayerCharacter* PlayerCharacter = Cast<ASMPlayerCharacter>(GetPawn());
 	if (IsValid(PlayerCharacter) == false) return;
 
 	PlayerCharacter->ApplyCustomization();

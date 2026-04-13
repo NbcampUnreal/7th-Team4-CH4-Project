@@ -50,10 +50,11 @@ private:
 	void OnWeaponButton2Clicked();
 	
 	void SelectWeapon(int32 WeaponIndex);
+	
 	//================================
 	// 스킬 선택
 	//================================
-	
+private:
 	/** 스킬 0번 선택 버튼 */
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> SkillButton0;

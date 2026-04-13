@@ -21,6 +21,11 @@ void USMCustomizeWidget::CustomizeSetup()
 	PreviousMatIdx = PS->GetSelectedMaterialIndex();
 	CurrentWeaponIdx = PreviousWeaponIdx;
 	CurrentMatIdx = PreviousMatIdx;
+	
+	ASMPlayerCharacter* Character = GetSMPlayerCharacter();
+	if (IsValid(Character) == false) return;
+	
+	Character->SetCustomizeMode(true);	
 }
 
 bool USMCustomizeWidget::Initialize()
@@ -72,7 +77,7 @@ bool USMCustomizeWidget::Initialize()
 	}
 	if (IsValid(CancelButton) == true)
 	{
-		ApplyButton->OnClicked.AddDynamic(this, &USMCustomizeWidget::OnCancelClicked);
+		CancelButton->OnClicked.AddDynamic(this, &USMCustomizeWidget::OnCancelClicked);
 	}
 
 	return true;
@@ -136,7 +141,7 @@ void USMCustomizeWidget::OnMaterialPrevClicked()
 	if (Num == 0) return;
 
 	CurrentMatIdx = (CurrentMatIdx - 1 + Num) % Num;
-	Character->ApplyCustomizationLocal(CurrentMatIdx, CurrentMatIdx);
+	Character->ApplyCustomizationLocal(CurrentWeaponIdx, CurrentMatIdx);
 }
 
 void USMCustomizeWidget::OnMaterialNextClicked()
@@ -148,7 +153,7 @@ void USMCustomizeWidget::OnMaterialNextClicked()
 	if (Num == 0) return;
 
 	CurrentMatIdx = (CurrentMatIdx + 1) % Num;
-	Character->ApplyCustomizationLocal(CurrentMatIdx, CurrentMatIdx);
+	Character->ApplyCustomizationLocal(CurrentWeaponIdx, CurrentMatIdx);
 }
 
 //================================

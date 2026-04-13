@@ -135,7 +135,7 @@ private:
 	UPROPERTY(EditDefaultsOnly,Category = "UI")
 	TSubclassOf<USMLobbyWidget> LobbyWidgetClass;
 
-	UPROPERTY(EditDefaultsOnly,Category = "UI")
+	UPROPERTY()
 	TObjectPtr<USMLobbyWidget> LobbyWidgetInstance;
 
 	UPROPERTY(EditDefaultsOnly, Category="UI")

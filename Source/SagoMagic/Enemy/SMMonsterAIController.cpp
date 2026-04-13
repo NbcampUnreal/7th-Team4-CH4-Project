@@ -170,8 +170,33 @@ AActor* ASMMonsterAIController::FindNearestPlayerInRange()
     APawn* MyPawn = GetPawn();
     if (!MyPawn) return nullptr;
 
-    float ClosestDist = AttackRange;  // ★ 공격 범위 안의 플레이어만
+    float ClosestDist = AttackRange;
     AActor* BestTarget = nullptr;
+
+    // HP 체크 - 살아있으면 true
+    auto IsPlayerAlive = [](APawn* PlayerPawn) -> bool
+        {
+            IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(PlayerPawn);
+            if (!ASCInterface) return true; // ASC 없으면 살아있다고 간주
+
+            UAbilitySystemComponent* PlayerASC = ASCInterface->GetAbilitySystemComponent();
+            if (!PlayerASC) return true;
+
+            for (const UAttributeSet* AS : PlayerASC->GetSpawnedAttributes())
+            {
+                if (!AS) continue;
+                for (TFieldIterator<FProperty> PropIt(AS->GetClass()); PropIt; ++PropIt)
+                {
+                    if (PropIt->GetName() == TEXT("Health"))
+                    {
+                        FGameplayAttribute HealthAttr(*PropIt);
+                        float HP = PlayerASC->GetNumericAttribute(HealthAttr);
+                        return HP > 0.f;
+                    }
+                }
+            }
+            return true; // Health 어트리뷰트 못 찾으면 살아있다고 간주
+        };
 
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
     {
@@ -181,32 +206,7 @@ AActor* ASMMonsterAIController::FindNearestPlayerInRange()
         APawn* PlayerPawn = PC->GetPawn();
         if (!PlayerPawn) continue;
 
-        // 죽은 플레이어 제외
-        if (IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(PlayerPawn))
-        {
-            if (UAbilitySystemComponent* PlayerASC = ASCInterface->GetAbilitySystemComponent())
-            {
-                for (const UAttributeSet* AS : PlayerASC->GetSpawnedAttributes())
-                {
-                    if (!AS) continue;
-                    for (TFieldIterator<FProperty> PropIt(AS->GetClass()); PropIt; ++PropIt)
-                    {
-                        if (PropIt->GetName() == TEXT("Health"))
-                        {
-                            FGameplayAttribute HealthAttr(*PropIt);
-                            float HP = PlayerASC->GetNumericAttribute(HealthAttr);
-                            if (HP <= 0.f)
-                            {
-                                PlayerPawn = nullptr;
-                            }
-                            goto DoneCheckHP;
-                        }
-                    }
-                }
-            }
-        }
-    DoneCheckHP:
-        if (!PlayerPawn) continue;
+        if (!IsPlayerAlive(PlayerPawn)) continue;
 
         float Dist = FVector::Dist(MyPawn->GetActorLocation(), PlayerPawn->GetActorLocation());
         if (Dist <= ClosestDist)

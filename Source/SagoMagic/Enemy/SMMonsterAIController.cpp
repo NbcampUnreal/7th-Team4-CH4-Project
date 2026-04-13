@@ -28,23 +28,22 @@ void ASMMonsterAIController::OnPossess(APawn* InPawn)
         {
             BlackboardComp = BlackboardCompPointer;
 
-            // 초기 타겟: BaseCamp
+            // Blackboard의 TargetActor는 항상 BaseCamp
             AActor* BaseCamp = FindBaseCamp();
             if (BaseCamp)
             {
                 Blackboard->SetValueAsObject(FName("TargetActor"), BaseCamp);
-                CurrentTargetType = EMonsterAttackTargetType::BaseCamp;
             }
+            CurrentTargetType = EMonsterAttackTargetType::BaseCamp;
 
-            //bool bBTStarted = RunBehaviorTree(BTAsset);
             RunBehaviorTree(BTAsset);
         }
     }
     else
     {
         UE_LOG(LogTemp, Warning, TEXT("[AI] OnPossess - BBAsset: %s / BTAsset: %s"),
-            BBAsset ? TEXT("있음") : TEXT("NULL"),
-            BTAsset ? TEXT("있음") : TEXT("NULL"));
+            BBAsset ? TEXT("Valid") : TEXT("NULL"),
+            BTAsset ? TEXT("Valid") : TEXT("NULL"));
     }
 }
 
@@ -74,19 +73,7 @@ void ASMMonsterAIController::StartAttackTimer()
 
 void ASMMonsterAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
 {
-    //if (Actor && Stimulus.WasSuccessfullySensed())
-    //{
-    //    if (Actor->ActorHasTag(FName("Player")))
-    //    {
-    //        //UE_LOG(LogTemp, Warning, TEXT("[AI] OnTargetDetected - 플레이어 감지! TargetActor를 %s로 덮어씀"),
-    //        //    *Actor->GetName());
-    //        UE_LOG(LogTemp, Warning, TEXT("[AI] OnTargetDetected - 플레이어 감지 시각: %f / Actor: %s"),
-    //            GetWorld()->GetTimeSeconds(), *Actor->GetName());
-    //        GetBlackboardComponent()->SetValueAsObject(FName("TargetActor"), Actor);
-    //    }
-    //}
-    //if (!Actor) return;
-
+    // Perception 감지는 로그용으로만 사용
     if (Stimulus.WasSuccessfullySensed())
     {
         // 감지해도 Blackboard는 건드리지 않음
@@ -103,82 +90,78 @@ void ASMMonsterAIController::UpdateTargetAndTryAttack()
     APawn* MyPawn = GetPawn();
     if (!MyPawn) return;
 
-    // 타겟 우선순위 결정
-    AActor* BestTarget = FindBestTarget();
-    if (!BestTarget) return;
-
-    // Blackboard에 최종 타겟 반영 (BT 이동에도 활용 가능)
+    // ── 1단계: 이동 목표는 항상 BaseCamp로 유지 ──
+    AActor* BaseCamp = FindBaseCamp();
     if (UBlackboardComponent* BB = GetBlackboardComponent())
     {
-        BB->SetValueAsObject(FName("TargetActor"), BestTarget);
+        // BaseCamp가 파괴됐으면 nullptr이 들어가서 BT MoveTo가 자연스럽게 실패
+        BB->SetValueAsObject(FName("TargetActor"), BaseCamp);
     }
-    // 타겟까지 거리 확인 — 범위 밖이면 이동만 하고 어빌리티는 실행하지 않음
-    float DistToTarget = FVector::Dist(MyPawn->GetActorLocation(), BestTarget->GetActorLocation());
-   
-    // BaseCamp는 AttackRange 대신 별도 근접 판정 사용 가능
-    // 지금은 동일한 AttackRange로 통일
-    if (DistToTarget > AttackRange)
+
+    // ── 2단계: AttackRange 안에 공격 가능한 대상이 있는지 확인 ──
+    AActor* AttackTarget = FindAttackableTarget();
+
+    if (!AttackTarget)
     {
-        // 사거리 밖 → BT가 MoveTo로 접근 중이므로 여기서는 리턴
+        // 공격할 게 없음 → BT가 BaseCamp로 이동 중 → 아무것도 안 함
+        CurrentTargetType = EMonsterAttackTargetType::BaseCamp;
         return;
     }
 
-    // ASC에서 어빌리티 실행
+    // ── 3단계: 공격 대상 있음 → 어빌리티 실행 ──
     UAbilitySystemComponent* ASC = nullptr;
     if (IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(MyPawn))
     {
         ASC = ASCInterface->GetAbilitySystemComponent();
     }
-
-    if (!ASC)
-    {
-        return;
-    }
+    if (!ASC) return;
 
     const TArray<FGameplayAbilitySpec>& AllSpecs = ASC->GetActivatableAbilities();
-
-    if (AllSpecs.Num() == 0)
-    {
-        return;
-    }
+    if (AllSpecs.Num() == 0) return;
 
     const FGameplayAbilitySpec& Spec = AllSpecs[0];
     ASC->TryActivateAbility(Spec.Handle);
 }
 
-AActor* ASMMonsterAIController::FindBestTarget()
+AActor* ASMMonsterAIController::FindAttackableTarget()
 {
-    // 우선순위 1: 경로 위 구조물
-    // TODO: 구조물 클래스 완성 후 FindBuildingOnPath()가 실제 결과를 반환함
-    if (AActor* Building = FindBuildingOnPath())
+    // 우선순위 1: 범위 내 건물
+    if (AActor* Building = FindBuildingInRange())
     {
         CurrentTargetType = EMonsterAttackTargetType::Building;
         return Building;
     }
 
-    // 우선순위 2: 범위 내 가장 가까운 플레이어
+    // 우선순위 2: 범위 내 플레이어
     if (AActor* Player = FindNearestPlayerInRange())
     {
         CurrentTargetType = EMonsterAttackTargetType::Player;
         return Player;
     }
 
-    // 우선순위 3: BaseCamp
-    if (AActor* BaseCamp = FindBaseCamp())
+    // 우선순위 3: 범위 내 BaseCamp
+    APawn* MyPawn = GetPawn();
+    if (MyPawn)
     {
-      //UE_LOG(LogTemp, Warning, TEXT("[AI] FindBaseCamp!!"));
-        CurrentTargetType = EMonsterAttackTargetType::BaseCamp;
-        return BaseCamp;
+        AActor* BaseCamp = FindBaseCamp();
+        if (BaseCamp)
+        {
+            float Dist = FVector::Dist(MyPawn->GetActorLocation(), BaseCamp->GetActorLocation());
+            if (Dist <= AttackRange)
+            {
+                CurrentTargetType = EMonsterAttackTargetType::BaseCamp;
+                return BaseCamp;
+            }
+        }
     }
 
-    // 공격 대상 없음
-    CurrentTargetType = EMonsterAttackTargetType::None;
     return nullptr;
 }
 
-AActor* ASMMonsterAIController::FindBuildingOnPath()
+AActor* ASMMonsterAIController::FindBuildingInRange()
 {
-    // TODO: 건축물 완성 후 아래 로직 구현
+    // TODO: 건축물 완성 후 구현
+    // AttackRange 이내에서 가장 가까운 건물 반환
     return nullptr;
 }
 
@@ -187,7 +170,7 @@ AActor* ASMMonsterAIController::FindNearestPlayerInRange()
     APawn* MyPawn = GetPawn();
     if (!MyPawn) return nullptr;
 
-    float ClosestDist = PlayerDetectRadius;  // ★ AttackRange가 아닌 별도 감지 반경 사용
+    float ClosestDist = AttackRange;  // ★ 공격 범위 안의 플레이어만
     AActor* BestTarget = nullptr;
 
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
@@ -203,7 +186,6 @@ AActor* ASMMonsterAIController::FindNearestPlayerInRange()
         {
             if (UAbilitySystemComponent* PlayerASC = ASCInterface->GetAbilitySystemComponent())
             {
-                // Health Attribute를 찾아 0 이하인 플레이어 스킵
                 for (const UAttributeSet* AS : PlayerASC->GetSpawnedAttributes())
                 {
                     if (!AS) continue;
@@ -215,7 +197,7 @@ AActor* ASMMonsterAIController::FindNearestPlayerInRange()
                             float HP = PlayerASC->GetNumericAttribute(HealthAttr);
                             if (HP <= 0.f)
                             {
-                                PlayerPawn = nullptr; // 죽은 플레이어 표시
+                                PlayerPawn = nullptr;
                             }
                             goto DoneCheckHP;
                         }
@@ -251,7 +233,6 @@ AActor* ASMMonsterAIController::FindBaseCamp()
     {
         if (!IsValid(Camp)) continue;
 
-        // HP가 0인 BaseCamp는 제외
         if (ASMBaseCampActor* CampActor = Cast<ASMBaseCampActor>(Camp))
         {
             if (CampActor->GetCurrentHealth() <= 0.f) continue;

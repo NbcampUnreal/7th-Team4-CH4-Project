@@ -54,6 +54,10 @@ protected:
     UPROPERTY(EditAnywhere, Category = "Design")
     float AttackRange = 150.0f;
 
+    /** BaseCamp용 트레이스 채널 (ECC_Pawn에 안 잡히는 StaticMesh 대상) **/
+    UPROPERTY(EditAnywhere, Category = "Design")
+    TEnumAsByte<ECollisionChannel> BaseCampTraceChannel = ECC_WorldDynamic;
+
     /**
      * 공격 중 상태를 알리는 태그 (에디터에서 "State.Attacking" 할당)
      **/

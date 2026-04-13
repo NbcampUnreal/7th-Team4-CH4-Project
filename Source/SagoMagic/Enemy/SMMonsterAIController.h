@@ -11,6 +11,7 @@
 UENUM(BlueprintType)
 enum class EMonsterAttackTargetType : uint8
 {
+    None,
     BaseCamp,
     Building,
     Player
@@ -51,9 +52,13 @@ public:
     UPROPERTY()
     TObjectPtr<class UBlackboardComponent> BlackboardComp;
 
-    /** 플레이어와 이 거리 이하일 때 공격을 시도 **/
+    /** 공격 판정 거리 — 이 범위 안이면 어빌리티 발동 **/
     UPROPERTY(EditAnywhere, Category = "AI|Attack")
     float AttackRange = 150.0f;
+
+    /** 플레이어와 이 거리 이하일 때 공격을 시도 **/
+    UPROPERTY(EditAnywhere, Category = "AI|Attack")
+    float PlayerDetectRadius = 800.0f;
 
     /** 공격 쿨다운 (초) **/
     UPROPERTY(EditAnywhere, Category = "AI|Attack")
@@ -61,12 +66,13 @@ public:
     // 구조물 감지 반경 (경로 위 장애물 탐색)
     // TODO: 구조물 클래스 완성 후 이 값을 에디터에서 조정
     UPROPERTY(EditAnywhere, Category = "AI|Attack")
-    float StructureDetectRadius = 300.0f;
+    float BuildingDetectRadius = 300.0f;
 private:
     /** 매 틱 대신 타이머로 거리 체크  **/
     FTimerHandle AttackCheckTimerHandle;
 
-    void CheckAttackRange();
+    /** 타겟 선정 + Blackboard 갱신 (매 쿨다운) **/
+    void UpdateTargetAndTryAttack();
 
     /**
     * 공격 우선순위에 따라 최적 타겟을 선정
@@ -85,4 +91,8 @@ private:
      */
     AActor* FindNearestPlayerInRange();
 
+    /**
+     * AttackRange 이내의 가장 가까운 플레이어
+     */
+    AActor* FindBaseCamp();
 };

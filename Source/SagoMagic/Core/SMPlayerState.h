@@ -75,4 +75,35 @@ private:
 
 	//friend 선언으로 LobbyGameMode를 제외한 다른 class는 해당 값을 수정할 수 없게 설정
 	friend class ASMLobbyGameMode;
+	
+	//================================
+	// 캐릭터 커스터마이징
+	//================================
+public:
+	//Getter
+	
+	int32 GetSelectedWeaponIndex() const {return SelectedWeaponIndex;}
+	int32 GetSelectedMaterialIndex() const {return SelectedMaterialIndex;}
+	
+	//Setter (ServerOnly)
+	
+	void SetSelectedWeaponIndex(int32 NewIndex);
+	void SetSelectedMaterialIndex(int32 NewIndex);
+	
+protected:
+	//서버에서 인덱스 변화 적용시 다른 클라이언트로 자동 replicate
+	
+	UFUNCTION()
+	void OnRep_SelectedWeaponIndex();
+	
+	UFUNCTION()
+	void OnRep_SelectedMaterialIndex();
+	
+	
+private:
+	UPROPERTY(ReplicatedUsing=OnRep_SelectedWeaponIndex)
+	int32 SelectedWeaponIndex = 0;
+	
+	UPROPERTY(ReplicatedUsing=OnRep_SelectedMaterialIndex)
+	int32 SelectedMaterialIndex = 0;
 };

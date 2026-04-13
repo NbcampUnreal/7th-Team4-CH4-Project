@@ -8,6 +8,8 @@
 #include "Enemy/SMMonsterBase.h"
 #include "Enemy/SMMonsterProjectile.h"
 #include "GAS/AttributeSets/SMMonsterAttributeSet.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/Character.h"
 
 UGA_MonsterRangedAttack::UGA_MonsterRangedAttack()
 {
@@ -36,10 +38,17 @@ void UGA_MonsterRangedAttack::ActivateAbility(
 		ASC->AddLooseGameplayTags(AttackingTags);
 	}
 
+	// 공격 중 제자리에서 발사되게끔
+	if (ACharacter* MonsterChar = Cast<ACharacter>(GetAvatarActorFromActorInfo()))
+	{
+		MonsterChar->GetCharacterMovement()->StopMovementImmediately();
+		MonsterChar->GetCharacterMovement()->DisableMovement();
+	}
+
 	// 몽타주 재생
 	UAbilityTask_PlayMontageAndWait* MontageTask =
 		UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
-			this, FName("RangedAttack"), AttackMontage, 1.0f);
+			this, FName("RangedAttack"), AttackMontage, 0.7f);
 
 	MontageTask->OnCompleted.AddDynamic(this, &UGA_MonsterRangedAttack::OnMontageCompleted);
 	MontageTask->OnCancelled.AddDynamic(this, &UGA_MonsterRangedAttack::OnMontageCancelled);
@@ -65,6 +74,12 @@ void UGA_MonsterRangedAttack::EndAbility(
 	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
 	{
 		ASC->RemoveLooseGameplayTags(AttackingTags);
+	}
+
+	// 공격 끝나면 다시 플레이어나 건축물 따라가게
+	if (ACharacter* MonsterChar = Cast<ACharacter>(GetAvatarActorFromActorInfo()))
+	{
+		MonsterChar->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	}
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);

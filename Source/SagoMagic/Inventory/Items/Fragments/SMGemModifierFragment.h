@@ -14,14 +14,16 @@
  * - 효과 종류
  * - 효과 수치
  * - 적용 우선순위
- * - 장착 대상 요구 태그
+ * - 장착 대상 전체 요구 태그
+ * - 장착 대상 일부 요구 태그
  * - 장착 대상 차단 태그
  * - 장착시 스킬 효과 변동을 적용할 태그 컨테이너(추후 확장성 대비용)
  *
  * 역할:
  * - 젬 장착 시 적용할 효과와 장착 가능 조건 제공
  *
- * RequiredTargetTags : 해당 태그를 가진 스킬에만 장착 가능(하나도 없어야 자유장착 가능, '전부 만족' 조건을 사용해 설정된 모든 태그를 만족해야 장착가능)
+ * RequiredAllTargetTags : 해당 태그를 가진 스킬에만 장착 가능(하나도 없으면 조건 없음, 설정된 모든 태그를 만족해야 장착 가능)
+ * RequiredAnyTargetTags : 해당 태그를 가진 스킬에만 장착 가능(하나도 없으면 조건 없음, 설정된 태그 중 하나라도 만족해야 장착 가능)
  * BlockedTargetTags : 해당 태그를 가진 스킬에는 장착 불가능(하나도 없어야 자유장착 가능, '일부 만족' 조건을 사용해 하나라도 해당되면 장착 불가능)
  */
 
@@ -58,10 +60,16 @@ public:
 		return ModifierPriority;
 	}
 
-	/** 요구 대상 태그 Getter */
-	const FGameplayTagContainer& GetRequiredTargetTags() const
+	/** 전체 요구 대상 태그 Getter */
+	const FGameplayTagContainer& GetRequiredAllTargetTags() const
 	{
-		return RequiredTargetTags;
+		return RequiredAllTargetTags;
+	}
+
+	/** 일부 요구 대상 태그 Getter */
+	const FGameplayTagContainer& GetRequiredAnyTargetTags() const
+	{
+		return RequiredAnyTargetTags;
 	}
 
 	/** 차단 대상 태그 Getter */
@@ -94,10 +102,16 @@ public:
 		ModifierPriority = InModifierPriority;
 	}
 
-	/** 요구 대상 태그 Setter */
-	void SetRequiredTargetTags(const FGameplayTagContainer& InRequiredTargetTags)
+	/** 전체 요구 대상 태그 Setter */
+	void SetRequiredAllTargetTags(const FGameplayTagContainer& InRequiredAllTargetTags)
 	{
-		RequiredTargetTags = InRequiredTargetTags;
+		RequiredAllTargetTags = InRequiredAllTargetTags;
+	}
+
+	/** 일부 요구 대상 태그 Setter */
+	void SetRequiredAnyTargetTags(const FGameplayTagContainer& InRequiredAnyTargetTags)
+	{
+		RequiredAnyTargetTags = InRequiredAnyTargetTags;
 	}
 
 	/** 차단 대상 태그 Setter */
@@ -125,9 +139,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Gem Modifier Fragment")
 	int32 ModifierPriority;
 
-	/** 장착 대상 스킬 요구 태그 */
+	/** 장착 대상 스킬 전체 요구 태그 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Gem Modifier Fragment")
-	FGameplayTagContainer RequiredTargetTags;
+	FGameplayTagContainer RequiredAllTargetTags;
+
+	/** 장착 대상 스킬 일부 요구 태그 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Gem Modifier Fragment")
+	FGameplayTagContainer RequiredAnyTargetTags;
 
 	/** 장착 대상 스킬 차단 태그 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Gem Modifier Fragment")

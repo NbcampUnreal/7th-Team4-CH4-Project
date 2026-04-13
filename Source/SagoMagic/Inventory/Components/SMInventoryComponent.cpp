@@ -1892,17 +1892,23 @@ bool USMInventoryComponent::CanApplyGemToSkillByTags(const USMGemModifierFragmen
 		return false;
 	}
 
-	const FGameplayTagContainer& RequiredTargetTags = InGemModifierFragment->RequiredTargetTags;
+	const FGameplayTagContainer& RequiredAllTargetTags = InGemModifierFragment->GetRequiredAllTargetTags();
+	const FGameplayTagContainer& RequiredAnyTargetTags = InGemModifierFragment->GetRequiredAnyTargetTags();
 	const FGameplayTagContainer& BlockedTargetTags = InGemModifierFragment->BlockedTargetTags;
 
-	if (RequiredTargetTags.IsEmpty() && BlockedTargetTags.IsEmpty())
+	if (RequiredAllTargetTags.IsEmpty() && RequiredAnyTargetTags.IsEmpty() && BlockedTargetTags.IsEmpty())
 	{
 		return true;
 	}
 
 	const FGameplayTagContainer& TargetSkillTags = InTargetSkillDefinition->GetItemTags();
 
-	if (RequiredTargetTags.IsEmpty() == false && TargetSkillTags.HasAll(RequiredTargetTags) == false)
+	if (RequiredAllTargetTags.IsEmpty() == false && TargetSkillTags.HasAll(RequiredAllTargetTags) == false)
+	{
+		return false;
+	}
+
+	if (RequiredAnyTargetTags.IsEmpty() == false && TargetSkillTags.HasAny(RequiredAnyTargetTags) == false)
 	{
 		return false;
 	}

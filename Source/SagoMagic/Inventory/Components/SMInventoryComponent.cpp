@@ -1892,17 +1892,23 @@ bool USMInventoryComponent::CanApplyGemToSkillByTags(const USMGemModifierFragmen
 		return false;
 	}
 
-	const FGameplayTagContainer& RequiredTargetTags = InGemModifierFragment->RequiredTargetTags;
-	const FGameplayTagContainer& BlockedTargetTags = InGemModifierFragment->BlockedTargetTags;
+	const FGameplayTagContainer& RequiredAllTargetTags = InGemModifierFragment->GetRequiredAllTargetTags();
+	const FGameplayTagContainer& RequiredAnyTargetTags = InGemModifierFragment->GetRequiredAnyTargetTags();
+	const FGameplayTagContainer& BlockedTargetTags = InGemModifierFragment->GetBlockedTargetTags();
 
-	if (RequiredTargetTags.IsEmpty() && BlockedTargetTags.IsEmpty())
+	if (RequiredAllTargetTags.IsEmpty() && RequiredAnyTargetTags.IsEmpty() && BlockedTargetTags.IsEmpty())
 	{
 		return true;
 	}
 
 	const FGameplayTagContainer& TargetSkillTags = InTargetSkillDefinition->GetItemTags();
 
-	if (RequiredTargetTags.IsEmpty() == false && TargetSkillTags.HasAll(RequiredTargetTags) == false)
+	if (RequiredAllTargetTags.IsEmpty() == false && TargetSkillTags.HasAll(RequiredAllTargetTags) == false)
+	{
+		return false;
+	}
+
+	if (RequiredAnyTargetTags.IsEmpty() == false && TargetSkillTags.HasAny(RequiredAnyTargetTags) == false)
 	{
 		return false;
 	}
@@ -2359,7 +2365,9 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 	}
 
 	float FinalDamage = SkillRuntimeData.BaseDamage + MatchedLevelData->BaseDamage;
+	float FinalTickInterval = SkillRuntimeData.TickInterval + MatchedLevelData->TickInterval;
 	float FinalRangeOrArea = SkillRuntimeData.RangeCm + MatchedLevelData->RangeCm;
+	float FinalDuration = SkillRuntimeData.Duration + MatchedLevelData->Duration;
 	float FinalCooldown = SkillRuntimeData.Cooldown + MatchedLevelData->Cooldown;
 	FGameplayTagContainer BehaviorTags = MatchedLevelData->BehaviorTags;
 
@@ -2386,8 +2394,14 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 		case ESMGemModifierType::Effect:
 			FinalDamage += static_cast<float>(GemModifierFragment->GetModifierValue());
 			break;
+		case ESMGemModifierType::TickInterval:
+			FinalTickInterval += static_cast<float>(GemModifierFragment->GetModifierValue());
+			break;
 		case ESMGemModifierType::RangeOrArea:
 			FinalRangeOrArea += static_cast<float>(GemModifierFragment->GetModifierValue());
+			break;
+		case ESMGemModifierType::Duration:
+			FinalDuration += static_cast<float>(GemModifierFragment->GetModifierValue());
 			break;
 		case ESMGemModifierType::Cooldown:
 			FinalCooldown += static_cast<float>(GemModifierFragment->GetModifierValue());
@@ -2400,7 +2414,9 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 
 	OutSummary.SetCurrentLevel(CurrentLevel);
 	OutSummary.SetFinalDamage(FinalDamage);
+	OutSummary.SetFinalTickInterval(FMath::Max(0.0f, FinalTickInterval));
 	OutSummary.SetFinalRangeOrArea(FinalRangeOrArea);
+	OutSummary.SetFinalDuration(FMath::Max(0.0f, FinalDuration));
 	OutSummary.SetFinalCooldown(FMath::Max(0.0f, FinalCooldown));
 	OutSummary.SetBehaviorTags(BehaviorTags);
 	return true;

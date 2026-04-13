@@ -38,6 +38,13 @@ void USMSyncDataManager::Initialize(FSubsystemCollectionBase& Collection)
 		BuildingCache,
 		[](const FSMBuildingData* Row) { return Row->BuildingType; }
 	);
+	
+	LoadAndCacheTable<FSMItemDropTableData, TSoftObjectPtr<USMItemDefinition>>(
+		*ItemDropTableDataTablePath,
+		ItemDropTableCache,
+		[](const FSMItemDropTableData* Row){return Row->ItemDefinition;}
+	);
+	
 }
 
 USMSyncDataManager* USMSyncDataManager::Get(const UObject* WorldContext)
@@ -90,6 +97,17 @@ FSMBuildingData USMSyncDataManager::GetBuildData(EGridBuildingType BuildingType)
 		UE_LOG(LogTemp, Error, TEXT("[SMSyncDataManager] BuildingType %d 없음"),
 			   static_cast<int32>(BuildingType));
 		return FSMBuildingData();
+	}
+	return *Found;
+}
+
+FSMItemDropTableData USMSyncDataManager::GetItemDropTableData(const TSoftObjectPtr<USMItemDefinition>& ItemDefinition) const
+{
+	const FSMItemDropTableData* Found = ItemDropTableCache.Find(ItemDefinition);
+	if (!Found)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[SMSyncDataManager] ItemDropTableData for ItemDefinition %s 없음"),*ItemDefinition.ToString());
+		return FSMItemDropTableData();
 	}
 	return *Found;
 }

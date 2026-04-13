@@ -84,6 +84,14 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerRPCEquipSkillToQuickSlot(const FGuid& InSkillInstanceId, int32 InSlotIndex);
 
+	/** ServerRPC - 스킬 빈 퀵슬롯 자동 장착 요청 */
+	UFUNCTION(Server, Reliable)
+	void ServerRPCEquipSkillToFirstAvailableQuickSlot(const FGuid& InSkillInstanceId);
+
+	/** ServerRPC - 퀵슬롯 스킬 자동 해제 요청 */
+	UFUNCTION(Server, Reliable)
+	void ServerRPCUnequipSkillFromQuickSlot(int32 InSlotIndex);
+
 	/** ServerRPC - 퀵슬롯 스킬 지정 위치 해제 요청 */
 	UFUNCTION(Server, Reliable)
 	void ServerRPCUnequipSkillFromQuickSlotToMainInventory(int32 InSlotIndex, int32 InGridX, int32 InGridY,

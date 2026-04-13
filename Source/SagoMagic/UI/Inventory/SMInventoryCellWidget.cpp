@@ -162,6 +162,14 @@ void USMInventoryCellWidget::NativeOnDragDetected(const FGeometry& InGeometry, c
 			GridX,
 			GridY,
 			PivotCellFraction);
+
+		if (USMInventoryDragDropOperation* InventoryOperation = Cast<USMInventoryDragDropOperation>(OutOperation))
+		{
+			if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+			{
+				OwningPanel->BeginActiveDragPreview(InventoryOperation, InMouseEvent.GetScreenSpacePosition());
+			}
+		}
 	}
 }
 

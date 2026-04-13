@@ -1,6 +1,7 @@
 ﻿#include "UI/Inventory/SMInventoryDragDropOperation.h"
 
 #include "UI/Inventory/SMDragItemPreviewWidget.h"
+#include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
 USMInventoryDragDropOperation::USMInventoryDragDropOperation()
 	: SourceGridX(0)
@@ -14,6 +15,7 @@ USMInventoryDragDropOperation::USMInventoryDragDropOperation()
 	  , PivotCellFraction(FVector2D(0.5f, 0.5f))
 	  , PointerFromCenter(FVector2D::ZeroVector)
 	  , DragPreviewWidget(nullptr)
+	  , OwningInventoryPanel(nullptr)
 {
 }
 
@@ -70,6 +72,36 @@ void USMInventoryDragDropOperation::UpdateCurrentRotation(ESMGridRotation InCurr
 {
 	CurrentRotation = InCurrentRotation;
 	UpdateDragVisualOffset();
+}
+
+void USMInventoryDragDropOperation::Drop_Implementation(const FPointerEvent& PointerEvent)
+{
+	if (OwningInventoryPanel != nullptr)
+	{
+		OwningInventoryPanel->ClearActiveDragPreview();
+	}
+
+	Super::Drop_Implementation(PointerEvent);
+}
+
+void USMInventoryDragDropOperation::DragCancelled_Implementation(const FPointerEvent& PointerEvent)
+{
+	if (OwningInventoryPanel != nullptr)
+	{
+		OwningInventoryPanel->ClearActiveDragPreview();
+	}
+
+	Super::DragCancelled_Implementation(PointerEvent);
+}
+
+void USMInventoryDragDropOperation::Dragged_Implementation(const FPointerEvent& PointerEvent)
+{
+	if (OwningInventoryPanel != nullptr)
+	{
+		OwningInventoryPanel->UpdateActiveDragPreviewPosition(this, PointerEvent.GetScreenSpacePosition());
+	}
+
+	Super::Dragged_Implementation(PointerEvent);
 }
 
 bool USMInventoryDragDropOperation::HasValidItemInstanceId() const

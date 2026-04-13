@@ -6,6 +6,7 @@
 #include "SMInventoryDragDropOperation.generated.h"
 
 class USMDragItemPreviewWidget;
+class USMPlayerInventoryPanelWidget;
 
 
 /**
@@ -99,6 +100,12 @@ public:
 		return DragPreviewWidget;
 	}
 
+	/** 드래그 프리뷰 소유 패널 Getter */
+	USMPlayerInventoryPanelWidget* GetOwningInventoryPanel() const
+	{
+		return OwningInventoryPanel;
+	}
+
 	/** 아이템 인스턴스 ID Setter */
 	void SetItemInstanceId(const FGuid& InItemInstanceId)
 	{
@@ -165,6 +172,12 @@ public:
 		DragPreviewWidget = InDragPreviewWidget;
 	}
 
+	/** 드래그 프리뷰 소유 패널 Setter */
+	void SetOwningInventoryPanel(USMPlayerInventoryPanelWidget* InOwningInventoryPanel)
+	{
+		OwningInventoryPanel = InOwningInventoryPanel;
+	}
+
 public:
 	/** 드래그 데이터 초기화 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Drag Drop")
@@ -184,6 +197,10 @@ public:
 	/** 현재 드래그 회전값 갱신 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Drag Drop")
 	void UpdateCurrentRotation(ESMGridRotation InCurrentRotation);
+
+	virtual void Drop_Implementation(const FPointerEvent& PointerEvent) override;
+	virtual void DragCancelled_Implementation(const FPointerEvent& PointerEvent) override;
+	virtual void Dragged_Implementation(const FPointerEvent& PointerEvent) override;
 
 	/** 드래그 대상 아이템 ID 유효성 검사 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory Drag Drop")
@@ -249,6 +266,10 @@ public:
 	/** 드래그 미리보기 위젯 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Drag Drop")
 	TObjectPtr<USMDragItemPreviewWidget> DragPreviewWidget;
+
+	/** 드래그 프리뷰 소유 패널 */
+	UPROPERTY(BlueprintReadOnly, Category="Inventory Drag Drop")
+	TObjectPtr<USMPlayerInventoryPanelWidget> OwningInventoryPanel;
 
 protected:
 

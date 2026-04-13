@@ -2,6 +2,7 @@
 
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Blueprint/WidgetTree.h"
+#include "Abilities/GameplayAbility.h"
 #include "Character/SMPlayerController.h"
 #include "Components/Border.h"
 #include "Components/CanvasPanel.h"
@@ -12,6 +13,7 @@
 #include "Inventory/Core/SMContainerTypes.h"
 #include "Inventory/Core/SMItemInstanceTypes.h"
 #include "Inventory/Items/Definitions/SMItemDefinition.h"
+#include "Inventory/Items/Fragments/SMAbilityFragment.h"
 #include "Inventory/Items/Fragments/SMDisplayInfoFragment.h"
 #include "Inventory/Items/Fragments/SMGridShapeFragment.h"
 #include "UI/Inventory/SMDragItemPreviewWidget.h"
@@ -28,6 +30,16 @@ USMQuickSlotBarWidget::USMQuickSlotBarWidget(const FObjectInitializer& ObjectIni
 void USMQuickSlotBarWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	if (Slot1_PreviewCanvas != nullptr)
+	{
+		Slot1_PreviewCanvas->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	}
+
+	if (Slot2_PreviewCanvas != nullptr)
+	{
+		Slot2_PreviewCanvas->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	}
 }
 
 void USMQuickSlotBarWidget::NativeDestruct()
@@ -68,6 +80,11 @@ FReply USMQuickSlotBarWidget::NativeOnPreviewMouseButtonDown(const FGeometry& In
 	if (InMouseEvent.GetEffectingButton() != EKeys::LeftMouseButton)
 	{
 		return Super::NativeOnPreviewMouseButtonDown(InGeometry, InMouseEvent);
+	}
+
+	if (ASMPlayerController* OwningPlayerController = GetOwningPlayer<ASMPlayerController>())
+	{
+		OwningPlayerController->ServerRPCSetActiveQuickSlot(SlotIndex);
 	}
 
 	PendingDragSlotIndex = SlotIndex;
@@ -124,6 +141,15 @@ void USMQuickSlotBarWidget::NativeOnDragDetected(
 	}
 
 	OutOperation = CreateDragDropOperationForQuickSlotSkill(PendingDragSlotIndex, InGeometry, InMouseEvent);
+
+	if (USMInventoryDragDropOperation* InventoryOperation = Cast<USMInventoryDragDropOperation>(OutOperation))
+	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->BeginActiveDragPreview(InventoryOperation, InMouseEvent.GetScreenSpacePosition());
+		}
+	}
+
 	PendingDragSlotIndex = INDEX_NONE;
 }
 
@@ -144,7 +170,19 @@ bool USMQuickSlotBarWidget::NativeOnDragOver(
 		return false;
 	}
 
-	if (InventoryOperation->GetSourceContainerId() != InventoryComponent->GetMainInventory().ContainerId)
+	int32 SourceQuickSlotIndex = INDEX_NONE;
+	const bool bDraggedFromQuickSlot =
+		InventoryComponent->GetQuickSlotIndexByContainerId(InventoryOperation->GetSourceContainerId(), SourceQuickSlotIndex);
+	const bool bDraggedFromMainInventory =
+		InventoryOperation->GetSourceContainerId() == InventoryComponent->GetMainInventory().ContainerId;
+	if (bDraggedFromMainInventory == false && bDraggedFromQuickSlot == false)
+	{
+		return false;
+	}
+
+	FSMSkillItemInstanceData SkillData;
+	if (InventoryOperation->GetItemInstanceId().IsValid() == false ||
+		InventoryComponent->GetSkillData(InventoryOperation->GetItemInstanceId(), SkillData) == false)
 	{
 		return false;
 	}
@@ -155,7 +193,7 @@ bool USMQuickSlotBarWidget::NativeOnDragOver(
 		return false;
 	}
 
-	return TargetSlot->GetEquippedSkillId().IsValid() == false;
+	return CanEquipDraggedSkillToQuickSlot(InventoryOperation, TargetSlotIndex);
 }
 
 bool USMQuickSlotBarWidget::NativeOnDrop(
@@ -179,7 +217,23 @@ bool USMQuickSlotBarWidget::NativeOnDrop(
 		return false;
 	}
 
-	if (InventoryOperation->GetSourceContainerId() != InventoryComponent->GetMainInventory().ContainerId)
+	int32 SourceQuickSlotIndex = INDEX_NONE;
+	const bool bDraggedFromQuickSlot =
+		InventoryComponent->GetQuickSlotIndexByContainerId(InventoryOperation->GetSourceContainerId(), SourceQuickSlotIndex);
+	const bool bDraggedFromMainInventory =
+		InventoryOperation->GetSourceContainerId() == InventoryComponent->GetMainInventory().ContainerId;
+	if (bDraggedFromMainInventory == false && bDraggedFromQuickSlot == false)
+	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->ClearActiveDragState();
+		}
+		return false;
+	}
+
+	FSMSkillItemInstanceData SkillData;
+	if (InventoryOperation->GetItemInstanceId().IsValid() == false ||
+		InventoryComponent->GetSkillData(InventoryOperation->GetItemInstanceId(), SkillData) == false)
 	{
 		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 		{
@@ -190,7 +244,16 @@ bool USMQuickSlotBarWidget::NativeOnDrop(
 
 	const FSMQuickSlotEntry* TargetSlot = InventoryComponent->FindQuickSlotEntry(TargetSlotIndex);
 	ASMPlayerController* OwningPlayerController = GetOwningPlayer<ASMPlayerController>();
-	if (TargetSlot == nullptr || TargetSlot->GetEquippedSkillId().IsValid() || OwningPlayerController == nullptr)
+	if (TargetSlot == nullptr || OwningPlayerController == nullptr)
+	{
+		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			OwningPanel->ClearActiveDragState();
+		}
+		return false;
+	}
+
+	if (CanEquipDraggedSkillToQuickSlot(InventoryOperation, TargetSlotIndex) == false)
 	{
 		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 		{
@@ -204,6 +267,94 @@ bool USMQuickSlotBarWidget::NativeOnDrop(
 	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 	{
 		OwningPanel->ClearActiveDragState();
+	}
+
+	return true;
+}
+
+bool USMQuickSlotBarWidget::CanEquipDraggedSkillToQuickSlot(
+	USMInventoryDragDropOperation* InInventoryOperation,
+	int32 InTargetSlotIndex) const
+{
+	if (InInventoryOperation == nullptr || InventoryComponent == nullptr)
+	{
+		return false;
+	}
+
+	int32 SourceQuickSlotIndex = INDEX_NONE;
+	const bool bDraggedFromQuickSlot =
+		InventoryComponent->GetQuickSlotIndexByContainerId(InInventoryOperation->GetSourceContainerId(), SourceQuickSlotIndex);
+	const bool bDraggedFromMainInventory =
+		InInventoryOperation->GetSourceContainerId() == InventoryComponent->GetMainInventory().ContainerId;
+	if (bDraggedFromMainInventory == false && bDraggedFromQuickSlot == false)
+	{
+		return false;
+	}
+
+	FSMSkillItemInstanceData DraggedSkillData;
+	if (InInventoryOperation->GetItemInstanceId().IsValid() == false ||
+		InventoryComponent->GetSkillData(InInventoryOperation->GetItemInstanceId(), DraggedSkillData) == false)
+	{
+		return false;
+	}
+
+	const FSMQuickSlotEntry* TargetSlot = InventoryComponent->FindQuickSlotEntry(InTargetSlotIndex);
+	if (TargetSlot == nullptr)
+	{
+		return false;
+	}
+
+	if (TargetSlot->GetEquippedSkillId() == InInventoryOperation->GetItemInstanceId())
+	{
+		return true;
+	}
+
+	const USMItemDefinition* DraggedSkillDefinition = InventoryComponent->ResolveItemDefinition(DraggedSkillData.BaseItem);
+	if (DraggedSkillDefinition == nullptr)
+	{
+		return false;
+	}
+
+	const USMAbilityFragment* DraggedAbilityFragment = DraggedSkillDefinition->FindFragmentByClass<USMAbilityFragment>();
+	if (DraggedAbilityFragment == nullptr || DraggedAbilityFragment->GetAbilityInputTag().IsValid() == false ||
+		DraggedAbilityFragment->GetAbilityClass() == nullptr)
+	{
+		return false;
+	}
+
+	for (const FSMQuickSlotEntry& SlotEntry : InventoryComponent->GetQuickSlots().Slots)
+	{
+		const FGuid& EquippedSkillId = SlotEntry.GetEquippedSkillId();
+		if (EquippedSkillId.IsValid() == false ||
+			EquippedSkillId == InInventoryOperation->GetItemInstanceId() ||
+			EquippedSkillId == TargetSlot->GetEquippedSkillId())
+		{
+			continue;
+		}
+
+		FSMSkillItemInstanceData EquippedSkillData;
+		if (InventoryComponent->GetSkillData(EquippedSkillId, EquippedSkillData) == false)
+		{
+			continue;
+		}
+
+		const USMItemDefinition* EquippedSkillDefinition = InventoryComponent->ResolveItemDefinition(EquippedSkillData.BaseItem);
+		if (EquippedSkillDefinition == nullptr)
+		{
+			continue;
+		}
+
+		const USMAbilityFragment* EquippedAbilityFragment =
+			EquippedSkillDefinition->FindFragmentByClass<USMAbilityFragment>();
+		if (EquippedAbilityFragment == nullptr)
+		{
+			continue;
+		}
+
+		if (EquippedAbilityFragment->GetAbilityInputTag().MatchesTagExact(DraggedAbilityFragment->GetAbilityInputTag()))
+		{
+			return false;
+		}
 	}
 
 	return true;
@@ -324,16 +475,24 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 	for (const FSMQuickSlotEntry& SlotEntry : Slots)
 	{
 		UCanvasPanel* TargetPreviewCanvas = nullptr;
+		UWidget* TargetPreviewBoundsWidget = nullptr;
 		if (SlotEntry.GetSlotIndex() == 0)
 		{
 			TargetPreviewCanvas = Slot1_PreviewCanvas;
+			TargetPreviewBoundsWidget = Slot1_BaseBackground != nullptr
+				                           ? static_cast<UWidget*>(Slot1_BaseBackground)
+				                           : static_cast<UWidget*>(Slot1_PreviewCanvas);
 		}
 		else if (SlotEntry.GetSlotIndex() == 1)
 		{
 			TargetPreviewCanvas = Slot2_PreviewCanvas;
+			TargetPreviewBoundsWidget = Slot2_BaseBackground != nullptr
+				                           ? static_cast<UWidget*>(Slot2_BaseBackground)
+				                           : static_cast<UWidget*>(Slot2_PreviewCanvas);
 		}
 
-		if (TargetPreviewCanvas == nullptr || SlotEntry.GetEquippedSkillId().IsValid() == false)
+		if (TargetPreviewCanvas == nullptr || TargetPreviewBoundsWidget == nullptr ||
+			SlotEntry.GetEquippedSkillId().IsValid() == false)
 		{
 			continue;
 		}
@@ -421,21 +580,38 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 		const int32 PreviewWidth = FMath::Max(1, MaxX - MinX + 1);
 		const int32 PreviewHeight = FMath::Max(1, MaxY - MinY + 1);
 		FVector2D EffectivePreviewAreaSize = PreviewAreaSize;
-		if (const FVector2D CanvasSize = TargetPreviewCanvas->GetCachedGeometry().GetLocalSize();
-			CanvasSize.X > 0.0f && CanvasSize.Y > 0.0f)
+		if (const FVector2D BoundsSize = TargetPreviewBoundsWidget->GetCachedGeometry().GetLocalSize();
+			BoundsSize.X > 0.0f && BoundsSize.Y > 0.0f)
 		{
-			EffectivePreviewAreaSize = CanvasSize;
+			EffectivePreviewAreaSize = BoundsSize;
 		}
 
+		const float PreviewCellSpacing = PreviewCellPadding * 2.0f;
+		const float PreviewOuterPadding = PreviewCellPadding * 2.0f;
+		const FVector2D AvailablePreviewAreaSize(
+			FMath::Max(0.0f, EffectivePreviewAreaSize.X - (PreviewOuterPadding * 2.0f)),
+			FMath::Max(0.0f, EffectivePreviewAreaSize.Y - (PreviewOuterPadding * 2.0f)));
 		const float WidthCellSize = EffectivePreviewAreaSize.X / static_cast<float>(PreviewWidth);
 		const float HeightCellSize = EffectivePreviewAreaSize.Y / static_cast<float>(PreviewHeight);
-		const float PreviewCellSize = FMath::Clamp(
+		const float BasePreviewCellSize = FMath::Clamp(
 			FMath::Min(WidthCellSize, HeightCellSize),
 			MinPreviewCellSize,
 			MaxPreviewCellSize);
+		const float MaxContentWidth =
+			(AvailablePreviewAreaSize.X - ((PreviewWidth - 1) * PreviewCellSpacing)) / static_cast<float>(PreviewWidth);
+		const float MaxContentHeight =
+			(AvailablePreviewAreaSize.Y - ((PreviewHeight - 1) * PreviewCellSpacing)) / static_cast<float>(PreviewHeight);
+		const float PreviewCellContentSize = FMath::Clamp(
+			BasePreviewCellSize,
+			MinPreviewCellSize,
+			FMath::Max(0.0f, FMath::Min(FMath::Min(MaxContentWidth, MaxContentHeight), MaxPreviewCellSize)));
+		const float OccupiedPreviewWidth =
+			(PreviewWidth * PreviewCellContentSize) + ((PreviewWidth - 1) * PreviewCellSpacing);
+		const float OccupiedPreviewHeight =
+			(PreviewHeight * PreviewCellContentSize) + ((PreviewHeight - 1) * PreviewCellSpacing);
 		const FVector2D PreviewOffset(
-			(EffectivePreviewAreaSize.X - (PreviewWidth * PreviewCellSize)) * 0.5f,
-			(EffectivePreviewAreaSize.Y - (PreviewHeight * PreviewCellSize)) * 0.5f);
+			(EffectivePreviewAreaSize.X - OccupiedPreviewWidth) * 0.5f,
+			(EffectivePreviewAreaSize.Y - OccupiedPreviewHeight) * 0.5f);
 
 		for (const FIntPoint& OccupiedCell : OccupiedCells)
 		{
@@ -445,8 +621,9 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 				continue;
 			}
 
-			PreviewCellSizeBox->SetWidthOverride(PreviewCellSize);
-			PreviewCellSizeBox->SetHeightOverride(PreviewCellSize);
+			PreviewCellSizeBox->SetVisibility(ESlateVisibility::HitTestInvisible);
+			PreviewCellSizeBox->SetWidthOverride(PreviewCellContentSize);
+			PreviewCellSizeBox->SetHeightOverride(PreviewCellContentSize);
 
 			UBorder* PreviewCellBorder = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass());
 			if (PreviewCellBorder == nullptr)
@@ -454,16 +631,17 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 				continue;
 			}
 
+			PreviewCellBorder->SetVisibility(ESlateVisibility::HitTestInvisible);
 			PreviewCellBorder->SetBrushColor(PreviewAccentColor);
 			PreviewCellSizeBox->SetContent(PreviewCellBorder);
 
 			if (UCanvasPanelSlot* PreviewCanvasSlot = Cast<UCanvasPanelSlot>(TargetPreviewCanvas->AddChild(PreviewCellSizeBox)))
 			{
 				PreviewCanvasSlot->SetAutoSize(false);
-				PreviewCanvasSlot->SetSize(FVector2D(PreviewCellSize, PreviewCellSize));
+				PreviewCanvasSlot->SetSize(FVector2D(PreviewCellContentSize, PreviewCellContentSize));
 				PreviewCanvasSlot->SetPosition(FVector2D(
-					PreviewOffset.X + ((OccupiedCell.X - MinX) * PreviewCellSize),
-					PreviewOffset.Y + ((OccupiedCell.Y - MinY) * PreviewCellSize)));
+					PreviewOffset.X + ((OccupiedCell.X - MinX) * (PreviewCellContentSize + PreviewCellSpacing)),
+					PreviewOffset.Y + ((OccupiedCell.Y - MinY) * (PreviewCellContentSize + PreviewCellSpacing))));
 			}
 		}
 	}
@@ -555,7 +733,12 @@ UDragDropOperation* USMQuickSlotBarWidget::CreateDragDropOperationForQuickSlotSk
 		return nullptr;
 	}
 
-	USMDragItemPreviewWidget* PreviewWidget = CreateWidget<USMDragItemPreviewWidget>(this, USMDragItemPreviewWidget::StaticClass());
+	TSubclassOf<USMDragItemPreviewWidget> PreviewWidgetClass = DragPreviewWidgetClass;
+	if (PreviewWidgetClass == nullptr)
+	{
+		PreviewWidgetClass = USMDragItemPreviewWidget::StaticClass();
+	}
+	USMDragItemPreviewWidget* PreviewWidget = CreateWidget<USMDragItemPreviewWidget>(this, PreviewWidgetClass);
 	if (PreviewWidget != nullptr)
 	{
 		PreviewWidget->InitializePreviewFromInventory(SkillData.BaseItem.InstanceId, SkillData.BaseItem.Rotation, InventoryComponent);
@@ -576,19 +759,56 @@ UDragDropOperation* USMQuickSlotBarWidget::CreateDragDropOperationForQuickSlotSk
 		}
 	}
 
+	const UWidget* SourceSlotWidget = this;
+	if (InSlotIndex == 0 && Slot1_BaseBackground != nullptr)
+	{
+		SourceSlotWidget = Slot1_BaseBackground;
+	}
+	else if (InSlotIndex == 1 && Slot2_BaseBackground != nullptr)
+	{
+		SourceSlotWidget = Slot2_BaseBackground;
+	}
+
+	int32 PivotShapeLocalX = 0;
+	int32 PivotShapeLocalY = 0;
+	FVector2D PivotCellFraction(0.5f, 0.5f);
+	if (SourceSlotWidget != nullptr)
+	{
+		const FGeometry& SourceGeometry = SourceSlotWidget->GetCachedGeometry();
+		const FVector2D LocalMousePosition = SourceGeometry.AbsoluteToLocal(InMouseEvent.GetScreenSpacePosition());
+		const FVector2D LocalSize = SourceGeometry.GetLocalSize();
+		if (LocalSize.X > 0.0f && LocalSize.Y > 0.0f)
+		{
+			const float NormalizedX = FMath::Clamp(LocalMousePosition.X / LocalSize.X, 0.0f, 0.9999f);
+			const float NormalizedY = FMath::Clamp(LocalMousePosition.Y / LocalSize.Y, 0.0f, 0.9999f);
+			const float ShapeSpaceX = NormalizedX * static_cast<float>(FMath::Max(1, ShapeWidth));
+			const float ShapeSpaceY = NormalizedY * static_cast<float>(FMath::Max(1, ShapeHeight));
+
+			PivotShapeLocalX = FMath::Clamp(FMath::FloorToInt(ShapeSpaceX), 0, FMath::Max(0, ShapeWidth - 1));
+			PivotShapeLocalY = FMath::Clamp(FMath::FloorToInt(ShapeSpaceY), 0, FMath::Max(0, ShapeHeight - 1));
+			PivotCellFraction.X = FMath::Clamp(ShapeSpaceX - static_cast<float>(PivotShapeLocalX), 0.0f, 1.0f);
+			PivotCellFraction.Y = FMath::Clamp(ShapeSpaceY - static_cast<float>(PivotShapeLocalY), 0.0f, 1.0f);
+		}
+	}
+
 	NewOperation->InitializeOperation(
 		SkillData.BaseItem.InstanceId,
 		SlotEntry->GetContainerId(),
 		0,
 		0,
 		SkillData.BaseItem.Rotation,
-		0,
-		0,
+		PivotShapeLocalX,
+		PivotShapeLocalY,
 		ShapeWidth,
 		ShapeHeight,
-		FVector2D(0.5f, 0.5f),
+		PivotCellFraction,
 		PreviewWidget);
-	NewOperation->DefaultDragVisual = PreviewWidget;
+
+	if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+	{
+		NewOperation->SetOwningInventoryPanel(OwningPanel);
+	}
+
 	return NewOperation;
 }
 

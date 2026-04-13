@@ -55,6 +55,10 @@ public:
 	UFUNCTION(BlueprintPure, Category="Inventory Context Menu Widget")
 	bool CanDeleteItem() const;
 
+	/** 대상 아이템이 퀵슬롯 장착 상태인지 Getter */
+	UFUNCTION(BlueprintPure, Category="Inventory Context Menu Widget")
+	bool IsEquippedInQuickSlot() const;
+
 	/** 대상 아이템 인스턴스 ID Setter */
 	void SetItemInstanceId(const FGuid& InItemInstanceId)
 	{
@@ -94,6 +98,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Inventory Context Menu Widget")
 	void RequestDetachEmbeddedItem();
 
+	/** 스킬 퀵슬롯 장착/해제 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory Context Menu Widget")
+	void RequestToggleSkillQuickSlot();
+
 protected:
 	/** 컨텍스트 메뉴 갱신 블루프린트 이벤트 */
 	UFUNCTION(BlueprintImplementableEvent, Category="Inventory Context Menu Widget")
@@ -127,6 +135,10 @@ protected:
 	/** 즉시 삭제 가능 여부 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Context Menu Widget")
 	bool bCanDeleteItem;
+
+	/** 대상 아이템의 퀵슬롯 장착 상태 */
+	UPROPERTY(BlueprintReadOnly, Category="Inventory Context Menu Widget")
+	bool bEquippedInQuickSlot;
 
 private:
 };

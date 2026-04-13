@@ -11,6 +11,8 @@
 
 class USMItemDefinition;
 class USMGemModifierFragment;
+class USMAbilitySystemComponent;
+class UGameplayAbility;
 class ASMBaseItemDropActor;
 
 /**
@@ -147,7 +149,7 @@ public:
 	                                              ESMGridRotation InRotation);
 
 	/** 활성 퀵슬롯 설정 요청 */
-	UFUNCTION(BlueprintCallable, Category="Inventory|QuickSlot")
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Inventory|QuickSlot")
 	void SetActiveQuickSlot(int32 InSlotIndex);
 
 	/** 스킬 요약 재계산 요청 */
@@ -266,6 +268,30 @@ private:
 
 	/** 스킬 요약 계산 */
 	bool BuildSkillSummary(const FGuid& InSkillInstanceId, FSMCompiledSkillSummary& OutSummary) const;
+
+	/** 소유 플레이어의 ASC 조회 */
+	USMAbilitySystemComponent* GetOwnerAbilitySystemComponent() const;
+
+	/** 스킬 인스턴스의 어빌리티 데이터 조회 */
+	bool GetSkillAbilityData(const FSMSkillItemInstanceData& InSkillData, FGameplayTag& OutAbilityTag,
+	                         TSubclassOf<UGameplayAbility>* OutAbilityClass = nullptr) const;
+
+	/** 동일 태그 스킬이 퀵슬롯에 장착됐는지 검사 */
+	bool HasQuickSlotSkillTag(const FGameplayTag& InAbilityTag, const FGuid& InIgnoreSkillInstanceId,
+	                          const FGuid& InAdditionalIgnoreSkillInstanceId = FGuid()) const;
+
+	/** 퀵슬롯 스킬 어빌리티 등록 */
+	bool AddQuickSlotAbility(const FGameplayTag& InAbilityTag,
+	                         const TSubclassOf<UGameplayAbility>& InAbilityClass);
+
+	/** 퀵슬롯 스킬 어빌리티 해제 */
+	void RemoveQuickSlotAbility(const FGameplayTag& InAbilityTag);
+
+	/** 메인 인벤토리 스킬과 퀵슬롯 스킬 스왑 시 해제 위치 탐색 */
+	bool FindMainInventorySwapPosition(const FSMSkillItemInstanceData& InIncomingSkill,
+	                                   const FSMSkillItemInstanceData& InEquippedQuickSlotSkill,
+	                                   int32& OutGridX,
+	                                   int32& OutGridY);
 
 	/** 슬롯 인덱스 유효성 검사 */
 	bool IsValidQuickSlotIndex(int32 InSlotIndex) const;

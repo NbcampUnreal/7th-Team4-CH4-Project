@@ -1,5 +1,6 @@
 #include "SMSyncDataManager.h"
 
+#include "Data/SMBuildingData.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 
 bool USMSyncDataManager::ShouldCreateSubsystem(UObject* Outer) const
@@ -32,6 +33,11 @@ void USMSyncDataManager::Initialize(FSubsystemCollectionBase& Collection)
 		[](const FSMSkillData* Row){return Row->SkillTag;}
 		);
 	
+	LoadAndCacheTable<FSMBuildingData, EGridBuildingType>(
+		*BuildingDataTablePath,
+		BuildingCache,
+		[](const FSMBuildingData* Row) { return Row->BuildingType; }
+	);
 }
 
 USMSyncDataManager* USMSyncDataManager::Get(const UObject* WorldContext)
@@ -72,6 +78,18 @@ FSMSkillData USMSyncDataManager::GetSkillData(FGameplayTag SkillTag) const
 	{
 		UE_LOG(LogTemp, Error, TEXT("[SMSyncDataManager] SkillTag %s 없음"),*SkillTag.ToString());
 		return FSMSkillData();
+	}
+	return *Found;
+}
+
+FSMBuildingData USMSyncDataManager::GetBuildData(EGridBuildingType BuildingType) const
+{
+	const FSMBuildingData* Found = BuildingCache.Find(BuildingType);
+	if (!Found)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[SMSyncDataManager] BuildingType %d 없음"),
+			   static_cast<int32>(BuildingType));
+		return FSMBuildingData();
 	}
 	return *Found;
 }

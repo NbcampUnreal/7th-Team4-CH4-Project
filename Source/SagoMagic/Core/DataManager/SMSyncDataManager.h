@@ -4,9 +4,9 @@
 #include "Data/SMMonsterData.h"
 #include "Data/SMWaveData.h"
 #include "Data/SMSkillData.h"
+#include "Data/SMBuildingData.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "SMSyncDataManager.generated.h"
-
 /**
  * DataTable을 관리하는 전역 클래스입니다.
  * WorldSubsystem은 클라, 서버 모두 각각 생성됩니다.
@@ -44,6 +44,11 @@ public:
 	
 	/**WaveDataTable의 전체 Row 수 반환 */
 	int32 GetWaveCount() const {return WaveCache.Num();}
+	
+	/** Building 데이터 조회 - EGridBuildingType 키 */
+	UFUNCTION(BlueprintCallable, Category = "Data")
+	FSMBuildingData GetBuildData(EGridBuildingType BuildingType) const;
+	
 public:
  	template<typename RowType, typename KeyType>
  	static void LoadAndCacheTable(const TCHAR* Path, TMap<KeyType, RowType>& OutCache,
@@ -60,12 +65,17 @@ private:
 	UPROPERTY()
 	TMap<FGameplayTag, FSMSkillData> SkillCache;
 	
+	UPROPERTY()
+	TMap<EGridBuildingType, FSMBuildingData> BuildingCache;
+	
 	/** Monster DT 실제 경로 */
 	FString MonsterDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/MonsterData/DT_Monster.DT_Monster");
 	/** Wave DT 실제 경로 */
 	FString WaveDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/WaveData/DT_Wave.DT_Wave");
 	/** Skill DT 실제 경로 */
 	FString SkillDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/Skill_GemData/DT_Skill.DT_Skill");
+	/** Building DT 경로 */
+	FString BuildingDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/BuildingData/DT_Building.DT_Building");
 };
 
 template <typename RowType, typename KeyType>

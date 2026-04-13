@@ -18,4 +18,8 @@ namespace SMCharacterTag
 	/** 디폴트 어빌리티 */
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Default_Interact, TEXT("Ability.Default.Interact"))
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Default_Pickup, TEXT("Ability.Default.Pickup"))
+	
+	/** 건축 어빌리티 */
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Build_Place, TEXT("Ability.Build.Place"))
+	UE_DEFINE_GAMEPLAY_TAG(Build_GoldCost, TEXT("Build.GoldCost"))
 }

@@ -20,4 +20,9 @@ namespace SMCharacterTag
 	/** 디폴트 어빌리티 */
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Default_Interact)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Default_Pickup)
+
+	/** 건축 어빌리티 */
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Build_Place)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Build_GoldCost)
+	
 }

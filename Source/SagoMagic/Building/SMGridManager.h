@@ -238,7 +238,7 @@ private:
 	/**
 	 * 회전을 반영한 실제 건물 크기 반환
 	 * RotationIndex가 홀수(90도, 270도)이면 X<->Y 스왑
-	 * @param size			회전 전 기본 크기
+	 * @param Size			회전 전 기본 크기
 	 * @param RotationIndex 회전 단계
 	 * @return				회전 적용된 실제 크기
 	 */

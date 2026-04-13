@@ -55,7 +55,9 @@ enum class ESMGemModifierType : uint8
 	None UMETA(DisplayName="None"),
 	Effect UMETA(DisplayName="Effect"),
 	RangeOrArea UMETA(DisplayName="RangeOrArea"),
-	Cooldown UMETA(DisplayName="Cooldown")
+	Cooldown UMETA(DisplayName="Cooldown"),
+	DamageTick UMETA(DisplayName="DamageTick"),
+	Duration UMETA(DisplayName="Duration")
 };
 
 /** 비트마스크 기반 그리드 모양 데이터 */

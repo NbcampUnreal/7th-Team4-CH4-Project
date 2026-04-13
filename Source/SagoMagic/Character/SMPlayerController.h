@@ -7,6 +7,7 @@
 #include "GameFramework/PlayerController.h"
 #include "SMPlayerController.generated.h"
 
+class USMCustomizeWidget;
 class USMSessionSubsystem;
 class USMTitleWidget;
 class USMLobbyWidget;
@@ -159,4 +160,26 @@ private:
 
 	/** 현재 인벤토리 위젯 표시 여부 */
 	bool bIsInventoryVisible = false;
+	
+	//================================
+	// 캐릭터 커스터마이징
+	//================================
+public:
+	/** ServerRPC - SMCustomizeWidget에서 호출. 선택 확정 시 서버에 인덱스 전달 */
+	UFUNCTION(Server, Reliable)
+	void ServerRPCSetCustomization(int32 WeaponIndex, int32 MaterialIndex);
+	
+	/** LobbyWidget에서 호출. LobbyWidget 숨김 + CustomizeWidget 생성 + InputMode UIOnly */
+	void OpenCustomizeWidget();
+	
+	/** CustomizeWidget에서 호출. CustomizeWidget제거 + LobbyWidget 복원 + InputMode GameAndUI */
+	void CloseCustomizeWidget();
+	
+private:
+	
+	UPROPERTY(EditDefaultsOnly, Category="UI")
+	TSubclassOf<USMCustomizeWidget> CustomizeWidgetClass;
+	
+	UPROPERTY()
+	TObjectPtr<USMCustomizeWidget> CustomizeWidgetInstance;
 };

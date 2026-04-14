@@ -23,6 +23,8 @@ void USMEnemyHPBarComponent::BeginPlay()
 
 void USMEnemyHPBarComponent::TryInitASC()
 {
+	if (ASC) return;
+	
 	if (AActor* OwnerActor = GetOwner())
 	{
 		// ASC 가지고 있는지 인터페이스로 확인

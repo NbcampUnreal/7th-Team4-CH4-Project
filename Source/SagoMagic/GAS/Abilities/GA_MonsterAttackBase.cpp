@@ -96,10 +96,10 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
         {
             TargetASC = ASCInterface->GetAbilitySystemComponent();
         }
-        // ★ 디버그 로그 추가
-        UE_LOG(LogTemp, Warning, TEXT("[Attack] TargetASC: %s, DamageEffectClass: %s"),
-            TargetASC ? TEXT("Valid") : TEXT("NULL"),
-            DamageEffectClass ? TEXT("Valid") : TEXT("NULL"));
+        // 디버그 로그 추가
+        //UE_LOG(LogTemp, Warning, TEXT("[Attack] TargetASC: %s, DamageEffectClass: %s"),
+        //    TargetASC ? TEXT("Valid") : TEXT("NULL"),
+        //    DamageEffectClass ? TEXT("Valid") : TEXT("NULL"));
 
         if (TargetASC && SourceASC && DamageEffectClass)
         {
@@ -118,16 +118,16 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
 
                 SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
                 // ★ 디버그 로그 추가
-                //bool bApplied = SourceASC->ApplyGameplayEffectSpecToTarget(
-                //    *SpecHandle.Data.Get(), TargetASC).IsValid();
+                bool bApplied = SourceASC->ApplyGameplayEffectSpecToTarget(
+                    *SpecHandle.Data.Get(), TargetASC).IsValid();
 
-                //UE_LOG(LogTemp, Warning, TEXT("[Attack] GE Apply 결과: %s"),
-                //    bApplied ? TEXT("SUCCESS") : TEXT("FAILED"));
+                UE_LOG(LogTemp, Warning, TEXT("[Attack] GE Apply 결과: %s"),
+                    bApplied ? TEXT("SUCCESS") : TEXT("FAILED"));
 
-                //UE_LOG(LogTemp, Log, TEXT("[Attack] %s -> %s | Damage: %.0f"),
-                //    *SourceActor->GetName(),
-                //    *HitResult.GetActor()->GetName(),
-                //    DamageAmount);
+                UE_LOG(LogTemp, Log, TEXT("[Attack] %s -> %s | Damage: %.0f"),
+                    *SourceActor->GetName(),
+                    *HitResult.GetActor()->GetName(),
+                    DamageAmount);
             }
         }
     }

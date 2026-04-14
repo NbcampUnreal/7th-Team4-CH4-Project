@@ -7,6 +7,7 @@
 #include "Perception/AIPerceptionTypes.h"
 #include "SMMonsterAIController.generated.h"
 
+
 //공격 대상 타입
 UENUM(BlueprintType)
 enum class EMonsterAttackTargetType : uint8
@@ -16,6 +17,8 @@ enum class EMonsterAttackTargetType : uint8
     Building,
     Player
 };
+
+class ASMBaseBuilding;
 
 UCLASS()
 class SAGOMAGIC_API ASMMonsterAIController : public AAIController

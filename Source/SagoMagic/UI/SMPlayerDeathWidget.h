@@ -45,10 +45,10 @@ protected:
 	
 	/** 메인 사망 문구 */
 	UPROPERTY(EditDefaultsOnly, Category = "Player Death")
-	FText DeathMessageText = FText::FromString(TEXT("You Died"));
+	FText DeathMessageText = FText::FromString(TEXT("당신은 죽었습니다.."));
 	/** 카운트다운 문구 */
 	UPROPERTY(EditDefaultsOnly, Category = "Player Death")
-	FText CountdownFormatText = FText::FromString(TEXT("Respawning in {0}..."));
+	FText CountdownFormatText = FText::FromString(TEXT("부활까지 {0}초"));
 
 private:
 	/** 남은 부활 시간 */

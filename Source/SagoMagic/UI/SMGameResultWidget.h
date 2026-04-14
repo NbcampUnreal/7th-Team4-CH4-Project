@@ -41,7 +41,7 @@ protected:
 	FText VictoryText = FText::FromString(TEXT("게임 클리어!"));
 	/** 에디터에서 지정할 패배 텍스트 */
 	UPROPERTY(EditDefaultsOnly, Category = "Game Result|Settings")
-	FText DefeatText = FText::FromString(TEXT("방어 실패.."));
+	FText DefeatText = FText::FromString(TEXT("방어 실패..!"));
 	
 	/** 카운트다운 표시 포맷 */
 	UPROPERTY(EditDefaultsOnly, Category = "Game Result|Settings")

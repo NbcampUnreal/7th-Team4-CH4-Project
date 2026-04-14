@@ -18,20 +18,28 @@ public:
 	UGA_LineTrace();
 
 protected:
-	virtual void OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo) override;
+	virtual void OnSkillEffect(
+		const FGameplayAbilityActorInfo* ActorInfo,
+		const FVector& TargetLocation,
+		const FVector& AimDirection) override;
 
-	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-	                        const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility,
+	virtual void OnMontageFinished() override;
+	
+	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle,
+	                        const FGameplayAbilityActorInfo* ActorInfo,
+	                        const FGameplayAbilityActivationInfo ActivationInfo,
+	                        bool bReplicateEndAbility,
 	                        bool bWasCancelled) override;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Debug")
 	bool bShowDebugTrace = true;
-	
+
 private:
 	// LineTrace 결과를 OutHit으로 반환. 적 발견 시 true, 아니면 false.
 	// (Team 태그 보유 액터는 관통하며 계속 탐색)
-	bool FindFirstEnemy(UWorld* World, const FGameplayAbilityActorInfo* ActorInfo,
-						FHitResult& OutHit) const;
+	bool FindFirstEnemy(UWorld* World,
+	                    const FGameplayAbilityActorInfo* ActorInfo,
+	                    FHitResult& OutHit) const;
 
 	//ASC에서 Team태그 확인
 	bool HasAnyTeamTag(AActor* Actor) const;
@@ -44,9 +52,4 @@ private:
 
 	FTimerHandle DamageTickHandle;
 	FTimerHandle DurationEndHandle;
-
-	// 나중에 DT에 연결하여 값 사용
-	// 테스트용 하드코딩
-	float SkillDuration = 3.0f;
-	float DamageInterval = 0.1f;
 };

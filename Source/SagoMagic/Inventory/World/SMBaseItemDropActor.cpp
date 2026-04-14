@@ -134,11 +134,6 @@ void ASMBaseItemDropActor::ApplyWorldVisual()
 	static const FName ColorMaterialSlotName(TEXT("Color"));
 	static const FName BaseColorParameterName(TEXT("BaseColor"));
 
-	if (GetNetMode() == NM_DedicatedServer)
-	{
-		return;
-	}
-
 	const USMItemDefinition* ItemDefinition = ResolveItemDefinition();
 	if (ItemDefinition == nullptr)
 	{

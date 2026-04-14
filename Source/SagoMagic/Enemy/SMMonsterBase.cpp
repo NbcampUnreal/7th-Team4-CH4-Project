@@ -282,8 +282,14 @@ void ASMMonsterBase::SpawnDropItem()
     SpawnParams.SpawnCollisionHandlingOverride =
         ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
+    UClass* ActorClassToSpawn = DropActorClass.Get();
+    if (ActorClassToSpawn == nullptr)
+    {
+        ActorClassToSpawn = ASMBaseItemDropActor::StaticClass();
+    }
+
     ASMBaseItemDropActor* DroppedActor = GetWorld()->SpawnActor<ASMBaseItemDropActor>(
-        ASMBaseItemDropActor::StaticClass(), SpawnLocation, SpawnRotation, SpawnParams);
+        ActorClassToSpawn, SpawnLocation, SpawnRotation, SpawnParams);
 
     if (DroppedActor)
     {

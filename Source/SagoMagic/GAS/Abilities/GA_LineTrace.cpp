@@ -12,7 +12,10 @@ UGA_LineTrace::UGA_LineTrace()
 {
 }
 
-void UGA_LineTrace::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
+void UGA_LineTrace::OnSkillEffect(
+	const FGameplayAbilityActorInfo* ActorInfo,
+	const FVector& TargetLocation,
+	const FVector& AimDirection)
 {
 	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
 
@@ -30,13 +33,22 @@ void UGA_LineTrace::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 
 	UWorld* World = GetWorld();
 	if (IsValid(World) == false) return;
-
+	
 	FGameplayCueParameters CueParameters;
 	CueParameters.RawMagnitude = RangeCm;
 	CueParameters.EffectContext = GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
 
 	GetAbilitySystemComponentFromActorInfo()->AddGameplayCue(
-		SMSkillTag::GameplayCue_Skill_LineTrace_Beam, CueParameters);
+		SMSkillTag::GameplayCue_Skill_LineTrace_Beam,
+		CueParameters);
+
+
+	// CashedSummary에서 Duration / TickInterval 읽기
+	const float SkillDuration =
+		CachedSummary.GetFinalDuration() > 0.0f ? CachedSummary.GetFinalDuration() : 3.0f;
+
+	const float DamageInterval =
+		CachedSummary.GetFinalTickInterval() > 0.0f ? CachedSummary.GetFinalTickInterval() : 0.1f;
 
 	if (Avatar->HasAuthority() == false)
 	{
@@ -69,8 +81,16 @@ void UGA_LineTrace::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 	);
 }
 
-void UGA_LineTrace::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-                               const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility,
+void UGA_LineTrace::OnMontageFinished()
+{
+	// 시작 애니메이션 종료 시 보모의 EndAbility 호출 X
+	// 빔 종료는 DurationEndHandle -> OnDurationExpired가 EndAbility 호출
+}
+
+void UGA_LineTrace::EndAbility(const FGameplayAbilitySpecHandle Handle,
+                               const FGameplayAbilityActorInfo* ActorInfo,
+                               const FGameplayAbilityActivationInfo ActivationInfo,
+                               bool bReplicateEndAbility,
                                bool bWasCancelled)
 {
 	if (UWorld* World = GetWorld())
@@ -78,7 +98,7 @@ void UGA_LineTrace::EndAbility(const FGameplayAbilitySpecHandle Handle, const FG
 		World->GetTimerManager().ClearTimer(DamageTickHandle);
 		World->GetTimerManager().ClearTimer(DurationEndHandle);
 	}
-
+	
 	if (ActorInfo)
 	{
 		APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
@@ -87,6 +107,12 @@ void UGA_LineTrace::EndAbility(const FGameplayAbilitySpecHandle Handle, const FG
 			GetAbilitySystemComponentFromActorInfo()->RemoveGameplayCue(
 				SMSkillTag::GameplayCue_Skill_LineTrace_Beam
 			);
+		}
+		
+		if (ActorInfo->AbilitySystemComponent.IsValid())
+		{
+			// 현재 재생중인 몽타주 강제 종료
+			ActorInfo->AbilitySystemComponent->CurrentMontageStop();
 		}
 	}
 
@@ -138,7 +164,7 @@ void UGA_LineTrace::ApplyDamageTick()
 	if (!ActorInfo) return;
 
 	//매 틱마다 현재 커서 방향으로 AimData 갱신
-	ExtractAimData(ActorInfo);
+	//ExtractAimData(ActorInfo);
 
 	FHitResult OutHit;
 	const bool bHit = FindFirstEnemy(GetWorld(), ActorInfo, OutHit);
@@ -150,13 +176,29 @@ void UGA_LineTrace::ApplyDamageTick()
 
 		// 빔 라인: 맞으면 빨간색, 빗나가면 초록색
 		const FColor LineColor = bHit ? FColor::Red : FColor::Green;
-		DrawDebugLine(GetWorld(), Start, End, LineColor, false, DamageInterval, 0, 2.0f);
+		DrawDebugLine(
+			GetWorld(),
+			Start,
+			End,
+			LineColor,
+			false,
+			CachedSummary.GetFinalTickInterval()
+					? CachedSummary.GetFinalTickInterval() : 0.1f,
+			0,
+			2.0f);
 
 		if (bHit == true)
 		{
 			// 히트 지점에 구체 표시
-			DrawDebugSphere(GetWorld(), OutHit.ImpactPoint, 15.f, 8, FColor::Orange,
-			                false, DamageInterval);
+			DrawDebugSphere(
+				GetWorld(),
+				OutHit.ImpactPoint,
+				15.f,
+				8,
+				FColor::Orange,
+				false,
+				CachedSummary.GetFinalTickInterval() > 0.0f
+						? CachedSummary.GetFinalTickInterval() : 0.1f);
 		}
 	}
 
@@ -171,7 +213,8 @@ void UGA_LineTrace::ApplyDamageTick()
 				if (SpecHandle.IsValid() == true)
 				{
 					GetAbilitySystemComponentFromActorInfo()->ApplyGameplayEffectSpecToTarget(
-						*SpecHandle.Data.Get(), TargetASC);
+						*SpecHandle.Data.Get(),
+						TargetASC);
 				}
 			}
 		}

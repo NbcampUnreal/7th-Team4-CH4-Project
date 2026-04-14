@@ -44,6 +44,9 @@ protected:
     /** HP가 0이 됐을 때 AttributeSet의 델리게이트로 호출 (서버 전용) **/
     void HandleDeath(AController* KillerController);
 
+    /** 공용 드롭 테이블에서 가중치 기반 랜덤 1개 아이템을 월드에 스폰 (서버 전용) */
+    void SpawnDropItem();
+
 public:
     /** 테스트용 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Mesh|Test")

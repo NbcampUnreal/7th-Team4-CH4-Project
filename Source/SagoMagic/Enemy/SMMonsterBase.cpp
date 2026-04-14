@@ -7,8 +7,12 @@
 #include "../GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "../Data/SMMonsterData.h"
 #include "Core/DataManager/SMAsyncDataManager.h"
+#include "Core/DataManager/SMSyncDataManager.h"
 #include "Core/Wave/SMWaveManagerSubsystem.h"
 #include "Engine/AssetManager.h"
+#include "Inventory/World/SMBaseItemDropActor.h"
+#include "Inventory/Core/SMItemDropTypes.h"
+#include "Data/SMItemDropTableData.h"
 #include "Net/UnrealNetwork.h"
 
 ASMMonsterBase::ASMMonsterBase()
@@ -191,6 +195,8 @@ void ASMMonsterBase::HandleDeath(AController* KillerController)
             }
         }
     }
+    // ── 아이템 드롭 (공용 드롭 테이블에서 가중치 기반 1개) ──
+    SpawnDropItem();
 
     if (USMWaveManagerSubsystem* WM = USMWaveManagerSubsystem::Get(this))
     {
@@ -218,4 +224,70 @@ void ASMMonsterBase::HandleDeath(AController* KillerController)
     // 3초 후 액터 제거 (애니메이션 붙일 자리)
     //SetLifeSpan(3.0f);
 
+}
+
+void ASMMonsterBase::SpawnDropItem()
+{
+    if (!HasAuthority()) return;
+
+    USMSyncDataManager* DM = USMSyncDataManager::Get(this);
+    if (!DM) return;
+
+    const TMap<TSoftObjectPtr<USMItemDefinition>, FSMItemDropTableData>& DropTable =
+        DM->GetItemDropTableCache();
+
+    if (DropTable.Num() == 0) return;
+
+    // 1) 유효한 항목의 가중치 합산
+    int32 TotalWeight = 0;
+    for (const auto& Pair : DropTable)
+    {
+        if (Pair.Value.IsValidData())
+        {
+            TotalWeight += Pair.Value.GetDropWeight();
+        }
+    }
+    if (TotalWeight <= 0) return;
+
+    // 2) 가중치 기반 랜덤 1개 선택
+    int32 Roll = FMath::RandRange(0, TotalWeight - 1);
+    int32 Accumulated = 0;
+    TSoftObjectPtr<USMItemDefinition> SelectedItem;
+
+    for (const auto& Pair : DropTable)
+    {
+        if (!Pair.Value.IsValidData()) continue;
+
+        Accumulated += Pair.Value.GetDropWeight();
+        if (Roll < Accumulated)
+        {
+            SelectedItem = Pair.Key;
+            break;
+        }
+    }
+    if (SelectedItem.IsNull()) return;
+
+    // 3) FSMItemDropPayload 생성
+    FSMItemDropPayload Payload;
+    Payload.SetInstanceId(FGuid::NewGuid());
+    Payload.SetDefinition(SelectedItem);
+    // 몬스터 드롭이므로 ItemType, Rotation, bLocked, NestedItemSnapshots는 기본값 유지
+
+    // 4) 월드에 ASMBaseItemDropActor 스폰
+    FVector SpawnLocation = GetActorLocation();
+    FRotator SpawnRotation = FRotator::ZeroRotator;
+
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride =
+        ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+    ASMBaseItemDropActor* DroppedActor = GetWorld()->SpawnActor<ASMBaseItemDropActor>(
+        ASMBaseItemDropActor::StaticClass(), SpawnLocation, SpawnRotation, SpawnParams);
+
+    if (DroppedActor)
+    {
+        DroppedActor->InitializeFromPayload(Payload);
+        UE_LOG(LogTemp, Log, TEXT("[DropItem] %s 사망 → %s 드롭"),
+            *GetName(), *SelectedItem.ToString());
+    }
 }

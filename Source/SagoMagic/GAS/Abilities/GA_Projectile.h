@@ -13,8 +13,10 @@ public:
 	UGA_Projectile();
 
 protected:
-	virtual void OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo) override;
-
+	virtual void OnSkillEffect(
+		const FGameplayAbilityActorInfo* ActorInfo,
+		const FVector& TargetLocation,
+		const FVector& AimDirection) override;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Skill")
 	TSubclassOf<ASMASkillProjectile> ProjectileClass;

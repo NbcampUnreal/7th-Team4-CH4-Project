@@ -1,51 +1,70 @@
 #include "GA_Projectile.h"
+
+#include "AbilitySystemComponent.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "SkillActor/SMASkillProjectile.h"
 
 
 UGA_Projectile::UGA_Projectile()
 {
-    ProjectileClass = ASMASkillProjectile::StaticClass();
+	ProjectileClass = ASMASkillProjectile::StaticClass();
 }
 
-void UGA_Projectile::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
+void UGA_Projectile::OnSkillEffect(
+	const FGameplayAbilityActorInfo* ActorInfo,
+	const FVector& TargetLocation,
+	const FVector& AimDirection)
 {
-    APawn* Avatar = ActorInfo && ActorInfo->AvatarActor.IsValid()
-        ? Cast<APawn>(ActorInfo->AvatarActor.Get()) : nullptr;
-    if (!Avatar || !Avatar->HasAuthority())
-    {
-        EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
-        return;
-    }
+	APawn* Avatar = ActorInfo && ActorInfo->AvatarActor.IsValid()
+		                ? Cast<APawn>(ActorInfo->AvatarActor.Get())
+		                : nullptr;
 
-    UWorld* World = GetWorld();
-    if (!World || !ProjectileClass)
-    {
-        EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
-        return;
-    }
+	if (!Avatar || !Avatar->HasAuthority()) return;
 
-    FGameplayEffectSpecHandle SpecHandle = MakeDamageSpec(ActorInfo);
-    if (!SpecHandle.IsValid())
-    {
-        EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
-        return;
-    }
 
-    // 캐릭터 앞 30cm 에서 발사
-    const FVector SpawnLocation = CurrentAimOrigin + CurrentAimDirection * 30.f;
+	UWorld* World = GetWorld();
+	if (!World || !ProjectileClass) return;
 
-    FActorSpawnParameters Params;
-    Params.Owner = Avatar;
-    Params.Instigator = Avatar;
-    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	FGameplayEffectSpecHandle SpecHandle = MakeDamageSpec(ActorInfo);
+	if (!SpecHandle.IsValid()) return;
 
-    ASMASkillProjectile* Proj = World->SpawnActor<ASMASkillProjectile>(
-        ProjectileClass, SpawnLocation, CurrentAimDirection.Rotation(), Params);
+	// 스태프끝에서 발사
+	FName MuzzleSocketName = FName("Staff_Tip");
+	// 소캣 없으면 캐릭터 앞 30cm
+	FVector SpawnLocation = CurrentAimOrigin + CurrentAimDirection * 50.f;
 
-    if (Proj)
-    {
-        Proj->InitProjectile(SpecHandle, RangeCm, CurrentAimDirection, Avatar);
-    }
+	USkeletalMeshComponent* CharacterMesh = Avatar->GetComponentByClass<USkeletalMeshComponent>();
+	if (CharacterMesh)
+	{
+		// 애니메이션 포즈에 맞춰 서버 뼈대 좌표 갱신
+		CharacterMesh->RefreshBoneTransforms();
+		if (CharacterMesh->DoesSocketExist(MuzzleSocketName))
+		{
+			SpawnLocation = CharacterMesh->GetSocketLocation(MuzzleSocketName);
+		}
+	}
 
-    EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, false);
+	FVector FinalDirection = AimDirection;
+	float DistanceToTarget = FVector::Dist2D(Avatar->GetActorLocation(), TargetLocation);
+
+	if (DistanceToTarget > 20.0f)
+	{
+		FinalDirection = (TargetLocation - SpawnLocation).GetSafeNormal2D();
+	}
+
+	FActorSpawnParameters Params;
+	Params.Owner = Avatar;
+	Params.Instigator = Avatar;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	ASMASkillProjectile* Proj = World->SpawnActor<ASMASkillProjectile>(
+		ProjectileClass,
+		SpawnLocation,
+		FinalDirection.Rotation(),
+		Params);
+
+	if (Proj)
+	{
+		Proj->InitProjectile(SpecHandle, RangeCm, FinalDirection, Avatar);
+	}
 }

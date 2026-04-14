@@ -1,7 +1,6 @@
 #include "GAS/GameplayCue/GCN_SkillField.h"
-
 #include "NiagaraComponent.h"
-#include "NiagaraSystem.h"
+
 
 AGCN_SkillField::AGCN_SkillField()
 {
@@ -28,21 +27,46 @@ bool AGCN_SkillField::OnActive_Implementation(AActor* MyTarget, const FGameplayC
 	SetActorLocation(FieldLocation);
 
 	FieldNiagaraComponent->SetAsset(FieldNiagaraSystem);
+
+	// 스킬 범위에 맞게 이펙트 스케일 조정
+	// NormalizedMagnitude = RangeCm, NiagaraBaseRadiusCm = Scale_All 1.0일 때의 기본 반경
+	if (Parameters.NormalizedMagnitude > 0.f && NiagaraBaseRadiusCm > 0.f)
+	{
+		const float ScaleValue = Parameters.NormalizedMagnitude / NiagaraBaseRadiusCm;
+		FieldNiagaraComponent->SetVariableFloat(FName("User.Scale_All"), ScaleValue);
+	}
+
 	FieldNiagaraComponent->Activate(true);
 
-	//5초후 액터 자동 소멸되게 
+	// 지속시간 후 파티클 신규 스폰 중단 → 기존 파티클은 자연 소멸
 	const float Lifetime = Parameters.RawMagnitude > 0.f ? Parameters.RawMagnitude : 5.f;
-	SetLifeSpan(Lifetime);
+	GetWorldTimerManager().SetTimer(
+		FadeoutTimerHandle,
+		this,
+		&AGCN_SkillField::StartFadeout,
+		Lifetime,
+		false
+	);
+	// 파티클이 다 사라질 시간까지 액터 유지 제발
+	SetLifeSpan(Lifetime + FadeoutDuration);
 
 	return true;
 }
 
 bool AGCN_SkillField::OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
 {
-	if (IsValid(FieldNiagaraComponent))
-	{
-		FieldNiagaraComponent->Deactivate();
-	}
+	// 타이머가 아직 안 됐으면 즉시 페이드아웃 시작
+	GetWorldTimerManager().ClearTimer(FadeoutTimerHandle);
+	StartFadeout();
 
 	return Super::OnRemove_Implementation(MyTarget, Parameters);
+}
+
+void AGCN_SkillField::StartFadeout()
+{
+	if (IsValid(FieldNiagaraComponent))
+	{
+		// 신규 스폰 중단 — 기존 파티클은 수명대로 자연 소멸
+		FieldNiagaraComponent->Deactivate();
+	}
 }

@@ -169,6 +169,8 @@ bool UGA_SkillBase::LoadActiveSkillSummary(const FGameplayAbilityActorInfo* Acto
 	BaseDamage = CachedSummary.GetFinalDamage();
 	RangeCm = CachedSummary.GetFinalRangeOrArea();
 	CooldownSeconds = CachedSummary.GetFinalCooldown();
+	FieldDuration = CachedSummary.GetFinalDuration();
+	TickInterval = CachedSummary.GetFinalTickInterval();
 	return true;
 }
 

@@ -27,11 +27,17 @@ void ASMASkillField::BeginPlay()
 
 void ASMASkillField::InitField(FGameplayEffectSpecHandle InSpecHandle,
                                AActor* InInstigatorActor,
-                               float InDuration)
+                               float InDuration,
+                               float InRangeCm)
 {
 	DamageSpecHandle = InSpecHandle;
 	InstigatorActor = InInstigatorActor;
 	Duration = InDuration;
+	
+	if (InRangeCm > 0.f && CollisionComponent)
+	{
+		CollisionComponent->SetBoxExtent(FVector(InRangeCm, InRangeCm, FieldBoxExtent.Z));
+	}
 
 	// 장판 지속 시간 종료 타이머
 	if (UWorld* World = GetWorld())
@@ -45,7 +51,23 @@ void ASMASkillField::InitField(FGameplayEffectSpecHandle InSpecHandle,
 		);
 	}
 
-	// 콜리전 스폰 시점에 데미지를 줄 수 있도록
+	// 스폰 직후 즉시 데미지 방지 딜레이 후 그 시점 오버랩 액터만 처리
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimer(
+			InitialOverlapHandle,
+			this,
+			&ASMASkillField::CheckInitialOverlaps,
+			StartDelay,
+			false
+		);
+	}
+}
+
+void ASMASkillField::CheckInitialOverlaps()
+{
+	if (!HasAuthority()) return;
+
 	TArray<AActor*> OverlappingActors;
 	CollisionComponent->GetOverlappingActors(OverlappingActors);
 	for (AActor* Actor : OverlappingActors)

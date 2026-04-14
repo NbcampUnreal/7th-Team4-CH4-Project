@@ -17,7 +17,7 @@ public:
 	ASMASkillField();
 
 	void InitField(FGameplayEffectSpecHandle InSpecHandle, AActor* InInstigatorActor,
-		float InDuration);
+		float InDuration, float InRangeCm);
 
 protected:
 	virtual void BeginPlay() override;
@@ -29,6 +29,10 @@ protected:
 	/** 장판 박스 범위 - BP에서 조정 가능 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field")
 	FVector FieldBoxExtent = FVector(500.f, 500.f, 100.f);
+
+	/** 스폰 직후 즉시 데미지 방지용 딜레이 - BP에서 조정 가능 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field")
+	float StartDelay = 0.5f;
 
 private:
 	UFUNCTION()
@@ -51,6 +55,12 @@ private:
 	TMap<AActor*, FActiveGameplayEffectHandle> ActiveEffectHandles;
 
 	FTimerHandle DurationEndHandle;
+
+	// 스폰 직후 즉시 데미지 방지용 딜레이 타이머
+	FTimerHandle InitialOverlapHandle;
+
+	// 딜레이 후 스폰 시점 오버랩 액터 처리
+	void CheckInitialOverlaps();
 
 	//지속시간
 	float Duration = 5.f;

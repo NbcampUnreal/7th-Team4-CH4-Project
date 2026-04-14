@@ -26,10 +26,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Skill")
 	TSubclassOf<ASMASkillField> FieldClass;
 
-	/** 장판 지속 시간 */
-	UPROPERTY(EditDefaultsOnly, Category = "Skill")
-	float FieldDuration = 5.f;
-
 private:
 	// 서버에서 클라이언트 타겟데이터 수신 시 호출
 	void OnTargetDataReady(const FGameplayAbilityTargetDataHandle& TargetData, FGameplayTag ApplicationTag);

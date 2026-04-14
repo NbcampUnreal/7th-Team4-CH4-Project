@@ -65,10 +65,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
 
-	// ActivateAbility시 채워지는 수치
-	float BaseDamage = 0.f;
-	float RangeCm = 0.f;
-	float CooldownSeconds = 0.f;
+	// ActivateAbility시 인벤토리에서 채워지는 스탯
+	float BaseDamage = 0.f;  // 데미지
+	float RangeCm  = 0.f;  // 사거리/범위
+	float CooldownSeconds = 0.f;  // 쿨다운
+	float FieldDuration = 0.f;  // 지속 시간
+	float TickInterval = 0.f;  // 틱 간격
 	
 	//인벤토리에서 받아온 최종 요약 캐시
 	FSMCompiledSkillSummary CachedSummary;

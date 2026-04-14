@@ -42,6 +42,7 @@ void ASMPlayerState::CopyProperties(APlayerState* PlayerState)
 	NewPS->bIsReady = bIsReady;
 	NewPS->SelectedWeaponIndex = SelectedWeaponIndex;
 	NewPS->SelectedMaterialIndex = SelectedMaterialIndex;
+	NewPS->SelectedLobbySkillDef = SelectedLobbySkillDef;
 	NewPS->SetPlayerName(GetPlayerName());
 }
 
@@ -69,6 +70,7 @@ void ASMPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 	DOREPLIFETIME(ASMPlayerState, bIsReady);
 	DOREPLIFETIME(ASMPlayerState, SelectedWeaponIndex);
 	DOREPLIFETIME(ASMPlayerState, SelectedMaterialIndex);
+	DOREPLIFETIME(ASMPlayerState, SelectedLobbySkillDef);
 }
 
 void ASMPlayerState::SetSelectedWeaponIndex(int32 NewIndex)
@@ -99,4 +101,11 @@ void ASMPlayerState::OnRep_SelectedMaterialIndex()
 	if (IsValid(PlayerCharacter) == false) return;
 
 	PlayerCharacter->ApplyCustomization();
+}
+
+void ASMPlayerState::SetSelectedLobbySkillDef(const TSoftObjectPtr<USMItemDefinition>& InDef)
+{
+	ensureMsgf(HasAuthority(), TEXT("SetSelectedLobbySkillDef must be called on server"));
+	if (HasAuthority() == false) return;
+	SelectedLobbySkillDef = InDef;
 }

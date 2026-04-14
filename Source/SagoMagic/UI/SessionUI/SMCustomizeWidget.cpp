@@ -18,20 +18,31 @@ void USMCustomizeWidget::CustomizeSetup()
 	ASMPlayerState* PS = PC->GetPlayerState<ASMPlayerState>();
 	if (IsValid(PS) == false) return;
 
+	const TSoftObjectPtr<USMItemDefinition>& PrevSkill = PS->GetSelectedLobbySkillDef();
+	CurrentSkillIndex = 0;
+	for (int32 i = 0; i < ChekSkillDefinitions.Num(); i++)
+	{
+		if (ChekSkillDefinitions[i] == PrevSkill)
+		{
+			CurrentSkillIndex = i;
+			break;
+		}
+	}
+	
 	PreviousWeaponIdx = PS->GetSelectedWeaponIndex();
 	PreviousMatIdx = PS->GetSelectedMaterialIndex();
 	CurrentWeaponIdx = PreviousWeaponIdx;
 	CurrentMatIdx = PreviousMatIdx;
-	
+
 	if (IsValid(CurrentMaterialNumber) == true)
 	{
-		CurrentMaterialNumber->SetText(FText::FromString(FString::Printf(TEXT("%d"), CurrentMatIdx+1)));
+		CurrentMaterialNumber->SetText(FText::FromString(FString::Printf(TEXT("%d"), CurrentMatIdx + 1)));
 	}
-	
+
 	ASMPlayerCharacter* Character = GetSMPlayerCharacter();
 	if (IsValid(Character) == false) return;
-	
-	Character->SetCustomizeMode(true);	
+
+	Character->SetCustomizeMode(true);
 }
 
 bool USMCustomizeWidget::Initialize()
@@ -118,20 +129,19 @@ void USMCustomizeWidget::SelectWeapon(int32 WeaponIndex)
 // 스킬 선택
 //================================
 
-void USMCustomizeWidget::OnSkillButton0Clicked()
-{
-}
+void USMCustomizeWidget::OnSkillButton0Clicked() { SelectSkill(0); }
 
-void USMCustomizeWidget::OnSkillButton1Clicked()
-{
-}
+void USMCustomizeWidget::OnSkillButton1Clicked() { SelectSkill(1); }
 
-void USMCustomizeWidget::OnSkillButton2Clicked()
-{
-}
+void USMCustomizeWidget::OnSkillButton2Clicked() { SelectSkill(2); }
 
-void USMCustomizeWidget::OnSkillButton3Clicked()
+void USMCustomizeWidget::OnSkillButton3Clicked() { SelectSkill(3); }
+
+void USMCustomizeWidget::SelectSkill(int32 Index)
 {
+	if (Index < 0 || Index > 3) return;
+	CurrentSkillIndex = Index;
+	UE_LOG(LogTemp,Warning,TEXT("Selected Skill Index: %d"), CurrentSkillIndex);
 }
 
 //================================
@@ -148,10 +158,10 @@ void USMCustomizeWidget::OnMaterialPrevClicked()
 
 	CurrentMatIdx = (CurrentMatIdx - 1 + Num) % Num;
 	Character->ApplyCustomizationLocal(CurrentWeaponIdx, CurrentMatIdx);
-	
+
 	if (IsValid(CurrentMaterialNumber) == true)
 	{
-		CurrentMaterialNumber->SetText(FText::FromString(FString::Printf(TEXT("%d"), CurrentMatIdx+1)));
+		CurrentMaterialNumber->SetText(FText::FromString(FString::Printf(TEXT("%d"), CurrentMatIdx + 1)));
 	}
 }
 
@@ -165,10 +175,10 @@ void USMCustomizeWidget::OnMaterialNextClicked()
 
 	CurrentMatIdx = (CurrentMatIdx + 1) % Num;
 	Character->ApplyCustomizationLocal(CurrentWeaponIdx, CurrentMatIdx);
-	
+
 	if (IsValid(CurrentMaterialNumber) == true)
 	{
-		CurrentMaterialNumber->SetText(FText::FromString(FString::Printf(TEXT("%d"), CurrentMatIdx+1)));
+		CurrentMaterialNumber->SetText(FText::FromString(FString::Printf(TEXT("%d"), CurrentMatIdx + 1)));
 	}
 }
 
@@ -183,6 +193,10 @@ void USMCustomizeWidget::OnApplyClicked()
 
 	//이 시점에만 ServerRPC -> OnRep_으로 다른 플레이어에게도 복제
 	PC->ServerRPCSetCustomization(CurrentWeaponIdx, CurrentMatIdx);
+	
+	//선택된 스킬 인덱스만 전송 (서버가 GM의 DA 조회 후 인벤토리에 스킬 전송)
+	PC->ServerRPCSelectLobbySkill(CurrentSkillIndex);
+	UE_LOG(LogTemp,Warning,TEXT("Selected Skill Index: %d Send to Server"), CurrentSkillIndex);
 
 	CloseWidget();
 }

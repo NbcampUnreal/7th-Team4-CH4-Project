@@ -100,13 +100,27 @@ void ASMMonsterAIController::UpdateTargetAndTryAttack()
 
     // ── 2단계: AttackRange 안에 공격 가능한 대상이 있는지 확인 ──
     AActor* AttackTarget = FindAttackableTarget();
-
+    
     if (!AttackTarget)
     {
-        // 공격할 게 없음 → BT가 BaseCamp로 이동 중 → 아무것도 안 함
+        // 공격할 게 없음 → IsAttacking 해제, 포커스 해제, BT가 BaseCamp로 이동
         CurrentTargetType = EMonsterAttackTargetType::BaseCamp;
+        CurrentAttackTarget = nullptr;
+        if (UBlackboardComponent* BB = GetBlackboardComponent())
+        {
+            BB->SetValueAsBool(FName("IsAttacking"), false);
+        }
+        ClearFocus(EAIFocusPriority::Gameplay);
         return;
     }
+
+    // 공격 대상 있음 → IsAttacking 설정, 타겟 바라보기
+    CurrentAttackTarget = AttackTarget;
+    if (UBlackboardComponent* BB = GetBlackboardComponent())
+    {
+        BB->SetValueAsBool(FName("IsAttacking"), true);
+    }
+    SetFocus(AttackTarget, EAIFocusPriority::Gameplay);
 
     // ── 3단계: 공격 대상 있음 → 어빌리티 실행 ──
     UAbilitySystemComponent* ASC = nullptr;
@@ -117,10 +131,14 @@ void ASMMonsterAIController::UpdateTargetAndTryAttack()
     if (!ASC) return;
 
     const TArray<FGameplayAbilitySpec>& AllSpecs = ASC->GetActivatableAbilities();
-    if (AllSpecs.Num() == 0) return;
+    if (AllSpecs.Num() == 0)
+    {
+        return;
+    }
 
     const FGameplayAbilitySpec& Spec = AllSpecs[0];
-    ASC->TryActivateAbility(Spec.Handle);
+    bool bActivated = ASC->TryActivateAbility(Spec.Handle);
+    UE_LOG(LogTemp, Warning, TEXT("[AI] TryActivateAbility 결과: %s"), bActivated ? TEXT("성공") : TEXT("실패"));
 }
 
 AActor* ASMMonsterAIController::FindAttackableTarget()

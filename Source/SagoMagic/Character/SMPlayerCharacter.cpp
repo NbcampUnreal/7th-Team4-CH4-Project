@@ -43,7 +43,7 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	CameraComp->SetupAttachment(SpringArmComp);
-	
+
 	// 캐릭터의 움직임으로 몸 회전 금지
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
@@ -51,7 +51,7 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
-	
+
 	InteractionScannerComp = CreateDefaultSubobject<USMInteractionScannerComponent>(TEXT("InteractionScanner"));
 	InteractionScannerComp->SetupAttachment(RootComponent);
 }
@@ -62,12 +62,12 @@ UAbilitySystemComponent* ASMPlayerCharacter::GetAbilitySystemComponent() const
 	{
 		return SMAbilitySystemComponent;
 	}
-	
+
 	if (const ASMPlayerState* PS = GetPlayerState<ASMPlayerState>())
 	{
 		return PS->GetSMAbilitySystemComponent();
 	}
-	
+
 	return nullptr;
 }
 
@@ -82,12 +82,12 @@ USMPlayerAttributeSet* ASMPlayerCharacter::GetAttributeSet() const
 	{
 		return AttributeSet;
 	}
-	
+
 	if (const ASMPlayerState* PS = GetPlayerState<ASMPlayerState>())
 	{
 		return PS->GetAttributeSet();
 	}
-	
+
 	return nullptr;
 }
 
@@ -105,7 +105,7 @@ void ASMPlayerCharacter::OnConstruction(const FTransform& Transform)
 void ASMPlayerCharacter::Move(const FInputActionValue& Value)
 {
 	if (bIsInCustomizeMode) return;
-	
+
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller)
@@ -118,17 +118,17 @@ void ASMPlayerCharacter::Move(const FInputActionValue& Value)
 void ASMPlayerCharacter::Attack()
 {
 	if (!SMAbilitySystemComponent) return;
-	
+
 	if (ASMPlayerState* PS = GetPlayerState<ASMPlayerState>())
 	{
 		if (USMInventoryComponent* InventoryComp = PS->GetInventoryComponent())
 		{
 			FGameplayTag ActiveSkillTag = InventoryComp->GetActiveSkillTag();
-			
+
 			if (ActiveSkillTag.IsValid())
 			{
 				SMAbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(ActiveSkillTag));
-				
+
 				SM_LOG(this, LogSM, Log, TEXT("%s 마법 발동"), *ActiveSkillTag.ToString());
 			}
 		}
@@ -138,7 +138,7 @@ void ASMPlayerCharacter::Attack()
 void ASMPlayerCharacter::Interact()
 {
 	if (!SMAbilitySystemComponent) return;
-	
+
 	FGameplayTag InteractTag = SMCharacterTag::Ability_Default_Interact;
 	SMAbilitySystemComponent->TryActivateAbilitiesByTag(FGameplayTagContainer(InteractTag));
 }
@@ -146,9 +146,9 @@ void ASMPlayerCharacter::Interact()
 void ASMPlayerCharacter::UseQuickSlot(const FInputActionValue& InValue)
 {
 	if (!IsLocallyControlled()) return;
-	
+
 	const int32 SlotIndex = FMath::RoundToInt(InValue.Get<float>() - 1);
-	
+
 	if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 	{
 		PC->ServerRPCSetActiveQuickSlot(SlotIndex);
@@ -160,25 +160,25 @@ void ASMPlayerCharacter::ToggleBuildMode()
 {
 	ASMPlayerController* PC = Cast<ASMPlayerController>(Controller);
 	if (!PC || !PC->IsLocalController()) return;
-	
+
 	UEnhancedInputLocalPlayerSubsystem* Subsystem =
 		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
 	if (!Subsystem || !BuildPlaceIMC || !SMAbilitySystemComponent) return;
-	
+
 	bool bIsBuildMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place);
 	bool bIsEditMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit);
-	
+
 	// 건축 모드에서 B입력 시 건축 모드 종료
 	if (bIsBuildMode)
 	{
 		Subsystem->RemoveMappingContext(BuildPlaceIMC);
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
 		ServerRPC_SetBuildModeTag(false);
-		
+
 		SM_LOG(this, LogSM, Log, TEXT("건축 모드 종료"));
 		return;
 	}
-	
+
 	// 편집모드라면 편집모드 종료
 	if (bIsEditMode)
 	{
@@ -186,12 +186,12 @@ void ASMPlayerCharacter::ToggleBuildMode()
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 		ServerRPC_SetEditModeTag(false);
 	}
-	
+
 	// 건축모드 켜기
 	Subsystem->AddMappingContext(BuildPlaceIMC, 1);
 	SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
 	ServerRPC_SetBuildModeTag(true);
-	
+
 	SM_LOG(this, LogSM, Log, TEXT("건축 모드 ON"));
 }
 
@@ -199,25 +199,25 @@ void ASMPlayerCharacter::ToggleEditMode()
 {
 	ASMPlayerController* PC = Cast<ASMPlayerController>(Controller);
 	if (!PC || !PC->IsLocalController()) return;
-	
+
 	UEnhancedInputLocalPlayerSubsystem* Subsystem =
 		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
 	if (!Subsystem || !BuildEditIMC || !SMAbilitySystemComponent) return;
-	
+
 	bool bIsBuildMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place);
 	bool bIsEditMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit);
-	
+
 	// 이미 편집 모드라면 편집모드 종료
 	if (bIsEditMode)
 	{
 		Subsystem->RemoveMappingContext(BuildEditIMC);
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 		ServerRPC_SetEditModeTag(false);
-		
+
 		SM_LOG(this, LogSM, Log, TEXT("편집 모드 OFF"));
 		return;
 	}
-	
+
 	// 건축 모드라면 건축모드 종료
 	if (bIsBuildMode)
 	{
@@ -225,18 +225,18 @@ void ASMPlayerCharacter::ToggleEditMode()
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
 		ServerRPC_SetBuildModeTag(false);
 	}
-	
+
 	Subsystem->AddMappingContext(BuildEditIMC, 1);
 	SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 	ServerRPC_SetEditModeTag(true);
-	
+
 	SM_LOG(this, LogSM, Log, TEXT("편집 모드 ON"));
 }
 
 void ASMPlayerCharacter::ServerRPC_SetBuildModeTag_Implementation(bool bEnable)
 {
 	if (!SMAbilitySystemComponent) return;
-	
+
 	if (bEnable)
 	{
 		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
@@ -250,7 +250,7 @@ void ASMPlayerCharacter::ServerRPC_SetBuildModeTag_Implementation(bool bEnable)
 void ASMPlayerCharacter::ServerRPC_SetEditModeTag_Implementation(bool bEnable)
 {
 	if (!SMAbilitySystemComponent) return;
-	
+
 	if (bEnable)
 	{
 		SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Edit);
@@ -264,7 +264,7 @@ void ASMPlayerCharacter::ServerRPC_SetEditModeTag_Implementation(bool bEnable)
 void ASMPlayerCharacter::OnBuildPlace()
 {
 	if (!SMAbilitySystemComponent) return;
-	
+
 	// TODO: 추후에 GA_BuildPlace 구현 후 주석 제거
 	// SMAbilitySystemComponent->TryActivateAbilitiesByTag(SMCharacterTag::Ability_Build_Place);
 	SM_LOG(this, LogSM, Log, TEXT("건축 GA실행"));
@@ -273,7 +273,7 @@ void ASMPlayerCharacter::OnBuildPlace()
 void ASMPlayerCharacter::OnEditSelect()
 {
 	if (!SMAbilitySystemComponent) return;
-	
+
 	// TODO: 추후에 GA_BuildEdit 구현 후 주석 제거
 	// SMAbilitySystemComponent->TryActivateAbilitiesByTag(SMCharacterTag::Ability_Build_Edit);
 	SM_LOG(this, LogSM, Log, TEXT("편집 GA 실행"));
@@ -287,7 +287,7 @@ void ASMPlayerCharacter::BeginPlay()
 void ASMPlayerCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	
+
 	DOREPLIFETIME(ASMPlayerCharacter, bIsDead);
 }
 
@@ -324,7 +324,7 @@ void ASMPlayerCharacter::Tick(float DeltaTime)
 void ASMPlayerCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-	
+
 	// 서버에서 호출
 	InitializeAbilitySystem();
 	GiveDefaultAbilities();
@@ -333,7 +333,7 @@ void ASMPlayerCharacter::PossessedBy(AController* NewController)
 void ASMPlayerCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
-	
+
 	// 클라에서 호출
 	// Ability 부여는 서버에서만(클라는 복제)
 	InitializeAbilitySystem();
@@ -343,23 +343,23 @@ void ASMPlayerCharacter::OnRep_PlayerState()
 void ASMPlayerCharacter::InitializeAbilitySystem()
 {
 	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
-	
+
 	if (!PS)
 	{
 		return;
 	}
-	
+
 	SMAbilitySystemComponent = PS->GetSMAbilitySystemComponent();
 	AttributeSet = PS->GetAttributeSet();
-	
+
 	if (SMAbilitySystemComponent && AttributeSet)
 	{
 		// Owner는 PlayerState
 		SMAbilitySystemComponent->InitAbilityActorInfo(PS, this);
-		
+
 		SMAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
 			AttributeSet->GetHealthAttribute()).RemoveAll(this);
-		
+
 		// SMASC로부터 플레이어의 체력변화 구독
 		SMAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
 			AttributeSet->GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
@@ -374,13 +374,13 @@ void ASMPlayerCharacter::GiveDefaultAbilities()
 	{
 		return;
 	}
-	
+
 	// 서버에서만 부여
 	if (!HasAuthority())
 	{
 		return;;
 	}
-	
+
 	for (TSubclassOf<UGameplayAbility>& AbilityClass : DefaultAbilities)
 	{
 		if (AbilityClass)
@@ -415,30 +415,30 @@ void ASMPlayerCharacter::OnRep_IsDead()
 void ASMPlayerCharacter::HandleDeath()
 {
 	SM_LOG(this, LogSM, Log, TEXT("[%s] 플레이어 사망."), *GetName());
-	
-	
+
+
 	if (SMAbilitySystemComponent)
 	{
 		SMAbilitySystemComponent->CancelAbilities();
 	}
-	
+
 	if (UCharacterMovementComponent* MovementComp = GetCharacterMovement())
 	{
 		MovementComp->StopMovementImmediately();
 		MovementComp->DisableMovement();
 	}
-	
+
 	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
 	{
 		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
-	
+
 	if (USkeletalMeshComponent* MeshComp = GetMesh())
 	{
 		MeshComp->SetCollisionProfileName(TEXT("Ragdoll"));
 		MeshComp->SetSimulatePhysics(true);
 	}
-	
+
 	if (HasAuthority())
 	{
 		if (ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>())
@@ -451,17 +451,16 @@ void ASMPlayerCharacter::HandleDeath()
 				GM->OnPlayerDead(PC);
 			}
 		}
-		
+
 		// TODO: DeathLifeSpan후 시체 처리(부활 타이머랑 타이밍 논의 필요)
 		SetLifeSpan(DeathLifeSpan);
 	}
-	
 }
 
 void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	
+
 	// 캐릭터가 생성되기 전에 PlayerState 데이터가 서버로부터 매우 빠르게 날아올 수 있으므로
 	// 한 번더 이니셜라이즈(Lyra도 총 3번 호출 함)
 	InitializeAbilitySystem();
@@ -472,37 +471,37 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		{
 			EIC->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
 		}
-		
+
 		if (AttackAction)
 		{
 			EIC->BindAction(AttackAction, ETriggerEvent::Started, this, &ThisClass::Attack);
 		}
-		
+
 		if (InteractAction)
 		{
 			EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &ThisClass::Interact);
 		}
-		
+
 		if (QuickSlotAction)
 		{
 			EIC->BindAction(QuickSlotAction, ETriggerEvent::Started, this, &ThisClass::UseQuickSlot);
 		}
-		
+
 		if (BuildAction)
 		{
 			EIC->BindAction(BuildAction, ETriggerEvent::Started, this, &ThisClass::ToggleBuildMode);
 		}
-		
+
 		if (EditAction)
 		{
 			EIC->BindAction(EditAction, ETriggerEvent::Started, this, &ThisClass::ToggleEditMode);
 		}
-		
+
 		if (BuildPlaceAction)
 		{
 			EIC->BindAction(BuildPlaceAction, ETriggerEvent::Started, this, &ThisClass::OnBuildPlace);
 		}
-		
+
 		if (EditSelectAction)
 		{
 			EIC->BindAction(EditSelectAction, ETriggerEvent::Started, this, &ThisClass::OnEditSelect);
@@ -513,7 +512,7 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 void ASMPlayerCharacter::PawnClientRestart()
 {
 	Super::PawnClientRestart();
-	
+
 	if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 	{
 		if (PC->IsLocalController() && DefaultIMC)
@@ -521,10 +520,24 @@ void ASMPlayerCharacter::PawnClientRestart()
 			if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
 			{
 				if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
-						ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
+					ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
 				{
+					// 기존 IMC 전부 초기화
+					if (LobbyIMC) Subsystem->RemoveMappingContext(LobbyIMC);
 					Subsystem->RemoveMappingContext(DefaultIMC);
-					Subsystem->AddMappingContext(DefaultIMC, 0);
+
+					// 현재 맵에 따라 IMC 결정
+					FString MapName = GetWorld()->GetMapName();
+					if (LobbyIMC && MapName.Contains(TEXT("Lobby")))
+					{
+						Subsystem->AddMappingContext(LobbyIMC, 1);
+						UE_LOG(LogTemp, Warning, TEXT("[PlayerCharacter] IMC = LobbyIMC"));
+					}
+					else
+					{
+						Subsystem->AddMappingContext(DefaultIMC, 0);
+						UE_LOG(LogTemp, Warning, TEXT("[PlayerCharacter] IMC = DefaultIMC"));
+					}
 				}
 			}
 		}
@@ -539,10 +552,10 @@ void ASMPlayerCharacter::SetCustomizeMode(bool bEnable)
 {
 	if (IsLocallyControlled() == false) return;
 	if (IsValid(SpringArmComp) == false) return;
-	
+
 	UCharacterMovementComponent* MovementComp = GetCharacterMovement();
 	if (IsValid(MovementComp) == false) return;
-	
+
 	if (bEnable == true)
 	{
 		bIsInCustomizeMode = true;
@@ -550,27 +563,27 @@ void ASMPlayerCharacter::SetCustomizeMode(bool bEnable)
 		MovementComp->StopMovementImmediately();
 		// 이동 잠금
 		MovementComp->DisableMovement();
-		
+
 		// 캐릭터 현재 Yaw + 180도 = 캐릭터 정면에서 바라보는 카메라 위치
 		float FaceYaw = GetActorRotation().Yaw;
 		FRotator CameraRot = FRotator(CustomizeCameraRotation.Pitch, FaceYaw + CustomizeCameraRotation.Yaw, 0.0f);
-		
-		
+
+
 		SpringArmComp->SetRelativeRotation(CameraRot);
 		SpringArmComp->TargetArmLength = CustomizeCameraLength;
 	}
 	else
 	{
 		bIsInCustomizeMode = false;
-		
+
 		MovementComp->SetMovementMode(MOVE_Walking);
-		
-		
+
+
 		SpringArmComp->SetUsingAbsoluteRotation(true);
 		SpringArmComp->bInheritPitch = false;
 		SpringArmComp->bInheritYaw = false;
 		SpringArmComp->bInheritRoll = false;
-		SpringArmComp->SetRelativeRotation(FRotator(-CameraAngle,0.0f,0.0f));
+		SpringArmComp->SetRelativeRotation(FRotator(-CameraAngle, 0.0f, 0.0f));
 		SpringArmComp->TargetArmLength = CameraLength;
 	}
 }
@@ -584,14 +597,14 @@ void ASMPlayerCharacter::ApplyCustomizationLocal(int32 WeaponIndex, int32 Materi
 	{
 		if (IsValid(Comp) == false) continue;
 		if (Comp->GetAttachSocketName() != FName("WeaponSocket")) continue;
-		
+
 		if (WeaponMeshOptions.IsValidIndex(WeaponIndex))
 		{
 			Comp->SetStaticMesh(WeaponMeshOptions[WeaponIndex]);
 		}
 		break;
 	}
-	
+
 	//캐릭터 스켈레탈 메시 머티리얼 적용
 	USkeletalMeshComponent* MeshComp = GetMesh();
 	if (IsValid(MeshComp) && MaterialOptions.IsValidIndex(MaterialIndex))
@@ -604,6 +617,6 @@ void ASMPlayerCharacter::ApplyCustomization()
 {
 	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
 	if (IsValid(PS) == false) return;
-	
-	ApplyCustomizationLocal(PS->GetSelectedWeaponIndex(), PS->GetSelectedMaterialIndex());	
+
+	ApplyCustomizationLocal(PS->GetSelectedWeaponIndex(), PS->GetSelectedMaterialIndex());
 }

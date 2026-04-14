@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "SMCustomizeWidget.generated.h"
 
+class USMItemDefinition;
 class ASMPlayerCharacter;
 class ASMPlayerController;
 class UTextBlock;
@@ -79,6 +80,20 @@ private:
 	void OnSkillButton2Clicked();
 	UFUNCTION()
 	void OnSkillButton3Clicked();
+	
+	/** 
+	 * CurrentSkillIndex 확인용 
+	 * DA가 꽂혀있어서 클라이언트 변조 위험이 있다고 생각할 수 있지만
+	 * 위젯에서는 이전 스킬 확인용으로 가지고 있는 것이지 변조된 데이터가 서버로 넘어가지 않음 (서버에는 skill def가 아닌 인덱스 값만 전달)
+	 * (변조해도 이전 스킬을 못찾을 뿐이지 게임에 영향 X)
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "Skill")
+	TArray<TSoftObjectPtr<USMItemDefinition>> ChekSkillDefinitions;
+	
+	UFUNCTION()
+	void SelectSkill(int32 Index);
+	
+	int32 CurrentSkillIndex = 0;
 	
 	//================================
 	// 머티리얼 선택

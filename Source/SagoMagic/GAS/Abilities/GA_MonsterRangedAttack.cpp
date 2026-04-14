@@ -151,7 +151,7 @@ void UGA_MonsterRangedAttack::OnHitEventReceived(FGameplayEventData Payload)
 		Projectile->InitProjectile(SpecHandle, ProjectileRange, FireDirection, SourceActor);
 	}
 
-	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+	// 정상 종료는 몽타주 완료/취소 콜백에서만 처리한다.
 }
 
 void UGA_MonsterRangedAttack::OnMontageCompleted()

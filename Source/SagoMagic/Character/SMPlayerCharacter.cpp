@@ -104,6 +104,8 @@ void ASMPlayerCharacter::OnConstruction(const FTransform& Transform)
 
 void ASMPlayerCharacter::Move(const FInputActionValue& Value)
 {
+	if (bIsInCustomizeMode) return;
+	
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller)
@@ -544,7 +546,9 @@ void ASMPlayerCharacter::SetCustomizeMode(bool bEnable)
 	if (bEnable == true)
 	{
 		bIsInCustomizeMode = true;
-		//이동 잠금
+		// 현재 속도(관성) 즉시 제거
+		MovementComp->StopMovementImmediately();
+		// 이동 잠금
 		MovementComp->DisableMovement();
 		
 		// 캐릭터 현재 Yaw + 180도 = 캐릭터 정면에서 바라보는 카메라 위치

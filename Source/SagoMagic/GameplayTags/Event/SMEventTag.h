@@ -17,4 +17,5 @@ namespace SMEventTag
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Skill_Projectile);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Skill_Field);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Skill_LineTrace);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Skill_EnergyStrike);
 }

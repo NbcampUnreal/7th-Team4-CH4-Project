@@ -16,4 +16,5 @@ namespace SMEventTag
 	UE_DEFINE_GAMEPLAY_TAG(Event_Skill_Projectile, "Event.Skill.Projectile");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Skill_Field, "Event.Skill.Field");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Skill_LineTrace, "Event.Skill.LineTrace");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Skill_EnergyStrike, "Event.Skill.EnergyStrike");
 }

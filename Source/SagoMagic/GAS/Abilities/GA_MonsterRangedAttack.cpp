@@ -129,7 +129,7 @@ void UGA_MonsterRangedAttack::OnHitEventReceived(FGameplayEventData Payload)
 	if (SpecHandle.IsValid())
 	{
 		SpecHandle.Data->SetSetByCallerMagnitude(
-			FGameplayTag::RequestGameplayTag(TEXT("Data.Damage.Amount")), -GetMonsterAttackPower());
+			SMSkillTag::Data_Damage_Amount, -GetMonsterAttackPower());
 	}
 
 	// 투사체 스폰

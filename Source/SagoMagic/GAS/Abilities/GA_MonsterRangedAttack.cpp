@@ -1,8 +1,7 @@
 #include "GAS/Abilities/GA_MonsterRangedAttack.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
-#include "AIController.h"
-#include "BehaviorTree/BlackboardComponent.h"
+#include "Enemy/SMMonsterAIController.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Enemy/SMMonsterBase.h"
@@ -102,21 +101,18 @@ void UGA_MonsterRangedAttack::OnHitEventReceived(FGameplayEventData Payload)
 		return;
 	}
 
-	// 블랙보드의 TargetActor를 향한 방향 계산
+	// CurrentAttackTarget을 향한 방향 계산
 	FVector FireDirection = SourceActor->GetActorForwardVector();
 	if (APawn* MonsterPawn = Cast<APawn>(SourceActor))
 	{
-		if (AAIController* AIController = Cast<AAIController>(MonsterPawn->GetController()))
+		if (ASMMonsterAIController* AIController = Cast<ASMMonsterAIController>(MonsterPawn->GetController()))
 		{
-			if (UBlackboardComponent* BB = AIController->GetBlackboardComponent())
+			if (AActor* Target = AIController->CurrentAttackTarget)
 			{
-				if (AActor* Target = Cast<AActor>(BB->GetValueAsObject(FName("TargetActor"))))
+				const FVector ToTarget = Target->GetActorLocation() - SourceActor->GetActorLocation();
+				if (!ToTarget.IsNearlyZero())
 				{
-					const FVector ToTarget = Target->GetActorLocation() - SourceActor->GetActorLocation();
-					if (!ToTarget.IsNearlyZero())
-					{
-						FireDirection = ToTarget.GetSafeNormal();
-					}
+					FireDirection = ToTarget.GetSafeNormal();
 				}
 			}
 		}

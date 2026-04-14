@@ -7,11 +7,13 @@
 #include "GameFramework/PlayerState.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInterface.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 #include "Components/SMInteractionTargetComponent.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 
 #include "Inventory/Items/Definitions/SMItemDefinition.h"
+#include "Inventory/Items/Fragments/SMDisplayInfoFragment.h"
 #include "Inventory/Items/Fragments/SMWorldVisualFragment.h"
 
 ASMBaseItemDropActor::ASMBaseItemDropActor()
@@ -129,6 +131,14 @@ const USMItemDefinition* ASMBaseItemDropActor::ResolveItemDefinition() const
 
 void ASMBaseItemDropActor::ApplyWorldVisual()
 {
+	static const FName ColorMaterialSlotName(TEXT("Color"));
+	static const FName BaseColorParameterName(TEXT("BaseColor"));
+
+	if (GetNetMode() == NM_DedicatedServer)
+	{
+		return;
+	}
+
 	const USMItemDefinition* ItemDefinition = ResolveItemDefinition();
 	if (ItemDefinition == nullptr)
 	{
@@ -155,6 +165,40 @@ void ASMBaseItemDropActor::ApplyWorldVisual()
 	}
 
 	StaticMeshComponent->SetWorldScale3D(WorldVisualFragment->GetWorldScale());
+
+	if (WorldVisualFragment->GetColorSlotMaterial().IsNull() == false)
+	{
+		const int32 ColorMaterialSlotIndex = StaticMeshComponent->GetMaterialIndex(ColorMaterialSlotName);
+		if (ColorMaterialSlotIndex != INDEX_NONE)
+		{
+			FLinearColor AccentColor = FLinearColor::White;
+			if (const USMDisplayInfoFragment* DisplayInfoFragment =
+				ItemDefinition->FindFragmentByClass<USMDisplayInfoFragment>())
+			{
+				AccentColor = DisplayInfoFragment->GetAccentColor();
+			}
+
+			UMaterialInstanceDynamic* ColorMaterialInstance =
+				Cast<UMaterialInstanceDynamic>(StaticMeshComponent->GetMaterial(ColorMaterialSlotIndex));
+			if (ColorMaterialInstance == nullptr)
+			{
+				if (UMaterialInterface* ColorSlotMaterial = WorldVisualFragment->GetColorSlotMaterial().LoadSynchronous())
+				{
+					ColorMaterialInstance =
+						StaticMeshComponent->CreateDynamicMaterialInstance(ColorMaterialSlotIndex, ColorSlotMaterial);
+					if (ColorMaterialInstance == nullptr)
+					{
+						StaticMeshComponent->SetMaterial(ColorMaterialSlotIndex, ColorSlotMaterial);
+					}
+				}
+			}
+
+			if (ColorMaterialInstance != nullptr)
+			{
+				ColorMaterialInstance->SetVectorParameterValue(BaseColorParameterName, AccentColor);
+			}
+		}
+	}
 
 	if (InteractionTargetComponent != nullptr)
 	{

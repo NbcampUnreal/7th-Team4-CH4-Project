@@ -45,6 +45,12 @@ public:
 		return OverrideMaterial;
 	}
 
+	/** 컬러 슬롯 머티리얼 Getter */
+	const TSoftObjectPtr<UMaterialInterface>& GetColorSlotMaterial() const
+	{
+		return ColorSlotMaterial;
+	}
+
 	/** 월드 스케일 Getter */
 	const FVector& GetWorldScale() const
 	{
@@ -63,6 +69,12 @@ public:
 		OverrideMaterial = InOverrideMaterial;
 	}
 
+	/** 컬러 슬롯 머티리얼 Setter */
+	void SetColorSlotMaterial(const TSoftObjectPtr<UMaterialInterface>& InColorSlotMaterial)
+	{
+		ColorSlotMaterial = InColorSlotMaterial;
+	}
+
 	/** 월드 스케일 Setter */
 	void SetWorldScale(const FVector& InWorldScale)
 	{
@@ -77,6 +89,10 @@ public:
 	/** 오버라이드 머티리얼(불필요할 경우 삭제) */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="World Visual Fragment")
 	TSoftObjectPtr<UMaterialInterface> OverrideMaterial;
+
+	/** 메시의 Color 슬롯에 적용할 머티리얼 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="World Visual Fragment")
+	TSoftObjectPtr<UMaterialInterface> ColorSlotMaterial;
 
 	/** 월드 스케일 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="World Visual Fragment")

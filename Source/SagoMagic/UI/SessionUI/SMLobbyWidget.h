@@ -59,4 +59,14 @@ private:
 
 	ASMPlayerController* GetSMPlayerController() const;
 	ASMLobbyGameState* GetLobbyGameState() const;
+	
+	//================================
+	// 캐릭터 커스터마이징
+	//================================
+private:
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UButton> CustomizeButton;
+
+	UFUNCTION()
+	void OnCustomizeButtonClicked();
 };

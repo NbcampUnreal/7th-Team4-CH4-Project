@@ -18,9 +18,10 @@
 #include "UI/Inventory/SMInventoryRootWidget.h"
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 #include "UI/SessionUI/SMLobbyWidget.h"
-#include "UI/SMGameplayMessages.h" 
+#include "UI/SMGameplayMessages.h"
 #include "UI/SMHUD.h"
 #include "UI/SMHUDManager.h"
+#include "UI/SessionUI/SMCustomizeWidget.h"
 
 void ASMPlayerController::BeginPlay()
 {
@@ -46,7 +47,7 @@ void ASMPlayerController::BeginPlay()
 	if (IsValid(World) == false) return;
 
 	FString MapName = UGameplayStatics::GetCurrentLevelName(World, true);
-	
+
 	if (MapName.Contains(LobbyMapName) == true)
 	{
 		ShowLobbyWidget();
@@ -57,9 +58,9 @@ void ASMPlayerController::ClientRPC_ShowDeathUI_Implementation(float RespawnTime
 {
 	// TODO: 현님이 UI완성하면 호출
 	SM_LOG(this, LogSM, Log, TEXT("사망 UI 표시 - %.1f초 후 부활"), RespawnTime);
-	
+
 	// GameplayMessage 대신 HUD 직접 접근 (태그 미등록 문제 우회)
-	
+
 	// PlayerController -> HUD -> HUDManager -> PlayerDeathWidget 순서로 접근
 	if (ASMHUD* HUD = Cast<ASMHUD>(GetHUD()))
 	{
@@ -68,7 +69,7 @@ void ASMPlayerController::ClientRPC_ShowDeathUI_Implementation(float RespawnTime
 			HUDMgr->ShowPlayerDeath(RespawnTime);
 		}
 	}
-	
+
 	// 사망 중 입력 모드 유지 (마우스 커서는 표시)
 	FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
@@ -81,7 +82,7 @@ void ASMPlayerController::ClientRPC_HideDeathUI_Implementation()
 {
 	// TODO: 현님이 UI완성하면 호출
 	SM_LOG(this, LogSM, Log, TEXT("부활 - 사망 UI 숨김"));
-	
+
 	if (ASMHUD* HUD = Cast<ASMHUD>(GetHUD()))
 	{
 		if (USMHUDManager* HUDMgr = HUD->GetHUDManager())
@@ -89,7 +90,7 @@ void ASMPlayerController::ClientRPC_HideDeathUI_Implementation()
 			HUDMgr->HidePlayerDeath();
 		}
 	}
-	
+
 	// 게임플레이 입력 모드 복원
 	FInputModeGameAndUI InputMode;
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
@@ -134,18 +135,16 @@ void ASMPlayerController::SetupInputComponent()
 void ASMPlayerController::PostSeamlessTravel()
 {
 	Super::PostSeamlessTravel();
-	
+
 	LoginNotify_Implementation();
-	
 }
 
 void ASMPlayerController::LoginNotify_Implementation()
 {
-	ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>();	
+	ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>();
 	if (IsValid(GM) == false) return;
-	
+
 	GM->OnPlayerReady(this);
-	
 }
 
 void ASMPlayerController::ClientRPC_ShowGameResult_Implementation(bool bIsVictory, float InReturnDelay)
@@ -203,7 +202,7 @@ void ASMPlayerController::ClientRPCArrivedAtGameLevel_Implementation()
 	if (!PS) return;
 
 	UE_LOG(LogTemp, Log, TEXT("[GameLevel] 플레이어 도착 - 이름:%s / Host:%d"),
-		*PS->GetPlayerName(), PS->GetIsHost());
+	       *PS->GetPlayerName(), PS->GetIsHost());
 
 	//TODO 현 : 게임 HUD 생성, 캐릭터 선택 등 여기서 처리
 }
@@ -354,7 +353,8 @@ void ASMPlayerController::ServerRPCSetActiveQuickSlot_Implementation(int32 InSlo
 	InventoryComponent->SetActiveQuickSlot(InSlotIndex);
 }
 
-void ASMPlayerController::ServerRPCEquipSkillToQuickSlot_Implementation(const FGuid& InSkillInstanceId, int32 InSlotIndex)
+void ASMPlayerController::ServerRPCEquipSkillToQuickSlot_Implementation(const FGuid& InSkillInstanceId,
+                                                                        int32 InSlotIndex)
 {
 	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
 	if (OwningPlayerState == nullptr)
@@ -473,16 +473,16 @@ void ASMPlayerController::RotateDraggedInventoryItem()
 void ASMPlayerController::ShowLobbyWidget()
 {
 	if (IsValid(LobbyWidgetClass) == false) return;
-	
+
 	LobbyWidgetInstance = CreateWidget<USMLobbyWidget>(this, LobbyWidgetClass);
 	if (IsValid(LobbyWidgetInstance) == false) return;
 
 	LobbyWidgetInstance->AddToViewport();
 	LobbyWidgetInstance->LobbySetup();
 
-	FInputModeUIOnly InputMode;
-	InputMode.SetWidgetToFocus(LobbyWidgetInstance->TakeWidget());
-	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	FInputModeGameAndUI InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
 	SetShowMouseCursor(true);
 }
@@ -578,4 +578,60 @@ void ASMPlayerController::HideInventoryWidget()
 	SetShowMouseCursor(true);
 
 	bIsInventoryVisible = false;
+}
+
+void ASMPlayerController::OpenCustomizeWidget()
+{
+	if (IsValid(CustomizeWidgetClass) == false) return;
+
+	//LobbyWidget 숨김
+	if (IsValid(LobbyWidgetInstance) == true)
+	{
+		LobbyWidgetInstance->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	//CustomWidget 생성 및 열기
+	CustomizeWidgetInstance = CreateWidget<USMCustomizeWidget>(this, CustomizeWidgetClass);
+	if (IsValid(CustomizeWidgetInstance) == false) return;
+
+	CustomizeWidgetInstance->AddToViewport();
+	CustomizeWidgetInstance->CustomizeSetup();
+
+	FInputModeUIOnly InputMode;
+	InputMode.SetWidgetToFocus(CustomizeWidgetInstance->TakeWidget());
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	SetInputMode(InputMode);
+	SetShowMouseCursor(true);
+}
+
+void ASMPlayerController::CloseCustomizeWidget()
+{
+	if (IsValid(CustomizeWidgetInstance) == true)
+	{
+		CustomizeWidgetInstance->RemoveFromParent();
+		CustomizeWidgetInstance = nullptr;
+	}
+
+	//LobbyWidget 복원
+	if (IsValid(LobbyWidgetInstance) == true)
+	{
+		LobbyWidgetInstance->SetVisibility(ESlateVisibility::Visible);
+	}
+
+	// 로비 입력 모드 복원 (이동/공격 + UI)
+	FInputModeGameAndUI InputMode;
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
+	SetShowMouseCursor(true);
+}
+
+void ASMPlayerController::ServerRPCSetCustomization_Implementation(int32 WeaponIndex, int32 MaterialIndex)
+{
+	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
+	if (IsValid(PS) == false) return;
+
+	PS->SetSelectedWeaponIndex(WeaponIndex);
+	PS->SetSelectedMaterialIndex(MaterialIndex);
+	// 데디케이트 서버: 값 변경 시 OnRep_가 모든 클라이언트에서 자동 호출됨
 }

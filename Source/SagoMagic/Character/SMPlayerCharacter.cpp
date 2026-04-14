@@ -104,6 +104,8 @@ void ASMPlayerCharacter::OnConstruction(const FTransform& Transform)
 
 void ASMPlayerCharacter::Move(const FInputActionValue& Value)
 {
+	if (bIsInCustomizeMode) return;
+	
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller)
@@ -294,7 +296,7 @@ void ASMPlayerCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// 로컬만 틱에서 실행
-	if (!bIsDead && IsLocallyControlled() && Controller)
+	if (!bIsDead && !bIsInCustomizeMode && IsLocallyControlled() && Controller)
 	{
 		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 		{
@@ -335,6 +337,7 @@ void ASMPlayerCharacter::OnRep_PlayerState()
 	// 클라에서 호출
 	// Ability 부여는 서버에서만(클라는 복제)
 	InitializeAbilitySystem();
+	ApplyCustomization();
 }
 
 void ASMPlayerCharacter::InitializeAbilitySystem()
@@ -526,4 +529,81 @@ void ASMPlayerCharacter::PawnClientRestart()
 			}
 		}
 	}
+}
+
+//================================
+// 캐릭터 커스터마이징
+//================================
+
+void ASMPlayerCharacter::SetCustomizeMode(bool bEnable)
+{
+	if (IsLocallyControlled() == false) return;
+	if (IsValid(SpringArmComp) == false) return;
+	
+	UCharacterMovementComponent* MovementComp = GetCharacterMovement();
+	if (IsValid(MovementComp) == false) return;
+	
+	if (bEnable == true)
+	{
+		bIsInCustomizeMode = true;
+		// 현재 속도(관성) 즉시 제거
+		MovementComp->StopMovementImmediately();
+		// 이동 잠금
+		MovementComp->DisableMovement();
+		
+		// 캐릭터 현재 Yaw + 180도 = 캐릭터 정면에서 바라보는 카메라 위치
+		float FaceYaw = GetActorRotation().Yaw;
+		FRotator CameraRot = FRotator(CustomizeCameraRotation.Pitch, FaceYaw + CustomizeCameraRotation.Yaw, 0.0f);
+		
+		
+		SpringArmComp->SetRelativeRotation(CameraRot);
+		SpringArmComp->TargetArmLength = CustomizeCameraLength;
+	}
+	else
+	{
+		bIsInCustomizeMode = false;
+		
+		MovementComp->SetMovementMode(MOVE_Walking);
+		
+		
+		SpringArmComp->SetUsingAbsoluteRotation(true);
+		SpringArmComp->bInheritPitch = false;
+		SpringArmComp->bInheritYaw = false;
+		SpringArmComp->bInheritRoll = false;
+		SpringArmComp->SetRelativeRotation(FRotator(-CameraAngle,0.0f,0.0f));
+		SpringArmComp->TargetArmLength = CameraLength;
+	}
+}
+
+void ASMPlayerCharacter::ApplyCustomizationLocal(int32 WeaponIndex, int32 MaterialIndex)
+{
+	// Blueprint에서 WeaponSocket에 붙어있는 StaticMeshComponent 탐색
+	TArray<UStaticMeshComponent*> Comps;
+	GetComponents<UStaticMeshComponent>(Comps);
+	for (UStaticMeshComponent* Comp : Comps)
+	{
+		if (IsValid(Comp) == false) continue;
+		if (Comp->GetAttachSocketName() != FName("WeaponSocket")) continue;
+		
+		if (WeaponMeshOptions.IsValidIndex(WeaponIndex))
+		{
+			Comp->SetStaticMesh(WeaponMeshOptions[WeaponIndex]);
+		}
+		break;
+	}
+	
+	//캐릭터 스켈레탈 메시 머티리얼 적용
+	USkeletalMeshComponent* MeshComp = GetMesh();
+	if (IsValid(MeshComp) && MaterialOptions.IsValidIndex(MaterialIndex))
+	{
+		MeshComp->SetMaterial(0, MaterialOptions[MaterialIndex]);
+	}
+}
+
+void ASMPlayerCharacter::ApplyCustomization()
+{
+	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
+	if (IsValid(PS) == false) return;
+	
+	ApplyCustomizationLocal(PS->GetSelectedWeaponIndex(), PS->GetSelectedMaterialIndex());	
 }

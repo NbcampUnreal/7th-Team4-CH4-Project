@@ -169,4 +169,40 @@ protected:
 	// 건축모드나 편집 모드일시 좌클릭 누르면 실행될 함수
 	void OnBuildPlace();
 	void OnEditSelect();
+	
+	//================================
+	// 캐릭터 커스터마이징
+	//================================
+public:
+	/** 커스터마이즈 모드 진입/죵료 (이동 잠금 + 카메라 전환) 로컬 전용 */
+	void SetCustomizeMode(bool bEnable);
+
+	/** PlayerState 인덱스 읽어서 무기/머티리얼 즉시 적용. 로컬 미리보기용 */
+	void ApplyCustomizationLocal(int32 WeaponIndex, int32 MaterialIndex);
+
+	/** PlayerState 인덱스 읽어서 무기/머티리얼 적용. OnRep_ 및 스폰 시 호출 */
+	void ApplyCustomization();
+	
+	/** 머티리얼 옵션 개수 반환 - SMCustomizeWidget 순환 계산용 */
+	int32 GetMaterialOptionNum() const { return MaterialOptions.Num(); }
+	
+protected:
+	/** 커스터마이즈 뷰 카메라 거리 (Blueprint에서 조정 가능) */
+	UPROPERTY(EditDefaultsOnly, Category = "Customization|Camera")
+	float CustomizeCameraLength = 450.0f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Customization|Camera")
+	FRotator CustomizeCameraRotation = FRotator(-15.0f, 180.0f, 0.0f);
+	
+private:
+	bool bIsInCustomizeMode = false;
+	
+	/** 무기 메시 옵션 배열 - Blueprint에서 할당 */
+	UPROPERTY(EditDefaultsOnly, Category = "Customization")
+	TArray<TObjectPtr<UStaticMesh>> WeaponMeshOptions;
+	
+	/** 머티리얼 옵션 배열 - Blueprint에서 할당 */
+	UPROPERTY(EditDefaultsOnly, Category = "Customization")
+	TArray<TObjectPtr<UMaterialInterface>> MaterialOptions;
+	
 };

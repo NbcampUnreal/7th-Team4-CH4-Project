@@ -531,6 +531,9 @@ void ASMPlayerController::ShowInventoryWidget()
 		return;
 	}
 
+	InventoryRootWidgetInstance->SetVisibility(ESlateVisibility::Visible);
+	InventoryRootWidgetInstance->ForceLayoutPrepass();
+
 	APlayerState* OwningPlayerState = GetPlayerState<APlayerState>();
 	USMInventoryComponent* InventoryComponent = nullptr;
 	if (OwningPlayerState != nullptr)
@@ -549,8 +552,6 @@ void ASMPlayerController::ShowInventoryWidget()
 			InventoryRootWidgetInstance->RefreshRootWidget();
 		}
 	}
-
-	InventoryRootWidgetInstance->SetVisibility(ESlateVisibility::Visible);
 
 	FInputModeGameAndUI InputMode;
 	InputMode.SetWidgetToFocus(InventoryRootWidgetInstance->TakeWidget());

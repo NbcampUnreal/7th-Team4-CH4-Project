@@ -82,6 +82,8 @@ void UGA_SkillField::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
 
 			FGameplayCueParameters CueParams;
 			CueParams.Location = SpawnLocation;
+			CueParams.RawMagnitude = FieldDuration;
+			CueParams.NormalizedMagnitude = RangeCm;  // Niagara Scale_All 동기화
 			//클라에서 장판 이펙트 생성
 			ASC->AddGameplayCue(SMSkillTag::GameplayCue_Skill_SpawnField_Tick, CueParams);
 		}
@@ -181,13 +183,14 @@ void UGA_SkillField::SpawnFieldAtLocation(const FVector& SpawnLocation, const FG
 	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 	if (Field)
 	{
-		Field->InitField(SpecHandle, Avatar, FieldDuration);
+		Field->InitField(SpecHandle, Avatar, FieldDuration, RangeCm);
 
 		if (SourceASC)
 		{
 			FGameplayCueParameters CueParams;
 			CueParams.Location = SpawnLocation;
 			CueParams.RawMagnitude = FieldDuration;
+			CueParams.NormalizedMagnitude = RangeCm;
 			SourceASC->AddGameplayCue(SMSkillTag::GameplayCue_Skill_SpawnField_Tick, CueParams);
 		}
 	}

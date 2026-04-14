@@ -9,6 +9,7 @@
 
 struct FOnAttributeChangeData;
 struct FInputActionValue;
+class USMBuildingModeComponent;
 class USMInteractionScannerComponent;
 class USMAbilitySystemComponent;
 class UGameplayAbility;
@@ -35,7 +36,9 @@ class SAGOMAGIC_API ASMPlayerCharacter : public ACharacter, public IAbilitySyste
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USMInteractionScannerComponent> InteractionScannerComp;
-
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BuildingMode", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USMBuildingModeComponent> BuildingModeComp;
 protected:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> DefaultIMC;
@@ -62,12 +65,6 @@ protected:
 	
 	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
 	TObjectPtr<UInputAction> EditAction;
-	
-	UPROPERTY(EditAnywhere, Category = "Input|Build|Place")
-	TObjectPtr<UInputAction> BuildPlaceAction;
-	
-	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
-	TObjectPtr<UInputAction> EditSelectAction;
 	
 	UPROPERTY(EditAnywhere, Category = "Input|Quickslot")
 	TObjectPtr<UInputAction> QuickSlotAction;
@@ -165,10 +162,6 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void ServerRPC_SetEditModeTag(bool bEnable);
-	
-	// 건축모드나 편집 모드일시 좌클릭 누르면 실행될 함수
-	void OnBuildPlace();
-	void OnEditSelect();
 	
 	//================================
 	// 로비 전용 Input 세팅

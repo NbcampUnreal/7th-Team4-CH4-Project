@@ -14,6 +14,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Building|Fence")
 	void ConvertToCorner(float Yaw);
+	void ConvertToCornerPreview(float Yaw);
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 private:

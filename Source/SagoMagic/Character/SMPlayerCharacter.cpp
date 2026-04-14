@@ -10,6 +10,7 @@
 #include "SMInteractionScannerComponent.h"
 #include "SMPlayerController.h"
 #include "Camera/CameraComponent.h"
+#include "Components/BuildingModeComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Core/SMGameMode.h"
 #include "Core/SMPlayerState.h"
@@ -43,7 +44,7 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	CameraComp->SetupAttachment(SpringArmComp);
-
+	
 	// 캐릭터의 움직임으로 몸 회전 금지
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
@@ -51,9 +52,11 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
-
+	
 	InteractionScannerComp = CreateDefaultSubobject<USMInteractionScannerComponent>(TEXT("InteractionScanner"));
 	InteractionScannerComp->SetupAttachment(RootComponent);
+	
+	BuildingModeComp = CreateDefaultSubobject<USMBuildingModeComponent>(TEXT("BuildingModeComponent"));
 }
 
 UAbilitySystemComponent* ASMPlayerCharacter::GetAbilitySystemComponent() const
@@ -191,7 +194,13 @@ void ASMPlayerCharacter::ToggleBuildMode()
 	Subsystem->AddMappingContext(BuildPlaceIMC, 1);
 	SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
 	ServerRPC_SetBuildModeTag(true);
-
+	
+	if (BuildingModeComp)
+	{
+		BuildingModeComp->bIsBuildMode = true;
+		BuildingModeComp->SetComponentTickEnabled(true);
+	}
+	
 	SM_LOG(this, LogSM, Log, TEXT("건축 모드 ON"));
 }
 
@@ -259,24 +268,6 @@ void ASMPlayerCharacter::ServerRPC_SetEditModeTag_Implementation(bool bEnable)
 	{
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 	}
-}
-
-void ASMPlayerCharacter::OnBuildPlace()
-{
-	if (!SMAbilitySystemComponent) return;
-
-	// TODO: 추후에 GA_BuildPlace 구현 후 주석 제거
-	// SMAbilitySystemComponent->TryActivateAbilitiesByTag(SMCharacterTag::Ability_Build_Place);
-	SM_LOG(this, LogSM, Log, TEXT("건축 GA실행"));
-}
-
-void ASMPlayerCharacter::OnEditSelect()
-{
-	if (!SMAbilitySystemComponent) return;
-
-	// TODO: 추후에 GA_BuildEdit 구현 후 주석 제거
-	// SMAbilitySystemComponent->TryActivateAbilitiesByTag(SMCharacterTag::Ability_Build_Edit);
-	SM_LOG(this, LogSM, Log, TEXT("편집 GA 실행"));
 }
 
 void ASMPlayerCharacter::BeginPlay()
@@ -496,16 +487,7 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		{
 			EIC->BindAction(EditAction, ETriggerEvent::Started, this, &ThisClass::ToggleEditMode);
 		}
-
-		if (BuildPlaceAction)
-		{
-			EIC->BindAction(BuildPlaceAction, ETriggerEvent::Started, this, &ThisClass::OnBuildPlace);
-		}
-
-		if (EditSelectAction)
-		{
-			EIC->BindAction(EditSelectAction, ETriggerEvent::Started, this, &ThisClass::OnEditSelect);
-		}
+		
 	}
 }
 

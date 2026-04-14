@@ -13,7 +13,6 @@
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "GameFramework/Pawn.h"
 #include "InputAction.h"
-#include "SMPlayerCharacter.h"
 #include "Core/SMGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/Inventory/SMInventoryRootWidget.h"
@@ -52,12 +51,6 @@ void ASMPlayerController::BeginPlay()
 	if (MapName.Contains(LobbyMapName) == true)
 	{
 		ShowLobbyWidget();
-
-		ASMPlayerCharacter* SMCharacter = Cast<ASMPlayerCharacter>(GetPawn());
-		if (IsValid(SMCharacter))
-		{
-			SMCharacter->SetLobbyInputMode();
-		}
 	}
 }
 
@@ -198,6 +191,8 @@ void ASMPlayerController::ApplyControllerMappingContext()
 
 void ASMPlayerController::ClientRPCArrivedAtGameLevel_Implementation()
 {
+	ResetInventoryWidgetState();
+
 	//입력 모드 전환 (기존 OnArrivedAtGameLevel 로직)
 	FInputModeGameAndUI InputMode;
 	SetInputMode(InputMode);
@@ -477,6 +472,17 @@ void ASMPlayerController::RotateDraggedInventoryItem()
 	CurrentPanelWidget->RequestRotateCurrentDraggedItem();
 }
 
+void ASMPlayerController::ResetInventoryWidgetState()
+{
+	if (InventoryRootWidgetInstance != nullptr)
+	{
+		InventoryRootWidgetInstance->RemoveFromParent();
+		InventoryRootWidgetInstance = nullptr;
+	}
+
+	bIsInventoryVisible = false;
+}
+
 void ASMPlayerController::ShowLobbyWidget()
 {
 	if (IsValid(LobbyWidgetClass) == false) return;
@@ -672,7 +678,7 @@ void ASMPlayerController::ServerRPCSelectLobbySkill_Implementation(int32 InSkill
 	PS->SetSelectedLobbySkillDef(SkillDef);
 }
 
-void ASMPlayerController::InitializeInventory()
+void ASMPlayerController::AddBasicSkillToInventory()
 {
 	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
 	if (IsValid(PS) == false) return;
@@ -680,6 +686,8 @@ void ASMPlayerController::InitializeInventory()
 	USMInventoryComponent* Inv = PS->GetInventoryComponent();
 	if (IsValid(Inv) == false) return;
 
+	Inv->ResetInventory();
+	
 	const TSoftObjectPtr<USMItemDefinition>& SkillDef = PS->GetSelectedLobbySkillDef();
 	if (SkillDef.IsNull()) return;
 

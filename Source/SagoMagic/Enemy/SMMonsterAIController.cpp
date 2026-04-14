@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Pawn.h"
 #include "Building/SMBaseCampActor.h"
+#include "Building/SMBaseBuilding.h"
 
 
 ASMMonsterAIController::ASMMonsterAIController()
@@ -178,9 +179,35 @@ AActor* ASMMonsterAIController::FindAttackableTarget()
 
 AActor* ASMMonsterAIController::FindBuildingInRange()
 {
-    // TODO: 건축물 완성 후 구현
     // AttackRange 이내에서 가장 가까운 건물 반환
-    return nullptr;
+    APawn* MyPawn = GetPawn();
+    if (!MyPawn) return nullptr;
+
+    const FVector MyLocation = MyPawn->GetActorLocation();
+    float ClosestDist = AttackRange;
+    AActor* BestTarget = nullptr;
+
+    TArray<AActor*> FoundBuildings;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ASMBaseBuilding::StaticClass(), FoundBuildings);
+
+    for (AActor* Actor : FoundBuildings)
+    {
+        ASMBaseBuilding* Building = Cast<ASMBaseBuilding>(Actor);
+        if (!Building) continue;
+
+        //파괴 불가능 혹은 이미 불가능한 건물 스킵
+        if (!Building->GetIsDestructible()) continue;
+        if (Building->GetCurrentHealth() <= 0.f) continue;
+
+        float Dist = FVector::Dist(MyLocation, Building->GetActorLocation());
+        if (Dist <= ClosestDist)
+        {
+            ClosestDist = Dist;
+            BestTarget = Building;
+        }
+    }
+
+    return BestTarget;
 }
 
 AActor* ASMMonsterAIController::FindNearestPlayerInRange()

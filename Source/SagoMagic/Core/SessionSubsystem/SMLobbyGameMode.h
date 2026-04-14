@@ -7,6 +7,7 @@
 #include "SMLobbyGameMode.generated.h"
 
 
+class USMItemDefinition;
 class ASMPlayerState;
 class ASMLobbyGameState;
 /**
@@ -50,4 +51,15 @@ protected:
 
 	ASMPlayerState* GetSMPlayerState(APlayerController* PC) const;
 	ASMLobbyGameState* GetLobbyGameState() const;
+	
+	//================================
+	// 캐릭터 스킬 선택
+	//================================
+public:
+	const TSoftObjectPtr<USMItemDefinition>& GetPresetSkillDefinition(int32 index) const;
+	
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Skill|Preset")
+	TArray<TSoftObjectPtr<USMItemDefinition>> PresetSkillDefinitions;
+	
 };

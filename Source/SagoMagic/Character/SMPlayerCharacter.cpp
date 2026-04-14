@@ -294,7 +294,7 @@ void ASMPlayerCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// 로컬만 틱에서 실행
-	if (!bIsDead && IsLocallyControlled() && Controller)
+	if (!bIsDead && !bIsInCustomizeMode && IsLocallyControlled() && Controller)
 	{
 		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 		{
@@ -543,16 +543,22 @@ void ASMPlayerCharacter::SetCustomizeMode(bool bEnable)
 	
 	if (bEnable == true)
 	{
+		bIsInCustomizeMode = true;
 		//이동 잠금
 		MovementComp->DisableMovement();
 		
-		//캐릭터 정면 뷰
-		SpringArmComp->SetUsingAbsoluteRotation(false);
-		SpringArmComp->SetRelativeRotation(CustomizeCameraRotation);
+		// 캐릭터 현재 Yaw + 180도 = 캐릭터 정면에서 바라보는 카메라 위치
+		float FaceYaw = GetActorRotation().Yaw;
+		FRotator CameraRot = FRotator(CustomizeCameraRotation.Pitch, FaceYaw + CustomizeCameraRotation.Yaw, 0.0f);
+		
+		
+		SpringArmComp->SetRelativeRotation(CameraRot);
 		SpringArmComp->TargetArmLength = CustomizeCameraLength;
 	}
 	else
 	{
+		bIsInCustomizeMode = false;
+		
 		MovementComp->SetMovementMode(MOVE_Walking);
 		
 		

@@ -195,6 +195,8 @@ protected:
 	FRotator CustomizeCameraRotation = FRotator(-15.0f, 180.0f, 0.0f);
 	
 private:
+	bool bIsInCustomizeMode = false;
+	
 	/** 무기 메시 옵션 배열 - Blueprint에서 할당 */
 	UPROPERTY(EditDefaultsOnly, Category = "Customization")
 	TArray<TObjectPtr<UStaticMesh>> WeaponMeshOptions;

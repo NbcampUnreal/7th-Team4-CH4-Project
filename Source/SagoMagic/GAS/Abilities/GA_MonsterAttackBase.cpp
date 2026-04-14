@@ -7,6 +7,8 @@
 #include "Character/SMPlayerCharacter.h"  
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "Enemy/SMMonsterAIController.h"
+#include "Building/SMBaseCampActor.h"
 
 UGA_MonsterAttackBase::UGA_MonsterAttackBase()
 {    // 서버에서만 실행, 클라이언트는 복제로 받음
@@ -80,8 +82,7 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
         return;
     }
-  /*  UE_LOG(LogTemp, Warning, TEXT("[Attack] OnHitEventReceived 호출됨. HasAuthority: %s"),
-        GetActorInfo().IsNetAuthority() ? TEXT("TRUE") : TEXT("FALSE"));*/
+
     AActor* SourceActor = GetAvatarActorFromActorInfo();
     UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 
@@ -95,8 +96,12 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
         {
             TargetASC = ASCInterface->GetAbilitySystemComponent();
         }
+        // ★ 디버그 로그 추가
+        UE_LOG(LogTemp, Warning, TEXT("[Attack] TargetASC: %s, DamageEffectClass: %s"),
+            TargetASC ? TEXT("Valid") : TEXT("NULL"),
+            DamageEffectClass ? TEXT("Valid") : TEXT("NULL"));
 
-        if (TargetASC && SourceASC)
+        if (TargetASC && SourceASC && DamageEffectClass)
         {
             FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
             EffectContext.AddHitResult(HitResult);
@@ -108,60 +113,30 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
 
             if (SpecHandle.IsValid())
             {
-                /*UE_LOG(LogTemp, Warning, TEXT("[Attack] SpecHandle 유효. DamageEffectClass: %s"),
-                    DamageEffectClass ? *DamageEffectClass->GetName() : TEXT("NULL ← 에디터에서 할당 필요!"));*/
                 SpecHandle.Data.Get()->SetSetByCallerMagnitude(
                     FGameplayTag::RequestGameplayTag("Data.Damage.Amount"), -DamageAmount);
 
-                // 타겟 ASC의 모든 AttributeSet 중 "Health" Attribute를 찾아 읽기
-                // (플레이어 코드 include 없이 문자열로 탐색)
-                float HPBeforeVal = -1.f, HPAfterVal = -1.f;
-                for (const UAttributeSet* AS : TargetASC->GetSpawnedAttributes())
-                {
-                    if (!AS) continue;
-                    for (TFieldIterator<FProperty> PropIt(AS->GetClass()); PropIt; ++PropIt)
-                    {
-                        if (PropIt->GetName() == TEXT("Health"))
-                        {
-                            FGameplayAttribute HealthAttr(*PropIt);
-                            HPBeforeVal = TargetASC->GetNumericAttribute(HealthAttr);
-
-                            SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
-
-                            HPAfterVal = TargetASC->GetNumericAttribute(HealthAttr);
-
-                            /*UE_LOG(LogTemp, Warning,
-                                TEXT("[Attack] %s -> %s | 데미지: %.0f | 플레이어 HP: %.0f -> %.0f"),
-                                *SourceActor->GetName(),
-                                *HitResult.GetActor()->GetName(),
-                                DamageAmount,
-                                HPBeforeVal,
-                                HPAfterVal);*/
-                            goto ApplyDone; // 중첩 루프 탈출
-                        }
-                    }
-                }
-                // Health Attribute를 못 찾은 경우 (GE는 그냥 적용)
                 SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
-                UE_LOG(LogTemp, Warning,
-                    TEXT("[Attack] %s -> %s | 데미지: %.0f | (HP Attribute를 찾지 못했습니다)"),
-                    *SourceActor->GetName(),
-                    *HitResult.GetActor()->GetName(),
-                    DamageAmount);
-            ApplyDone:;
+                // ★ 디버그 로그 추가
+                //bool bApplied = SourceASC->ApplyGameplayEffectSpecToTarget(
+                //    *SpecHandle.Data.Get(), TargetASC).IsValid();
+
+                //UE_LOG(LogTemp, Warning, TEXT("[Attack] GE Apply 결과: %s"),
+                //    bApplied ? TEXT("SUCCESS") : TEXT("FAILED"));
+
+                //UE_LOG(LogTemp, Log, TEXT("[Attack] %s -> %s | Damage: %.0f"),
+                //    *SourceActor->GetName(),
+                //    *HitResult.GetActor()->GetName(),
+                //    DamageAmount);
             }
-        }
-        else
-        {
-            // 디버그: ASC를 못 찾은 경우 원인 파악용
-            UE_LOG(LogTemp, Warning, TEXT("[Attack] ASC를 찾지 못했습니다. Target:%s / SourceASC:%s / TargetASC:%s"),
-                *HitResult.GetActor()->GetName(),
-                SourceASC ? TEXT("OK") : TEXT("NULL"),
-                TargetASC ? TEXT("OK") : TEXT("NULL"));
         }
     }
 
-    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+    // 몽타주가 끝나면 OnMontageCompleted에서 EndAbility가 호출되므로
+    // 여기서는 EndAbility를 호출하지 않음
+    // (히트 이벤트는 몽타주 중간에 발생하므로 몽타주 완료를 기다림)
+
+    //EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
 bool UGA_MonsterAttackBase::PerformHitCheck(FHitResult& OutHitResult) const
@@ -172,30 +147,80 @@ bool UGA_MonsterAttackBase::PerformHitCheck(FHitResult& OutHitResult) const
     UWorld* World = AvatarActor->GetWorld();
     if (!World) return false;
 
+    // AI Controller에서 현재 타겟 타입 읽기
+    EMonsterAttackTargetType TargetType = EMonsterAttackTargetType::BaseCamp;
+    if (APawn* Pawn = Cast<APawn>(AvatarActor))
+    {
+        if (ASMMonsterAIController* MonsterAI = Cast<ASMMonsterAIController>(Pawn->GetController()))
+        {
+            TargetType = MonsterAI->CurrentTargetType;
+        }
+    }
+
     const FVector Start = AvatarActor->GetActorLocation();
     const FVector End = Start + AvatarActor->GetActorForwardVector() * AttackRange;
 
     FCollisionQueryParams Params;
     Params.AddIgnoredActor(AvatarActor);
 
+    // 타겟 타입에 따라 적절한 콜리전 채널 선택
+    ECollisionChannel TraceChannel;
+    switch (TargetType)
+    {
+    case EMonsterAttackTargetType::Player:
+        TraceChannel = ECC_Pawn;
+        break;
+    case EMonsterAttackTargetType::BaseCamp:
+        TraceChannel = BaseCampTraceChannel;  // StaticMesh 기반이므로 별도 채널
+        break;
+    case EMonsterAttackTargetType::Building:
+        TraceChannel = BaseCampTraceChannel;  // 건물도 동일 채널 사용 (추후 분리 가능)
+        break;
+    default:
+        TraceChannel = ECC_Pawn;
+        break;
+    }
+
     TArray<FHitResult> HitResults;
     World->SweepMultiByChannel(
         HitResults,
         Start, End,
         FQuat::Identity,
-        ECC_Pawn,
+        TraceChannel,
         FCollisionShape::MakeSphere(AttackRadius),
         Params
     );
 
     for (FHitResult& Hit : HitResults)
     {
-        // 플레이어 캐릭터인지 타입으로 확인
-        if (Cast<ASMPlayerCharacter>(Hit.GetActor()))
+        AActor* HitActor = Hit.GetActor();
+        if (!HitActor) continue;
+
+        switch (TargetType)
         {
-            OutHitResult = Hit;
-            //UE_LOG(LogTemp, Log, TEXT("[HitCheck] 성공: %s"), *Hit.GetActor()->GetName());
-            return true;
+        case EMonsterAttackTargetType::Building:
+            // TODO: 구조물 클래스 완성 후 Cast 대상 교체
+            // if (Cast<ASMStructureBase>(HitActor)) { OutHitResult = Hit; return true; }
+            break;
+
+        case EMonsterAttackTargetType::Player:
+            if (Cast<ASMPlayerCharacter>(HitActor))
+            {
+                OutHitResult = Hit;
+                return true;
+            }
+            break;
+
+        case EMonsterAttackTargetType::BaseCamp:
+            if (Cast<ASMBaseCampActor>(HitActor))
+            {
+                OutHitResult = Hit;
+                return true;
+            }
+            break;
+
+        default:
+            break;
         }
     }
 

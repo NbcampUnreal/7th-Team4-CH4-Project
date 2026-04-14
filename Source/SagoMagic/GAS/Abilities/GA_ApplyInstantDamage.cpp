@@ -12,139 +12,62 @@ UGA_ApplyInstantDamage::UGA_ApplyInstantDamage()
 {
 }
 
-void UGA_ApplyInstantDamage::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
-                                             const FGameplayAbilityActorInfo* ActorInfo,
-                                             const FGameplayAbilityActivationInfo ActivationInfo,
-                                             const FGameplayEventData* TriggerEventData)
-{
-	if (!ActorInfo || ActorInfo->AvatarActor.IsValid() == false)
-	{
-		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-		return;
-	}
-
-	// 1. DT에서 스킬 수치 로드
-	if (LoadActiveSkillSummary(ActorInfo) == false)
-	{
-		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-		return;
-	}
-
-	//2.클라이언트: 마우스 커서 월드 위치 획득 -> 로컬 적 탐색 -> TargetData전송
-	APawn* Pawn = Cast<APawn>(ActorInfo->AvatarActor.Get());
-	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
-
-	if (IsValid(Pawn) == true && IsValid(ASC) == true && Pawn->HasAuthority() == false)
-	{
-		FVector CursorWorldLocation = FVector::ZeroVector;
-		if (GetCursorHitLocation(ActorInfo, CursorWorldLocation) == false)
-		{
-			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-			return;
-		}
-
-		//로컬 적 탐색 (스킬 커밋여부 판단용, 실제 데미지는 서버가 결정)
-		AActor* LocalTarget = nullptr;
-		if (FindClosestEnemy(GetWorld(), CursorWorldLocation, DetectionRadius,
-		                     ActorInfo->AvatarActor.Get(), LocalTarget) == false)
-		{
-			ASC->ServerSetReplicatedTargetData(
-				Handle, ActivationInfo.GetActivationPredictionKey(),
-				FGameplayAbilityTargetDataHandle(),
-				FGameplayTag(), ASC->ScopedPredictionKey
-			);
-
-			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-			return;
-		}
-		//4. 적 발견 -> 클라이언트 CommitAbility (예츸 쿨다운)
-		if (CommitAbility(Handle, ActorInfo, ActivationInfo) == false)
-		{
-			EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-			return;
-		}
-		
-		// 클라이언트 예측 GameplayCue 실행
-		FGameplayCueParameters CueParams;
-		CueParams.Location = LocalTarget->GetActorLocation();
-		CueParams.EffectContext = ASC->MakeEffectContext();
-		ASC->ExecuteGameplayCue(
-			SMSkillTag::GameplayCue_Skill_ApplyInstantDamage_Hit, CueParams);
-
-		//적이 있으므로 커서 위치를 TargetData로 서버에 전송
-		FGameplayAbilityTargetData_LocationInfo* LocationData = new FGameplayAbilityTargetData_LocationInfo();
-		LocationData->TargetLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
-		LocationData->TargetLocation.LiteralTransform = FTransform(CursorWorldLocation);
-
-		FGameplayAbilityTargetDataHandle TargetDataHandle;
-		TargetDataHandle.Add(LocationData);
-
-		//서버로 전송
-		ASC->ServerSetReplicatedTargetData(
-			Handle,
-			ActivationInfo.GetActivationPredictionKey(),
-			TargetDataHandle,
-			FGameplayTag(),
-			ASC->ScopedPredictionKey
-		);
-		
-		EndAbility(Handle, ActorInfo, ActivationInfo, false, false);
-		return; 
-	}
-
-	//3. 서버 : CommitAbility 하지 않음 -> OnTargetDataReady에서 적 검증 후 처리
-	OnSkillEffect(ActorInfo);
-}
-
-void UGA_ApplyInstantDamage::OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo)
+void UGA_ApplyInstantDamage::OnSkillEffect(
+	const FGameplayAbilityActorInfo* ActorInfo,
+	const FVector& TargetLocation,
+	const FVector& AimDirection)
 {
 	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
-	if (IsValid(Avatar) == false)
+	if (!Avatar) return;
+	
+	// 부모가 넘겨준 TargetLocation 기준으로 가까운 적 찾기
+	AActor* FoundEnemy = nullptr;
+	bool bFound = FindClosestEnemy(GetWorld(), TargetLocation, DetectionRadius, Avatar, FoundEnemy);
+	
+	// 적중 이펙트 예측
+	if (Avatar->IsLocallyControlled() && !Avatar->HasAuthority())
 	{
-		EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
+		if (bFound && FoundEnemy)
+		{
+			UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+			if (ASC)
+			{
+				FGameplayCueParameters CueParmas;
+				CueParmas.Location = FoundEnemy->GetActorLocation();
+				CueParmas.EffectContext = ASC->MakeEffectContext();
+				ASC->ExecuteGameplayCue(SMSkillTag::GameplayCue_Skill_ApplyInstantDamage_Hit, CueParmas);
+			}
+		}
 		return;
 	}
-
-	if (Avatar->HasAuthority() == false)
+	
+	// 서버에서는 실제 데미지 적용 및 이펙트 복제
+	if (Avatar->HasAuthority())
 	{
-		EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), false, false);
-		return;
+		if (bFound && FoundEnemy)
+		{
+			UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(FoundEnemy);
+			if (TargetASC)
+			{
+				// 데미지 적용
+				FGameplayEffectSpecHandle SpecHandle = MakeDamageSpec(ActorInfo);
+				if (SpecHandle.IsValid())
+				{
+					GetAbilitySystemComponentFromActorInfo()->
+						ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+				}
+			}
+			
+			UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
+			if (SourceASC)
+			{
+				FGameplayCueParameters CueParmas;
+				CueParmas.Location = FoundEnemy->GetActorLocation();
+				CueParmas.EffectContext = SourceASC->MakeEffectContext();
+				SourceASC->ExecuteGameplayCue(SMSkillTag::GameplayCue_Skill_ApplyInstantDamage_Hit, CueParmas);
+			}
+		}
 	}
-
-	//서버: TargetData 수신 대기
-	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
-	if (IsValid(SourceASC) == false)
-	{
-		EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
-		return;
-	}
-
-	SourceASC->AbilityTargetDataSetDelegate(
-		GetCurrentAbilitySpecHandle(),
-		GetCurrentActivationInfo().GetActivationPredictionKey()
-	).AddUObject(this, &UGA_ApplyInstantDamage::OnTargetDataReady);
-
-	SourceASC->CallReplicatedTargetDataDelegatesIfSet(
-		GetCurrentAbilitySpecHandle(),
-		GetCurrentActivationInfo().GetActivationPredictionKey()
-	);
-}
-
-bool UGA_ApplyInstantDamage::GetCursorHitLocation(const FGameplayAbilityActorInfo* ActorInfo,
-                                                  FVector& OutLocation) const
-{
-	if (!ActorInfo || ActorInfo->PlayerController.IsValid() == false) return false;
-
-	APlayerController* PC = ActorInfo->PlayerController.Get();
-
-	FHitResult HitResult;
-	if (PC->GetHitResultUnderCursor(ECC_Visibility, true, HitResult) == true)
-	{
-		OutLocation = HitResult.Location;
-		return true;
-	}
-
-	return false;
 }
 
 bool UGA_ApplyInstantDamage::FindClosestEnemy(UWorld* World, const FVector& Center, float Radius,

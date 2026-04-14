@@ -25,9 +25,9 @@ void UGA_SkillField::OnSkillEffect(
 		UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 		if (ASC)
 		{
-			FGameplayCueParameters CureParams;
-			CureParams.Location = TargetLocation;
-			ASC->AddGameplayCue(SMSkillTag::GameplayCue_Skill_SpawnField_Tick, CureParams);
+			FGameplayCueParameters CueParams;
+			CueParams.Location = TargetLocation;
+			ASC->AddGameplayCue(SMSkillTag::GameplayCue_Skill_SpawnField_Tick, CueParams);
 		}
 		
 		return;

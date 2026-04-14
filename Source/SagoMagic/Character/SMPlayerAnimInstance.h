@@ -24,10 +24,10 @@ protected:
 	TObjectPtr<ASMPlayerCharacter> SMCharacter;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
-	float Speed;
+	float Speed = 0.0f;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
-	float Direction;
+	float Direction = 0.0f;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "State")
 	bool bIsDead = false;

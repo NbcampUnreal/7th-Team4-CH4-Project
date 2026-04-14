@@ -4,6 +4,7 @@
 #include "AN_SendEvent.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "SagoMagic.h"
 #include "Abilities/GameplayAbilityTypes.h"
 
 UAN_SendEvent::UAN_SendEvent()
@@ -30,5 +31,11 @@ void UAN_SendEvent::Notify(
 	FGameplayEventData Payload;
 	Payload.Instigator = Owner;
 
+	if (!EventTag.IsValid())
+	{
+		SM_LOG(this, LogSM, Error, TEXT("EventTag가 없습니다."))
+		return;
+	}
+	
 	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Owner, EventTag, Payload);
 }

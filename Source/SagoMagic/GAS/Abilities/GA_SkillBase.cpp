@@ -224,13 +224,23 @@ void UGA_SkillBase::StartMontageAndTasks()
 	if (!AttackMontage)
 	{
 		OnFireEventReceived(FGameplayEventData());
+		EndAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), true, false);
 		return;
 	}
 
-	// 이벤트 태그 대기 Task
-	UAbilityTask_WaitGameplayEvent* EventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, SkillEventTag);
-	EventTask->EventReceived.AddDynamic(this, &ThisClass::OnFireEventReceived);
-	EventTask->ReadyForActivation();
+	if (!SkillEventTag.IsValid())
+	{
+		SM_LOG(this, LogSM, Error, TEXT("SkillEventTag 미설정."));
+		OnFireEventReceived(FGameplayEventData());
+	}
+	else
+	{
+		// 이벤트 태그 대기 Task
+		UAbilityTask_WaitGameplayEvent* EventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, SkillEventTag);
+		EventTask->EventReceived.AddDynamic(this, &ThisClass::OnFireEventReceived);
+		EventTask->ReadyForActivation();
+	}
+	
 
 	// 몽타주 실행 Task
 	UAbilityTask_PlayMontageAndWait* MontageTask =
@@ -270,8 +280,8 @@ void UGA_SkillBase::OnFireEventReceived(FGameplayEventData Payload)
 
 		// 마우스 좌표 포장
 		FGameplayAbilityTargetData_LocationInfo* LocData = new FGameplayAbilityTargetData_LocationInfo();
-		LocData->TargetLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
-		LocData->TargetLocation.LiteralTransform = FTransform(CurrentAimOrigin);
+		LocData->SourceLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
+		LocData->SourceLocation.LiteralTransform = FTransform(CurrentAimOrigin);
 		LocData->TargetLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
 		LocData->TargetLocation.LiteralTransform = FTransform(CurrentTargetLocation);
 
@@ -303,9 +313,14 @@ void UGA_SkillBase::OnTargetDataReadyCallBack(
 	if (!ActorInfo) return;
 
 	// TargetData 메모리 정리
-	ActorInfo->AbilitySystemComponent->ConsumeClientReplicatedTargetData(
+	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+	if (ASC)
+	{
+		ASC->ConsumeClientReplicatedTargetData(
 		GetCurrentAbilitySpecHandle(),
 		GetCurrentActivationInfo().GetActivationPredictionKey());
+	}
+	
 
 	if (TargetDataHandle.Num() > 0)
 	{

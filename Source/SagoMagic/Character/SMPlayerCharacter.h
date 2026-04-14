@@ -171,6 +171,14 @@ protected:
 	void OnEditSelect();
 	
 	//================================
+	// 로비 전용 Input 세팅
+	//================================
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	TObjectPtr<UInputMappingContext> LobbyIMC;
+	
+	void SetLobbyInputMode();
+	
+	//================================
 	// 캐릭터 커스터마이징
 	//================================
 public:

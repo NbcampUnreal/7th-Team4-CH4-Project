@@ -173,6 +173,9 @@ void UGA_LineTrace::ApplyDamageTick()
 	{
 		const FVector Start = CurrentAimOrigin;
 		const FVector End = Start + CurrentAimDirection.GetSafeNormal() * RangeCm;
+		
+		const float FinalTickInterval = 
+			CachedSummary.GetFinalTickInterval() ? CachedSummary.GetFinalTickInterval() : 0.1f;
 
 		// 빔 라인: 맞으면 빨간색, 빗나가면 초록색
 		const FColor LineColor = bHit ? FColor::Red : FColor::Green;
@@ -182,8 +185,7 @@ void UGA_LineTrace::ApplyDamageTick()
 			End,
 			LineColor,
 			false,
-			CachedSummary.GetFinalTickInterval()
-					? CachedSummary.GetFinalTickInterval() : 0.1f,
+			FinalTickInterval,
 			0,
 			2.0f);
 
@@ -197,8 +199,7 @@ void UGA_LineTrace::ApplyDamageTick()
 				8,
 				FColor::Orange,
 				false,
-				CachedSummary.GetFinalTickInterval() > 0.0f
-						? CachedSummary.GetFinalTickInterval() : 0.1f);
+				FinalTickInterval);
 		}
 	}
 

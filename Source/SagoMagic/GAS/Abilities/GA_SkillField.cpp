@@ -34,9 +34,7 @@ void UGA_SkillField::OnSkillEffect(
 		
 		return;
 	}
-
 	
-
 	if (!GetWorld() || !FieldClass)
 	{
 		return;
@@ -74,3 +72,4 @@ void UGA_SkillField::OnSkillEffect(
 			}
 		}
 	}
+}

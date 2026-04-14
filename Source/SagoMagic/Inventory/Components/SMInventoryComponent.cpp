@@ -121,14 +121,50 @@ void USMInventoryComponent::ResetInventory()
 		return;
 	}
 
-	MainInventory = FSMGridContainerState();
-	QuickSlots = FSMQuickSlotSetState();
+	InitializeMainInventory();
+	InitializeQuickSlots();
+
+	TArray<FGameplayTag> QuickSlotAbilityTagsToRemove;
+	for (const FSMQuickSlotEntry& SlotEntry : QuickSlots.Slots)
+	{
+		if (SlotEntry.GetEquippedSkillId().IsValid() == false)
+		{
+			continue;
+		}
+
+		const FSMSkillItemInstanceData* EquippedSkill = FindSkill(SlotEntry.GetEquippedSkillId());
+		if (EquippedSkill == nullptr)
+		{
+			continue;
+		}
+
+		FGameplayTag AbilityTag;
+		if (GetSkillAbilityData(*EquippedSkill, AbilityTag) == false)
+		{
+			continue;
+		}
+
+		QuickSlotAbilityTagsToRemove.AddUnique(AbilityTag);
+	}
+
+	MainInventory.ContainedItemIds.Reset();
+	QuickSlots.Slot1SkillId.Invalidate();
+	QuickSlots.Slot2SkillId.Invalidate();
+	QuickSlots.ActiveSlotIndex = 0;
+
+	for (FSMQuickSlotEntry& SlotEntry : QuickSlots.Slots)
+	{
+		SlotEntry.SetEquippedSkillId(FGuid());
+	}
+
 	ItemEntries.Reset();
 	SkillEntries.Reset();
 	SkillInternalContainers.Reset();
 
-	InitializeMainInventory();
-	InitializeQuickSlots();
+	for (const FGameplayTag& AbilityTag : QuickSlotAbilityTagsToRemove)
+	{
+		RemoveQuickSlotAbility(AbilityTag);
+	}
 
 	PublishInventoryUpdatedMessage(MainInventory.ContainerId);
 	PublishQuickSlotUpdatedMessage(0);

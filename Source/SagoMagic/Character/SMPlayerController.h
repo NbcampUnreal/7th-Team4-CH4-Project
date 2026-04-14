@@ -120,6 +120,8 @@ private:
 	/** 현재 드래그 중인 인벤토리 아이템 회전 */
 	void RotateDraggedInventoryItem();
 
+	void ResetInventoryWidgetState();
+	
 	/** 컨트롤러 전용 입력 매핑 컨텍스트 */
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputMappingContext> ControllerMappingContext;
@@ -191,6 +193,6 @@ public:
 	void ServerRPCSelectLobbySkill(int32 InSkillIndex);
 	
 	/** L_Play진입 시 선택 스킬을 인벤토리에 초기화(서버 전용) */
-	void InitializeInventory();
+	void AddBasicSkillToInventory();
 	
 };

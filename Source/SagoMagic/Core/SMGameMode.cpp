@@ -20,7 +20,7 @@ void ASMGameMode::HandleSeamlessTravelPlayer(AController*& C)
     ASMPlayerController* PC = Cast<ASMPlayerController>(C);
     if (IsValid(PC))
     {
-    	PC->InitializeInventory();
+    	PC->AddBasicSkillToInventory();
     	
         AllPlayerController.AddUnique(PC);
         PC->ClientRPCArrivedAtGameLevel();

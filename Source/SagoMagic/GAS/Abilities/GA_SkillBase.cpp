@@ -1,11 +1,17 @@
 #include "GAS/Abilities/GA_SkillBase.h"
+
+#include <ThirdParty/ShaderConductor/ShaderConductor/External/SPIRV-Headers/include/spirv/unified1/spirv.h>
+
 #include "AbilitySystemComponent.h"
 #include "GameplayTags/Character/SMSkillTag.h"
-#include "GameFramework/Character.h"
 #include "Data/SMSkillData.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "GameplayEffectTypes.h"
+#include "SagoMagic.h"
 
+#include "Abilities/GameplayAbilityTargetTypes.h"
+#include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 
 UGA_SkillBase::UGA_SkillBase()
 {
@@ -17,20 +23,22 @@ UGA_SkillBase::UGA_SkillBase()
 	ReplicationPolicy = EGameplayAbilityReplicationPolicy::ReplicateNo;
 }
 
-bool UGA_SkillBase::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
-                                       const FGameplayAbilityActorInfo* ActorInfo,
-                                       const FGameplayTagContainer* SourceTags,
-                                       const FGameplayTagContainer* TargetTags,
-                                       FGameplayTagContainer* OptionalRelevantTags) const
+bool UGA_SkillBase::CanActivateAbility(
+	const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayTagContainer* SourceTags,
+	const FGameplayTagContainer* TargetTags,
+	FGameplayTagContainer* OptionalRelevantTags) const
 {
 	//GAS의 기본조건을 자동을 체크 (Ability, ActivationBlockedTags 등)
 	return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);
 }
 
-void UGA_SkillBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
-                                    const FGameplayAbilityActorInfo* ActorInfo,
-                                    const FGameplayAbilityActivationInfo ActivationInfo,
-                                    const FGameplayEventData* TriggerEventData)
+void UGA_SkillBase::ActivateAbility(
+	const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayAbilityActivationInfo ActivationInfo,
+	const FGameplayEventData* TriggerEventData)
 {
 	if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
 	{
@@ -46,8 +54,6 @@ void UGA_SkillBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		return;
 	}
 
-	// 마우스 정보 가져오기, 커서 방향 -> CurrentAimOrigin, CurrentAimDirection
-	ExtractAimData(ActorInfo);
 
 	if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{
@@ -55,15 +61,15 @@ void UGA_SkillBase::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		return;
 	}
 
-	// TODO: HasAuthority 체크 요망
-	OnSkillEffect(ActorInfo);
+	ExecuteSkillLogic(ActorInfo);
 }
 
-void UGA_SkillBase::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
-                                  const FGameplayAbilityActorInfo* ActorInfo,
-                                  const FGameplayAbilityActivationInfo ActivationInfo) const
+void UGA_SkillBase::ApplyCooldown(
+	const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayAbilityActivationInfo ActivationInfo) const
 {
-	//CooldownGameplatEffectClass가 없거나 쿨다운이 0이면 패스
+	//CooldownGameplayEffectClass가 없거나 쿨다운이 0이면 패스
 	if (!CooldownGameplayEffectClass || CooldownSeconds <= 0.f)
 	{
 		Super::ApplyCooldown(Handle, ActorInfo, ActivationInfo);
@@ -72,7 +78,8 @@ void UGA_SkillBase::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
 
 	//GE Spec 생성
 	FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(
-		CooldownGameplayEffectClass, GetAbilityLevel());
+		CooldownGameplayEffectClass,
+		GetAbilityLevel());
 	if (!SpecHandle.IsValid()) return;
 
 	//SetByCaller로 쿨다운 시간 주입.
@@ -121,7 +128,7 @@ FGameplayEffectSpecHandle UGA_SkillBase::MakeDamageSpec(const FGameplayAbilityAc
 	//시전자의 ASC가져오기
 	UAbilitySystemComponent* SourceASC = ActorInfo->AbilitySystemComponent.Get();
 	if (!SourceASC) return FGameplayEffectSpecHandle();
-	
+
 	//시전자와 컨트롤러 정보 가져오기
 	AActor* Avatar = ActorInfo->AvatarActor.Get();
 	AController* Controller = nullptr;
@@ -129,11 +136,11 @@ FGameplayEffectSpecHandle UGA_SkillBase::MakeDamageSpec(const FGameplayAbilityAc
 	{
 		Controller = Pawn->GetController();
 	}
-	
+
 	//누가 쐈는지 기록
 	FGameplayEffectContextHandle ContextHandle = SourceASC->MakeEffectContext();
 	ContextHandle.AddInstigator(Avatar, Controller);
-	
+
 	FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, 1.f, ContextHandle);
 	if (!SpecHandle.IsValid()) return SpecHandle;
 
@@ -174,7 +181,6 @@ bool UGA_SkillBase::LoadActiveSkillSummary(const FGameplayAbilityActorInfo* Acto
 	return true;
 }
 
-/*
 bool UGA_SkillBase::LoadSkillStats()
 {
 	const FSMSkillData* Row = SkillStatRow.GetRow<FSMSkillData>(TEXT("LoadSkillStats"));
@@ -185,21 +191,161 @@ bool UGA_SkillBase::LoadSkillStats()
 	CooldownSeconds = Row->Cooldown;
 	return true;
 }
-*/
 
-void UGA_SkillBase::ExtractAimData(const FGameplayAbilityActorInfo* ActorInfo)
+void UGA_SkillBase::ExecuteSkillLogic(const FGameplayAbilityActorInfo* ActorInfo)
 {
-	if (!ActorInfo || !ActorInfo->AvatarActor.IsValid()) return;
+	// 서버가 데이터를 받기전의 멤버변수를 사용하지 않게 데이터 초기화
+	CurrentAimOrigin = FVector::ZeroVector;
+	CurrentAimDirection = FVector::ForwardVector;
+	CurrentTargetLocation = FVector::ZeroVector;
 
-	ACharacter* SMCharacter = Cast<ACharacter>(ActorInfo->AvatarActor.Get());
-	if (!SMCharacter) return;
+	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
+	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
 
-	//캐릭터 위치
-	CurrentAimOrigin = SMCharacter->GetActorLocation();
+	if (!Avatar || !ASC) return;
 
-	//커서가 가리키는 벡터 방향 설정하기
-	if (AController* Controller = SMCharacter->GetController())
+	// 서버는 스킬이 시작되자마자 델리게이트 생성
+	if (Avatar->HasAuthority() && !Avatar->IsLocallyControlled())
 	{
-		CurrentAimDirection = Controller->GetControlRotation().Vector();
+		ASC->AbilityTargetDataSetDelegate(GetCurrentAbilitySpecHandle(),
+		                                  GetCurrentActivationInfo().GetActivationPredictionKey()
+		).AddUObject(this, &UGA_SkillBase::OnTargetDataReadyCallBack);
+
+		ASC->CallReplicatedTargetDataDelegatesIfSet(
+			GetCurrentAbilitySpecHandle(),
+			GetCurrentActivationInfo().GetActivationPredictionKey()
+		);
 	}
+
+	StartMontageAndTasks();
+}
+
+void UGA_SkillBase::StartMontageAndTasks()
+{
+	// 몽타주 없으면 바로 스킬 실행
+	if (!AttackMontage)
+	{
+		OnFireEventReceived(FGameplayEventData());
+		return;
+	}
+
+	// 이벤트 태그 대기 Task
+	UAbilityTask_WaitGameplayEvent* EventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, SkillEventTag);
+	EventTask->EventReceived.AddDynamic(this, &ThisClass::OnFireEventReceived);
+	EventTask->ReadyForActivation();
+
+	// 몽타주 실행 Task
+	UAbilityTask_PlayMontageAndWait* MontageTask =
+		UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, AttackMontage);
+	MontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontageFinished);
+	MontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageFinished);
+	MontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageFinished);
+	MontageTask->ReadyForActivation();
+}
+
+void UGA_SkillBase::OnFireEventReceived(FGameplayEventData Payload)
+{
+	const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
+	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+
+	if (!Avatar || !ASC) return;
+
+	// Notify시점에 마우스 좌표 획득 및 서버 전송
+	if (Avatar->IsLocallyControlled())
+	{
+		// Target데이터 보낼 때는 반드시 새로운 에측 창열기
+		FScopedPredictionWindow ScopedPredictionWindow(ASC, true);
+		FVector MouseLocation;
+
+
+		if (!TryGetMouseGroundLocation(Avatar, MouseLocation))
+		{
+			MouseLocation = Avatar->GetActorLocation() + Avatar->GetActorForwardVector() * 1000.0f;
+		}
+		
+		// 클라 데이터 갱신
+		CurrentTargetLocation = MouseLocation;
+		CurrentAimOrigin = Avatar->GetActorLocation();
+		FVector Direction = (CurrentTargetLocation - CurrentAimOrigin).GetSafeNormal2D();
+		CurrentAimDirection = Direction;
+
+		// 마우스 좌표 포장
+		FGameplayAbilityTargetData_LocationInfo* LocData = new FGameplayAbilityTargetData_LocationInfo();
+		LocData->TargetLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
+		LocData->TargetLocation.LiteralTransform = FTransform(CurrentAimOrigin);
+		LocData->TargetLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
+		LocData->TargetLocation.LiteralTransform = FTransform(CurrentTargetLocation);
+
+		FGameplayAbilityTargetDataHandle TargetHandle;
+		TargetHandle.Add(LocData);
+
+		// 서버로 전송
+		ASC->ServerSetReplicatedTargetData(
+			GetCurrentAbilitySpecHandle(),
+			GetCurrentActivationInfo().GetActivationPredictionKey(),
+			TargetHandle,
+			FGameplayTag(),
+			ASC->ScopedPredictionKey
+		);
+
+		// 클라는 즉시 실행
+		OnSkillEffect(ActorInfo, CurrentTargetLocation, CurrentAimDirection);
+	}
+}
+
+void UGA_SkillBase::OnTargetDataReadyCallBack(
+	const FGameplayAbilityTargetDataHandle& TargetDataHandle,
+	FGameplayTag ApplicationTag)
+{
+	// 이미 종료된 어빌리타가 늦게 온 데이터를 처리하지 않도록 방어
+	if (!IsActive()) return;
+
+	const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
+	if (!ActorInfo) return;
+
+	// TargetData 메모리 정리
+	ActorInfo->AbilitySystemComponent->ConsumeClientReplicatedTargetData(
+		GetCurrentAbilitySpecHandle(),
+		GetCurrentActivationInfo().GetActivationPredictionKey());
+
+	if (TargetDataHandle.Num() > 0)
+	{
+		if (const FGameplayAbilityTargetData* Data = TargetDataHandle.Get(0))
+		{
+			// 서버 데이터 갱신
+			CurrentTargetLocation = Data->GetEndPoint();
+			CurrentAimOrigin = GetAvatarActorFromActorInfo()->GetActorLocation();
+			CurrentAimDirection = (CurrentTargetLocation - CurrentAimOrigin).GetSafeNormal2D();
+
+			// 최신 데이터가 확인되면 실행
+			OnSkillEffect(ActorInfo, CurrentTargetLocation, CurrentAimDirection);
+		}
+	}
+
+	if (!AttackMontage)
+	{
+		EndAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), true, false);
+	}
+}
+
+void UGA_SkillBase::OnMontageFinished()
+{
+	EndAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), true, false);
+}
+
+bool UGA_SkillBase::TryGetMouseGroundLocation(APawn* Pawn, FVector& OutLocation) const
+{
+	if (!Pawn) return false;
+
+	APlayerController* PC = Cast<APlayerController>(Pawn->GetController());
+	if (!PC) return false;
+
+	FHitResult Hit;
+	if (PC->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, Hit))
+	{
+		OutLocation = Hit.Location;
+		return true;
+	}
+	return false;
 }

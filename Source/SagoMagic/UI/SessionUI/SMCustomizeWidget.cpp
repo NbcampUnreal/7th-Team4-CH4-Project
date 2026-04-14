@@ -6,6 +6,7 @@
 #include "Character/SMPlayerCharacter.h"
 #include "Character/SMPlayerController.h"
 #include "Components/Button.h"
+#include "Components/TextBlock.h"
 #include "Core/SMPlayerState.h"
 
 void USMCustomizeWidget::CustomizeSetup()
@@ -21,6 +22,11 @@ void USMCustomizeWidget::CustomizeSetup()
 	PreviousMatIdx = PS->GetSelectedMaterialIndex();
 	CurrentWeaponIdx = PreviousWeaponIdx;
 	CurrentMatIdx = PreviousMatIdx;
+	
+	if (IsValid(CurrentMaterialNumber) == true)
+	{
+		CurrentMaterialNumber->SetText(FText::FromString(FString::Printf(TEXT("%d"), CurrentMatIdx+1)));
+	}
 	
 	ASMPlayerCharacter* Character = GetSMPlayerCharacter();
 	if (IsValid(Character) == false) return;
@@ -142,6 +148,11 @@ void USMCustomizeWidget::OnMaterialPrevClicked()
 
 	CurrentMatIdx = (CurrentMatIdx - 1 + Num) % Num;
 	Character->ApplyCustomizationLocal(CurrentWeaponIdx, CurrentMatIdx);
+	
+	if (IsValid(CurrentMaterialNumber) == true)
+	{
+		CurrentMaterialNumber->SetText(FText::FromString(FString::Printf(TEXT("%d"), CurrentMatIdx+1)));
+	}
 }
 
 void USMCustomizeWidget::OnMaterialNextClicked()
@@ -154,6 +165,11 @@ void USMCustomizeWidget::OnMaterialNextClicked()
 
 	CurrentMatIdx = (CurrentMatIdx + 1) % Num;
 	Character->ApplyCustomizationLocal(CurrentWeaponIdx, CurrentMatIdx);
+	
+	if (IsValid(CurrentMaterialNumber) == true)
+	{
+		CurrentMaterialNumber->SetText(FText::FromString(FString::Printf(TEXT("%d"), CurrentMatIdx+1)));
+	}
 }
 
 //================================

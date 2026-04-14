@@ -7,11 +7,13 @@
 #include "GameFramework/PlayerState.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInterface.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 #include "Components/SMInteractionTargetComponent.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 
 #include "Inventory/Items/Definitions/SMItemDefinition.h"
+#include "Inventory/Items/Fragments/SMDisplayInfoFragment.h"
 #include "Inventory/Items/Fragments/SMWorldVisualFragment.h"
 
 ASMBaseItemDropActor::ASMBaseItemDropActor()
@@ -129,6 +131,9 @@ const USMItemDefinition* ASMBaseItemDropActor::ResolveItemDefinition() const
 
 void ASMBaseItemDropActor::ApplyWorldVisual()
 {
+	static const FName ColorMaterialSlotName(TEXT("Color"));
+	static const FName BaseColorParameterName(TEXT("BaseColor"));
+
 	const USMItemDefinition* ItemDefinition = ResolveItemDefinition();
 	if (ItemDefinition == nullptr)
 	{
@@ -155,6 +160,33 @@ void ASMBaseItemDropActor::ApplyWorldVisual()
 	}
 
 	StaticMeshComponent->SetWorldScale3D(WorldVisualFragment->GetWorldScale());
+
+	if (WorldVisualFragment->GetColorSlotMaterial().IsNull() == false)
+	{
+		const int32 ColorMaterialSlotIndex = StaticMeshComponent->GetMaterialIndex(ColorMaterialSlotName);
+		if (ColorMaterialSlotIndex != INDEX_NONE)
+		{
+			if (UMaterialInterface* ColorSlotMaterial = WorldVisualFragment->GetColorSlotMaterial().LoadSynchronous())
+			{
+				FLinearColor AccentColor = FLinearColor::White;
+				if (const USMDisplayInfoFragment* DisplayInfoFragment =
+					ItemDefinition->FindFragmentByClass<USMDisplayInfoFragment>())
+				{
+					AccentColor = DisplayInfoFragment->GetAccentColor();
+				}
+
+				if (UMaterialInstanceDynamic* ColorMaterialInstance =
+					StaticMeshComponent->CreateDynamicMaterialInstance(ColorMaterialSlotIndex, ColorSlotMaterial))
+				{
+					ColorMaterialInstance->SetVectorParameterValue(BaseColorParameterName, AccentColor);
+				}
+				else
+				{
+					StaticMeshComponent->SetMaterial(ColorMaterialSlotIndex, ColorSlotMaterial);
+				}
+			}
+		}
+	}
 
 	if (InteractionTargetComponent != nullptr)
 	{

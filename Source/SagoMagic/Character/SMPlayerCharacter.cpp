@@ -522,35 +522,26 @@ void ASMPlayerCharacter::PawnClientRestart()
 				if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
 					ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
 				{
-					if (LobbyIMC)
-					{
-						Subsystem->RemoveMappingContext(LobbyIMC);
-					}
+					// 기존 IMC 전부 초기화
+					if (LobbyIMC) Subsystem->RemoveMappingContext(LobbyIMC);
 					Subsystem->RemoveMappingContext(DefaultIMC);
-					Subsystem->AddMappingContext(DefaultIMC, 0);
+
+					// 현재 맵에 따라 IMC 결정
+					FString MapName = GetWorld()->GetMapName();
+					if (LobbyIMC && MapName.Contains(TEXT("Lobby")))
+					{
+						Subsystem->AddMappingContext(LobbyIMC, 1);
+						UE_LOG(LogTemp, Warning, TEXT("[PlayerCharacter] IMC = LobbyIMC"));
+					}
+					else
+					{
+						Subsystem->AddMappingContext(DefaultIMC, 0);
+						UE_LOG(LogTemp, Warning, TEXT("[PlayerCharacter] IMC = DefaultIMC"));
+					}
 				}
 			}
 		}
 	}
-}
-
-//================================
-// 로비 전용 Input 세팅
-//================================
-
-void ASMPlayerCharacter::SetLobbyInputMode()
-{
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (IsValid(PC) == false) return;
-
-	UEnhancedInputLocalPlayerSubsystem* Subsystem =
-		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
-	if (IsValid(Subsystem) == false) return;
-
-	if (!LobbyIMC) return;
-
-	Subsystem->RemoveMappingContext(DefaultIMC);
-	Subsystem->AddMappingContext(LobbyIMC, 1);
 }
 
 //================================

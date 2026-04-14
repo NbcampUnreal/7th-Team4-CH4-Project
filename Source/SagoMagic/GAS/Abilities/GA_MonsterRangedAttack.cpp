@@ -7,8 +7,6 @@
 #include "Enemy/SMMonsterBase.h"
 #include "Enemy/SMMonsterProjectile.h"
 #include "GAS/AttributeSets/SMMonsterAttributeSet.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/Character.h"
 
 UGA_MonsterRangedAttack::UGA_MonsterRangedAttack()
 {

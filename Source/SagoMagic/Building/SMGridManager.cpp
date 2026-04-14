@@ -1,6 +1,10 @@
 #include "SMGridManager.h"
 #include "DrawDebugHelpers.h"
+#include "SagoMagic.h"
 #include "Algo/Reverse.h"
+#include "Kismet/GameplayStatics.h"
+#include "FSMAStarNode.h"
+
 #include "Net/UnrealNetwork.h"
 
 ASMGridManager::ASMGridManager()
@@ -45,6 +49,51 @@ void ASMGridManager::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 	//GridData 전체 복제
 	//PlacedActor는 복제 제외
 	DOREPLIFETIME(ASMGridManager, GridData);
+}
+
+FVector ASMGridManager::GridToWorldWithHeight(int32 X, int32 Y) const
+{
+	FVector Pos = GridToWorld(X, Y);
+	if (const float* Z = GridHeightCache.Find(FIntPoint(X, Y)))
+	{
+		Pos.Z = *Z;
+	}
+	else
+	{
+		Pos.Z = GridOrigin.Z;
+		SM_LOG(this, LogSM, Warning, TEXT("[GridManager] HeightCache 미스"));
+	}
+	
+	return Pos;
+}
+
+void ASMGridManager::BakeGridHeights()
+{
+	ALandscape* Landscape = Cast<ALandscape>(
+		UGameplayStatics::GetActorOfClass(GetWorld(), ALandscape::StaticClass()));
+
+	if (!Landscape)
+	{
+		SM_LOG(this, LogSM, Warning, TEXT("[GridManager] Landscape 없음"));
+		return;
+	}
+	
+	int32 BakedCount = 0;
+	for (int32 X = 0; X < GridWidth; X++)
+	{
+		for (int32 Y = 0; Y < GridHeight; Y++)
+		{
+			FVector WorldPos = GridToWorld(X, Y);
+			
+			TOptional<float> Height = Landscape->GetHeightAtLocation(
+				FVector(WorldPos.X, WorldPos.Y, 0.f));
+			
+			float Z = Height.IsSet() ? Height.GetValue() : GridOrigin.Z;
+			GridHeightCache.Add(FIntPoint(X,Y), Z);
+			BakedCount++;
+		}
+	}
+	SM_LOG(this, LogSM, Log, TEXT("[GridManager] HeightMap Bake 완료 %d 셀"), BakedCount);
 }
 
 //-------------좌표 변환-------------

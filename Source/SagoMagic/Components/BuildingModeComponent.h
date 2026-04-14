@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Building/FSMAStarNode.h"
+#include "Building/SMBuildPlaceTargetData.h"
 #include "Building/SMGridManager.h"
 #include "Components/ActorComponent.h"
 #include "Data/SMBuildingData.h"
@@ -21,14 +22,16 @@ class SAGOMAGIC_API USMBuildingModeComponent : public UActorComponent
 
 public:
 	USMBuildingModeComponent();
-
+	
+	void EnableBuildMode();
+	void DisableBuildMode();
+	void SetupInputBindings();
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 								   FActorComponentTickFunction* ThisTickFunction) override;
-private:
-	void SetupInputBindings();
 	
+private:
 	void OnPlaceBuilding(const FInputActionValue& Value);
 	void OnRotateBuilding(const FInputActionValue& Value);
 	void OnCycleBuilding(const FInputActionValue& Value);
@@ -55,6 +58,9 @@ private:
 	void LoadBuildingDataTable();
 	const FSMBuildingData* GetCurrentBuildingData() const;
 
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_RequestPlaceBuilding(const TArray<FSMCellPlaceInfo>& CellInfos, EGridBuildingType BuildingType);
+	
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputMappingContext> BuildIMC;
@@ -111,4 +117,7 @@ private:
 	
 	FString BuildingDataTablePath = 
 		TEXT("/Game/SagoMagic/Data/DataTables/BuildingData/DT_Building.DT_Building");
+	
+private:
+	bool bInputBound = false;
 };

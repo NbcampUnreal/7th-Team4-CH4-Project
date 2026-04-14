@@ -33,7 +33,8 @@ private:
 		const FGameplayAbilitySpecHandle& Handle,
 		const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo& ActivationInfo,
-		EGridBuildingType BuildingType);
+		EGridBuildingType BuildingType,
+		int32 CostAmount);
 	
 	/** 스폰 + GridManager 등록 */
 	bool SpawnAndRegister(ASMGridManager* GridManager,

@@ -2,30 +2,70 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "SagoMagic.h"
 #include "Abilities/GameplayAbilityTypes.h"
 #include "Building/SMBaseBuilding.h"
 #include "Building/SMBuildPlaceTargetData.h"
 #include "Building/SMFenceBuilding.h"
+#include "Core/SMPlayerState.h"
 #include "Core/DataManager/SMSyncDataManager.h"
 #include "GameFramework/PlayerState.h"
+#include "GameplayTags/Character/SMCharacterTag.h"
 #include "Kismet/GameplayStatics.h"
 
 USMBuildingModeComponent::USMBuildingModeComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
+	BuildPlaceEventTag = SMCharacterTag::Ability_Build_Place;
+}
+
+void USMBuildingModeComponent::EnableBuildMode()
+{
+	APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (!OwnerPawn) return;
+	
+	APlayerController* PC = Cast<APlayerController>(OwnerPawn->GetController());
+	if (!PC) return;
+	
+	ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
+	if (!LocalPlayer) return;
+	
+	UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
+	if (!Subsystem || !BuildIMC) return;
+	
+	Subsystem->AddMappingContext(BuildIMC, 1);
+	bIsBuildMode = true;
+	SetComponentTickEnabled(true);
+}
+
+void USMBuildingModeComponent::DisableBuildMode()
+{
+	APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (!OwnerPawn) return;
+	
+	APlayerController* PC = Cast<APlayerController>(OwnerPawn->GetController());
+	if (!PC) return;
+	
+	UEnhancedInputLocalPlayerSubsystem* Subsystem =
+		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
+	if (Subsystem && BuildIMC)
+	{
+		Subsystem->RemoveMappingContext(BuildIMC);
+	}
+	
+	bIsBuildMode = false;
+	bIsWaitingForEndPoint = false;
+	SetComponentTickEnabled(false);
+	ClearGhostActors();
 }
 
 void USMBuildingModeComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	LoadBuildingDataTable();
-	
-	GetWorld()->GetTimerManager().SetTimerForNextTick(
-		this, &USMBuildingModeComponent::SetupInputBindings);
-
 	if (!GridManager)
 	{
 		GridManager = Cast<ASMGridManager>(
@@ -47,6 +87,8 @@ void USMBuildingModeComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 void USMBuildingModeComponent::SetupInputBindings()
 {
+	if (bInputBound) return;
+	
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if (!OwnerPawn || !OwnerPawn->InputComponent)
 	{
@@ -59,6 +101,8 @@ void USMBuildingModeComponent::SetupInputBindings()
 		return;
 	}
 
+	LoadBuildingDataTable();
+	
 	if (PlaceAction)
 	{
 		Input->BindAction(PlaceAction, ETriggerEvent::Started, this,
@@ -74,6 +118,7 @@ void USMBuildingModeComponent::SetupInputBindings()
 		Input->BindAction(CycleAction, ETriggerEvent::Started, this,
 			&USMBuildingModeComponent::OnCycleBuilding);
 	}
+	bInputBound = true;
 }
 
 void USMBuildingModeComponent::OnPlaceBuilding(const FInputActionValue& Value)
@@ -87,14 +132,15 @@ void USMBuildingModeComponent::OnPlaceBuilding(const FInputActionValue& Value)
 	if (!PC) return;
 	
 	FHitResult Hit;
-	if (!PC->GetHitResultUnderCursor(ECC_WorldStatic, false, Hit)) return;
-	if (Hit.ImpactPoint.Z <= 0.9f) return;
+	if (!PC->GetHitResultUnderCursor(ECC_Visibility, true, Hit)) return;
+	if (Hit.ImpactNormal.Z <= 0.9f) return;
 	
 	FIntPoint ClickedGrid = GridManager->WorldToGrid(Hit.Location);
 	
 	//첫번째 클릭
 	if (!bIsWaitingForEndPoint)
 	{
+		SM_LOG(this, LogSM, Warning, TEXT("1번째 클릭"));
 		float DistXY = FVector::Dist2D(OwnerPawn->GetActorLocation(), Hit.Location);
 		if (DistXY > MaxBuildDistance) return;
 		
@@ -104,17 +150,53 @@ void USMBuildingModeComponent::OnPlaceBuilding(const FInputActionValue& Value)
 	}
 	
 	const FSMBuildingData* Data = GetCurrentBuildingData();
-	if (!Data) return;
+	if (!Data)
+	{
+		SM_LOG(this, LogSM, Warning, TEXT("2번째 클릭 - Data 없음"));
+		return;
+	}
 	
 	if (!CheckPlacementValidity(Hit.Location,*Data))
 	{
+		SM_LOG(this, LogSM, Warning, TEXT("2번째 클릭 - 유효성 실패"));
 		return;
 	}
 	
 	TArray<FIntPoint> Path = GridManager->FindPath(FenceStartGrid, ClickedGrid);
-	if (Path.IsEmpty()) return;
-	
-	SendPlaceEvent(Path, ClickedGrid);
+	if (Path.IsEmpty())
+	{
+		SM_LOG(this, LogSM, Warning, TEXT("2번째 클릭 - 경로 없음 Start(%d,%d) End(%d,%d)"),
+		FenceStartGrid.X, FenceStartGrid.Y, ClickedGrid.X, ClickedGrid.Y);
+		return;
+	}
+	TArray<FSMCellPlaceInfo> CellInfos;
+	for (int32 i = 0; i < Path.Num(); ++i)
+	{
+		FSMCellPlaceInfo Cellinfo;
+		Cellinfo.Grid = Path[i];
+		
+		FSMCornerInfo CornerInfo = GetEffectiveCornerInfo(Path, i);
+		Cellinfo.bIsCorner = CornerInfo.bIsCorner;
+
+		if (CornerInfo.bIsCorner)
+		{
+			Cellinfo.Yaw = CornerInfo.Yaw;
+		}
+		else
+		{
+			FIntPoint Dir;
+			if (i >0)
+				Dir = Path[i] - Path[i-1];
+			else if (Path.Num() > 1)
+				Dir = Path[1] - Path[0];
+			else
+				Dir = FIntPoint(1, 0);
+			Cellinfo.Yaw = (Dir.Y != 0) ? 90.f : 0.f;
+		}
+		CellInfos.Add(Cellinfo);
+	}
+	SM_LOG(this, LogSM, Warning, TEXT("2번째 클릭 - ServerRPC 호출 Path %d개"), Path.Num());
+	ServerRPC_RequestPlaceBuilding(CellInfos, Data->BuildingType);
 	
 	bIsWaitingForEndPoint = false;
 	LastHoverGrid = FIntPoint(-1, -1);
@@ -159,13 +241,24 @@ void USMBuildingModeComponent::OnCycleBuilding(const FInputActionValue& Value)
 
 void USMBuildingModeComponent::UpdateGhostTransform()
 {
-	if (!GridManager) return;
-	
+	if (!GetWorld()) return;
+	if (!GridManager)
+	{
+		SM_LOG(this, LogSM, Warning, TEXT("[Ghost] GridManager 없음"));
+		return;
+	}
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
-	if (!OwnerPawn) return;
-	
+	if (!OwnerPawn)
+	{
+		SM_LOG(this, LogSM, Warning, TEXT("[Ghost] OwnerPawn 없음"));
+		return;
+	}
 	APlayerController* PC = Cast<APlayerController>(OwnerPawn->GetController());
-	if (!PC) return;
+	if (!PC)
+	{
+		SM_LOG(this, LogSM, Warning, TEXT("[Ghost] PC 없음"));
+		return;
+	}
 	
 	FHitResult Hit;
 	bool bHit = PC->GetHitResultUnderCursor(ECC_WorldStatic, false, Hit);
@@ -186,6 +279,14 @@ void USMBuildingModeComponent::UpdateGhostTransform()
 	const FSMBuildingData* Data = GetCurrentBuildingData();
 	if (!Data || !Data->BuildingClass)
 	{
+		ClearGhostActors();
+		return;
+	}
+	
+	if (!Data->BuildingClass->IsChildOf(ASMBaseBuilding::StaticClass()))
+	{
+		SM_LOG(this, LogSM, Warning, TEXT("[Ghost] 잘못된 BuildingClass: %s"),
+			*Data->BuildingClass->GetName());
 		ClearGhostActors();
 		return;
 	}
@@ -216,16 +317,33 @@ void USMBuildingModeComponent::UpdateGhostTransform()
 	ClearGhostActors();
 	for (int32 i = 0; i < Path.Num(); ++i)
 	{
-		ASMBaseBuilding* Ghost = GetWorld()->SpawnActor<ASMBaseBuilding>(Data->BuildingClass, FTransform::Identity);
-		if (!Ghost) continue;
+		AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(
+			Data->BuildingClass, FTransform::Identity);
+		ASMBaseBuilding* Ghost = Cast<ASMBaseBuilding>(SpawnedActor);
+		if (!Ghost)
+		{
+			if (SpawnedActor) SpawnedActor->Destroy();
+			continue;
+		}
 		
+		Ghost->SetReplicates(false);
 		Ghost->SetActorEnableCollision(false);
 		
 		if (CornerInfos[i].bIsCorner)
-		{
 			ConvertGhostToCorner(Ghost, CornerInfos[i].Yaw);
-		}
+		
 		GhostActors.Add(Ghost);
+		
+		// ASMBaseBuilding* Ghost = GetWorld()->SpawnActor<ASMBaseBuilding>(Data->BuildingClass, FTransform::Identity);
+		// if (!Ghost) continue;
+		// Ghost->SetReplicates(false);
+		// Ghost->SetActorEnableCollision(false);
+		//
+		// if (CornerInfos[i].bIsCorner)
+		// {
+		// 	ConvertGhostToCorner(Ghost, CornerInfos[i].Yaw);
+		// }
+		// GhostActors.Add(Ghost);
 	}
 
 	for (int32 i = 0; i < Path.Num() && i < GhostActors.Num(); ++i)
@@ -264,7 +382,7 @@ void USMBuildingModeComponent::UpdateGhostTransform()
 		Ghost->SetActorRotation(FRotator(0.f, Yaw, 0.f));
 		
 		FVector TargetPos = GridManager->GridToWorld(Path[i].X, Path[i].Y);
-		TargetPos.Z = GridManager->GridOrigin.Z;
+		TargetPos.Z = Hit.ImpactPoint.Z;
 		Ghost->SetActorLocation(TargetPos);
 		
 		Ghost->SetActorHiddenInGame(false);
@@ -455,6 +573,29 @@ const FSMBuildingData* USMBuildingModeComponent::GetCurrentBuildingData() const
 {
 	if (!CachedBuildingData.IsValidIndex(CurrentSlotIndex)) return nullptr;
 	return &CachedBuildingData[CurrentSlotIndex];
+}
+
+void USMBuildingModeComponent::ServerRPC_RequestPlaceBuilding_Implementation(const TArray<FSMCellPlaceInfo>& CellInfos,
+	EGridBuildingType BuildingType)
+{
+	APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (!OwnerPawn) return;
+	
+	ASMPlayerState* PS = OwnerPawn->GetPlayerState<ASMPlayerState>();
+	if (!PS) return;
+	
+	
+	
+	FSMBuildPlaceTargetData* TargetData = new FSMBuildPlaceTargetData();
+	TargetData->BuildingType = BuildingType;
+	TargetData->CellInfos = CellInfos;
+	
+	FGameplayEventData EventData;
+	EventData.TargetData = FGameplayAbilityTargetDataHandle(TargetData);
+	
+
+	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(
+		PS, BuildPlaceEventTag, EventData);
 }
 
 float USMBuildingModeComponent::GetCornerYawFromConnections(FIntPoint DirA, FIntPoint DirB) const

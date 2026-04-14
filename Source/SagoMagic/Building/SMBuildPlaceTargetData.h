@@ -9,8 +9,13 @@ struct FSMCellPlaceInfo
 {
 	GENERATED_BODY()
 	
+	UPROPERTY()
 	FIntPoint Grid = FIntPoint::ZeroValue;
+	
+	UPROPERTY()
 	float Yaw = 0.f;
+	
+	UPROPERTY()
 	bool bIsCorner = false;
 };
 

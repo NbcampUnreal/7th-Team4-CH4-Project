@@ -5,12 +5,20 @@
 #include "Building/SMFenceBuilding.h"
 #include "Core/DataManager/SMSyncDataManager.h"
 #include "GameFramework/PlayerState.h"
+#include "GameplayTags/Character/SMCharacterTag.h"
+#include "GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "Kismet/GameplayStatics.h"
 
 UGA_BuildPlace::UGA_BuildPlace()
 {
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::ServerOnly;
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
+	
+	FAbilityTriggerData TriggerData;
+	TriggerData.TriggerTag = SMCharacterTag::Ability_Build_Place;
+	TriggerData.TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
+	AbilityTriggers.Add(TriggerData);
+	
 }
 ASMGridManager* UGA_BuildPlace::GetGridManager()
 {
@@ -26,23 +34,24 @@ void UGA_BuildPlace::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-
+	SM_LOG(this,LogSM,Error,TEXT("1111"));
 	if (!TriggerEventData)
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
 	}
-	
+	SM_LOG(this,LogSM,Error,TEXT("1112"));
 	const FSMBuildPlaceTargetData* PlaceData = 
 		static_cast<const FSMBuildPlaceTargetData*>(
 			TriggerEventData->TargetData.Get(0));
-	
+	SM_LOG(this,LogSM,Error,TEXT("1113"));
 	if (!PlaceData || PlaceData->CellInfos.IsEmpty())
 	{
 		SM_LOG(this,LogSM,Error,TEXT("[GA_BuildPlace] TargetData 없음"));
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-	
+	SM_LOG(this,LogSM,Error,TEXT("1114"));
 	ASMGridManager* GridManager = GetGridManager();
 	if (!GridManager)
 	{
@@ -50,13 +59,13 @@ void UGA_BuildPlace::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		return;
 	}
 	USMSyncDataManager* DM = GetWorld()->GetSubsystem<USMSyncDataManager>();
-	
+	SM_LOG(this,LogSM,Error,TEXT("1115"));
 	if (!GridManager || !DM)
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-	
+	SM_LOG(this,LogSM,Error,TEXT("1116"));
 	const FSMBuildingData* BuildingData = DM->GetBuildData(PlaceData->BuildingType);
 	if (!BuildingData || !BuildingData->BuildingClass)
 	{
@@ -64,15 +73,15 @@ void UGA_BuildPlace::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-	
+	SM_LOG(this,LogSM,Error,TEXT("1117"));
 	if (!ServerValidateCells(GridManager, PlaceData->CellInfos))
 	{
 		SM_LOG(this, LogSM, Error, TEXT("[GA_BuildPlace] 이미 점유된 셀 존재"));
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-
-	if (!ApplyBuildCost(Handle, ActorInfo, ActivationInfo, PlaceData->BuildingType))
+	SM_LOG(this,LogSM,Error,TEXT("1118"));
+	if (!ApplyBuildCost(Handle, ActorInfo, ActivationInfo, PlaceData->BuildingType, BuildingData->Cost * PlaceData->CellInfos.Num()))
 	{
 		SM_LOG(this, LogSM, Error, TEXT("[GA_BuildPlace] 골드 부족"));
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
@@ -83,13 +92,13 @@ void UGA_BuildPlace::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	{
 		OwnerId = PS->GetPlayerId();
 	}
-	
+	SM_LOG(this,LogSM,Error,TEXT("1118"));
 	if (!SpawnAndRegister(GridManager, PlaceData->CellInfos, BuildingData->BuildingClass, PlaceData->BuildingType, OwnerId))
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-	
+	SM_LOG(this,LogSM,Error,TEXT("1119"));
 	EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }
 
@@ -99,26 +108,30 @@ bool UGA_BuildPlace::ServerValidateCells(ASMGridManager* GridManager, const TArr
 	{
 		if (!GridManager->IsCellEmpty(Info.Grid.X, Info.Grid.Y))
 			return false;
-		return true;
 	}
 	return true;
 }
 
 bool UGA_BuildPlace::ApplyBuildCost(const FGameplayAbilitySpecHandle& Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo& ActivationInfo,
-	EGridBuildingType BuildingType)
+	EGridBuildingType BuildingType, int32 CostAmount)
 {
 	TSubclassOf<UGameplayEffect>* CostClass = BuildCostEffects.Find(BuildingType);
-	if (!CostClass || *CostClass) return true;
+	if (!CostClass || !(*CostClass)) return true;
 	
 	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
 	if (!ASC) return false;
+	float CurrentGold = ASC->GetNumericAttribute(USMPlayerAttributeSet::GetGoldAttribute());
+	if (CurrentGold < (float)CostAmount) return false;
 	
 	FGameplayEffectContextHandle Context = ASC->MakeEffectContext();
 	FGameplayEffectSpecHandle Spec = ASC->MakeOutgoingSpec(*CostClass, 1.f, Context);
 	if (!Spec.IsValid()) return false;
 	
-	return ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, Spec).IsValid();
+	Spec.Data->SetSetByCallerMagnitude(SMCharacterTag::Build_GoldCost, -(float)CostAmount);
+	
+	ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, Spec);
+	return true;
 }
 
 bool UGA_BuildPlace::SpawnAndRegister(ASMGridManager* GridManager, const TArray<FSMCellPlaceInfo>& CellInfos,
@@ -128,8 +141,8 @@ bool UGA_BuildPlace::SpawnAndRegister(ASMGridManager* GridManager, const TArray<
 
 	for (const FSMCellPlaceInfo& Info : CellInfos)
 	{
-		FVector SpawnPos = GridManager->GridToWorld(Info.Grid.X, Info.Grid.Y);
-		SpawnPos.Z = GridManager->GridOrigin.Z;
+		FVector SpawnPos = GridManager->GridToWorldWithHeight(Info.Grid.X, Info.Grid.Y);
+		SpawnPos.Z +=2.f;
 		FRotator SpawnRot = FRotator(0.f, Info.Yaw, 0.f);
 		
 		FActorSpawnParameters Params;

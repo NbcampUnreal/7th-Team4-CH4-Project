@@ -29,7 +29,7 @@ void UGA_SkillField::OnSkillEffect(
 			CueParams.Location = TargetLocation;
 			CueParams.RawMagnitude = FieldDuration;
 			CueParams.NormalizedMagnitude = RangeCm;
-			ASC->AddGameplayCue(SMSkillTag::GameplayCue_Skill_SpawnField_Tick, CureParams);
+			ASC->AddGameplayCue(SMSkillTag::GameplayCue_Skill_SpawnField_Tick, CueParams);
 		}
 		
 		return;

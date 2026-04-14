@@ -181,17 +181,6 @@ bool UGA_SkillBase::LoadActiveSkillSummary(const FGameplayAbilityActorInfo* Acto
 	return true;
 }
 
-bool UGA_SkillBase::LoadSkillStats()
-{
-	const FSMSkillData* Row = SkillStatRow.GetRow<FSMSkillData>(TEXT("LoadSkillStats"));
-	if (!Row) return false;
-
-	BaseDamage = Row->BaseDamage;
-	RangeCm = Row->RangeCm;
-	CooldownSeconds = Row->Cooldown;
-	return true;
-}
-
 void UGA_SkillBase::ExecuteSkillLogic(const FGameplayAbilityActorInfo* ActorInfo)
 {
 	// 서버가 데이터를 받기전의 멤버변수를 사용하지 않게 데이터 초기화

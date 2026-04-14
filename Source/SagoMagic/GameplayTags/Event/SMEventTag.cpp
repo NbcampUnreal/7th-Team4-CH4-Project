@@ -14,4 +14,6 @@ namespace SMEventTag
 	
 	// 플레이어 스킬 AnimNotify 이벤트 전달용
 	UE_DEFINE_GAMEPLAY_TAG(Event_Skill_Projectile, "Event.Skill.Projectile");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Skill_Field, "Event.Skill.Field");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Skill_LineTrace, "Event.Skill.LineTrace");
 }

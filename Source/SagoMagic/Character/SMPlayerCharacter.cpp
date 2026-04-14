@@ -522,6 +522,10 @@ void ASMPlayerCharacter::PawnClientRestart()
 				if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
 					ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
 				{
+					if (LobbyIMC)
+					{
+						Subsystem->RemoveMappingContext(LobbyIMC);
+					}
 					Subsystem->RemoveMappingContext(DefaultIMC);
 					Subsystem->AddMappingContext(DefaultIMC, 0);
 				}
@@ -543,11 +547,10 @@ void ASMPlayerCharacter::SetLobbyInputMode()
 		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
 	if (IsValid(Subsystem) == false) return;
 
-	if (LobbyIMC)
-	{
-		Subsystem->RemoveMappingContext(DefaultIMC);
-		Subsystem->AddMappingContext(LobbyIMC, 1);
-	}
+	if (!LobbyIMC) return;
+
+	Subsystem->RemoveMappingContext(DefaultIMC);
+	Subsystem->AddMappingContext(LobbyIMC, 1);
 }
 
 //================================

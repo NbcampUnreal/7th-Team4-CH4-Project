@@ -173,10 +173,12 @@ protected:
 	//================================
 	// 로비 전용 Input 세팅
 	//================================
+public:
+	void SetLobbyInputMode();
+	
+private:
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputMappingContext> LobbyIMC;
-	
-	void SetLobbyInputMode();
 	
 	//================================
 	// 캐릭터 커스터마이징

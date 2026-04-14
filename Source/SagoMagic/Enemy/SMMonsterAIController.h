@@ -39,6 +39,10 @@ public:
     /** 현재 공격 대상 타입 (GA_MonsterAttackBase에서 읽음) **/
     EMonsterAttackTargetType CurrentTargetType = EMonsterAttackTargetType::BaseCamp;
 
+    /** 현재 공격 중인 실제 대상 (GA_MonsterRangedAttack이 발사 방향 계산에 사용) **/
+    UPROPERTY()
+    TObjectPtr<AActor> CurrentAttackTarget;
+
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
     TObjectPtr<class UAIPerceptionComponent> PerceptionComp;
 

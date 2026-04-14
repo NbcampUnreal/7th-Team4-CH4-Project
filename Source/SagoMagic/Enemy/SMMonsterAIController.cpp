@@ -105,8 +105,12 @@ void ASMMonsterAIController::UpdateTargetAndTryAttack()
     {
         // 공격할 게 없음 → BT가 BaseCamp로 이동 중 → 아무것도 안 함
         CurrentTargetType = EMonsterAttackTargetType::BaseCamp;
+        CurrentAttackTarget = nullptr;
         return;
     }
+
+    // GA_MonsterRangedAttack이 발사 방향 계산에 사용
+    CurrentAttackTarget = AttackTarget;
 
     // ── 3단계: 공격 대상 있음 → 어빌리티 실행 ──
     UAbilitySystemComponent* ASC = nullptr;

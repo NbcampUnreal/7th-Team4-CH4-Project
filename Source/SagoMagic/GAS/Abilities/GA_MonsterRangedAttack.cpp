@@ -37,11 +37,17 @@ void UGA_MonsterRangedAttack::ActivateAbility(
 		ASC->AddLooseGameplayTags(AttackingTags);
 	}
 
-	// 공격 중 제자리에서 발사되게끔
-	if (ACharacter* MonsterChar = Cast<ACharacter>(GetAvatarActorFromActorInfo()))
+	// IsAttacking = true → BT에서 MoveTo 중단
+	if (APawn* MonsterPawn = Cast<APawn>(GetAvatarActorFromActorInfo()))
 	{
-		MonsterChar->GetCharacterMovement()->StopMovementImmediately();
-		MonsterChar->GetCharacterMovement()->DisableMovement();
+		if (ASMMonsterAIController* AIC = Cast<ASMMonsterAIController>(MonsterPawn->GetController()))
+		{
+			if (UBlackboardComponent* BB = AIC->GetBlackboardComponent())
+			{
+				BB->SetValueAsBool(FName("IsAttacking"), true);
+			}
+			AIC->StopMovement();
+		}
 	}
 
 	// 몽타주 재생
@@ -75,11 +81,8 @@ void UGA_MonsterRangedAttack::EndAbility(
 		ASC->RemoveLooseGameplayTags(AttackingTags);
 	}
 
-	// 공격 끝나면 다시 플레이어나 건축물 따라가게
-	if (ACharacter* MonsterChar = Cast<ACharacter>(GetAvatarActorFromActorInfo()))
-	{
-		MonsterChar->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-	}
+	// IsAttacking 해제는 AIController 타이머가 담당
+	// 타겟이 범위 밖으로 나갔을 때만 해제 → 범위 내면 계속 제자리 공격
 
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }

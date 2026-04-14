@@ -13,6 +13,7 @@
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "GameFramework/Pawn.h"
 #include "InputAction.h"
+#include "SMPlayerCharacter.h"
 #include "Core/SMGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/Inventory/SMInventoryRootWidget.h"
@@ -51,6 +52,12 @@ void ASMPlayerController::BeginPlay()
 	if (MapName.Contains(LobbyMapName) == true)
 	{
 		ShowLobbyWidget();
+
+		ASMPlayerCharacter* SMCharacter = Cast<ASMPlayerCharacter>(GetPawn());
+		if (IsValid(SMCharacter))
+		{
+			SMCharacter->SetLobbyInputMode();
+		}
 	}
 }
 
@@ -641,26 +648,44 @@ void ASMPlayerController::ServerRPCSelectLobbySkill_Implementation(int32 InSkill
 {
 	ASMLobbyGameMode* LobbyGameMode = GetWorld()->GetAuthGameMode<ASMLobbyGameMode>();
 	if (IsValid(LobbyGameMode) == false) return;
-	
+
 	const TSoftObjectPtr<USMItemDefinition>& SkillDef = LobbyGameMode->GetPresetSkillDefinition(InSkillIndex);
 	if (SkillDef.IsNull() == true) return;
-	
+
 	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
 	if (IsValid(PS) == false) return;
-	
+
 	USMInventoryComponent* InventoryComponent = PS->GetInventoryComponent();
 	if (IsValid(InventoryComponent) == false) return;
-	
+
 	//인벤토리 전체 초기화 이후 선택 스킬 추가 및 퀵슬롯 0번 장착
-	//InventoryComponent->ResetInventory();
+	InventoryComponent->ResetInventory();
 	FGuid NewSkillGuid = InventoryComponent->AddItemFromDefinition(SkillDef);
 	if (NewSkillGuid.IsValid() == false)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("FGuid is Not Valid"))
+		UE_LOG(LogTemp, Warning, TEXT("FGuid is Not Valid"))
 		return;
 	}
-	InventoryComponent->EquipSkillToQuickSlot(NewSkillGuid,0);
-	UE_LOG(LogTemp,Warning, TEXT("Skill Equipped Compete"));
-	
+	InventoryComponent->EquipSkillToQuickSlot(NewSkillGuid, 0);
+	UE_LOG(LogTemp, Warning, TEXT("Skill Equipped Compete"));
+
 	PS->SetSelectedLobbySkillDef(SkillDef);
+}
+
+void ASMPlayerController::InitializeInventory()
+{
+	ASMPlayerState* PS = GetPlayerState<ASMPlayerState>();
+	if (IsValid(PS) == false) return;
+
+	USMInventoryComponent* Inv = PS->GetInventoryComponent();
+	if (IsValid(Inv) == false) return;
+
+	const TSoftObjectPtr<USMItemDefinition>& SkillDef = PS->GetSelectedLobbySkillDef();
+	if (SkillDef.IsNull()) return;
+
+	FGuid SkillGuid = Inv->AddItemFromDefinition(SkillDef);
+	if (SkillGuid.IsValid())
+	{
+		Inv->EquipSkillToQuickSlot(SkillGuid, 0);
+	}
 }

@@ -182,4 +182,11 @@ private:
 	
 	UPROPERTY()
 	TObjectPtr<USMCustomizeWidget> CustomizeWidgetInstance;
+	
+	//================================
+	// 캐릭터 스킬 선택
+	//================================
+public:
+	UFUNCTION(Server, Reliable)
+	void ServerRPCSelectLobbySkill(int32 InSkillIndex);
 };

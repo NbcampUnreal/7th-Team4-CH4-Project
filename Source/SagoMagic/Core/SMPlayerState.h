@@ -8,6 +8,7 @@
 #include "GAS/SMAbilitySystemComponent.h"
 #include "SMPlayerState.generated.h"
 
+class USMItemDefinition;
 class USMPlayerAttributeSet;
 class USMInventoryComponent;
 
@@ -106,4 +107,14 @@ private:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_SelectedMaterialIndex)
 	int32 SelectedMaterialIndex = 0;
+	
+	//================================
+	// 캐릭터 스킬 선택
+	//================================
+public:
+	const TSoftObjectPtr<USMItemDefinition>& GetSelectedLobbySkillDef() const {return SelectedLobbySkillDef; }
+	void SetSelectedLobbySkillDef(const TSoftObjectPtr<USMItemDefinition>& InDef);
+private:
+	UPROPERTY(Replicated)
+	TSoftObjectPtr<USMItemDefinition> SelectedLobbySkillDef;
 };

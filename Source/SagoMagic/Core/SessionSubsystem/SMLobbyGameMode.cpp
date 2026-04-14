@@ -137,3 +137,11 @@ ASMLobbyGameState* ASMLobbyGameMode::GetLobbyGameState() const
 {
 	return GetGameState<ASMLobbyGameState>();
 }
+
+const TSoftObjectPtr<USMItemDefinition>& ASMLobbyGameMode::GetPresetSkillDefinition(int32 Index) const
+{
+	static TSoftObjectPtr<USMItemDefinition> InValidDefinition;
+	if (PresetSkillDefinitions.IsValidIndex(Index) == false) return InValidDefinition;
+	
+	return PresetSkillDefinitions[Index];
+}

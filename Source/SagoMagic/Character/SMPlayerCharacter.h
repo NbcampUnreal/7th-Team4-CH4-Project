@@ -58,10 +58,10 @@ protected:
 	TObjectPtr<UInputAction> InteractAction;
 	
 	UPROPERTY(EditAnywhere, Category = "Input|Build|Place")
-	TObjectPtr<UInputAction> BuildAction;
+	TObjectPtr<UInputAction> BuildModeAction;
 	
 	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
-	TObjectPtr<UInputAction> EditAction;
+	TObjectPtr<UInputAction> EditModeAction;
 	
 	UPROPERTY(EditAnywhere, Category = "Input|Build|Place")
 	TObjectPtr<UInputAction> BuildPlaceAction;
@@ -97,6 +97,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	USMInteractionScannerComponent* GetInteractionScanner() const { return InteractionScannerComp; }
+	
+	UFUNCTION(BlueprintCallable, Category = "Dead")
+	FORCEINLINE bool IsDead() const { return bIsDead; }
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 	

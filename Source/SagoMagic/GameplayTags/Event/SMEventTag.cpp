@@ -11,4 +11,10 @@ namespace SMEventTag
 
     //AnimNotify → GAS 이벤트 전달
     UE_DEFINE_GAMEPLAY_TAG(Event_Monster_HitCheck, "Event.Monster.HitCheck");
+	
+	// 플레이어 스킬 AnimNotify 이벤트 전달용
+	UE_DEFINE_GAMEPLAY_TAG(Event_Skill_Projectile, "Event.Skill.Projectile");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Skill_Field, "Event.Skill.Field");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Skill_LineTrace, "Event.Skill.LineTrace");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Skill_EnergyStrike, "Event.Skill.EnergyStrike");
 }

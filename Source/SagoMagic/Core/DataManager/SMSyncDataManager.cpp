@@ -8,7 +8,7 @@ bool USMSyncDataManager::ShouldCreateSubsystem(UObject* Outer) const
 	UWorld* World = Cast<UWorld>(Outer);
 	if (!World) return false;
 	if (World->GetNetMode() == NM_Client) return false;//클라이언트 차단
-	return World->GetMapName().Contains(TEXT("L_Play"));//L_Play에서만 생성
+	return (World->GetMapName().Contains(TEXT("L_Play")) || World->GetMapName().Contains(TEXT("L_Lobby")));
 }
 
 void USMSyncDataManager::Initialize(FSubsystemCollectionBase& Collection)

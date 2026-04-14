@@ -163,18 +163,15 @@ void ASMPlayerCharacter::ToggleBuildMode()
 {
 	ASMPlayerController* PC = Cast<ASMPlayerController>(Controller);
 	if (!PC || !PC->IsLocalController()) return;
-
-	UEnhancedInputLocalPlayerSubsystem* Subsystem =
-		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
-	if (!Subsystem || !BuildPlaceIMC || !SMAbilitySystemComponent) return;
-
+	if (!SMAbilitySystemComponent || !BuildingModeComp) return;
+	
 	bool bIsBuildMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place);
 	bool bIsEditMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit);
 
 	// 건축 모드에서 B입력 시 건축 모드 종료
 	if (bIsBuildMode)
 	{
-		Subsystem->RemoveMappingContext(BuildPlaceIMC);
+		BuildingModeComp->DisableBuildMode();
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
 		ServerRPC_SetBuildModeTag(false);
 
@@ -185,21 +182,15 @@ void ASMPlayerCharacter::ToggleBuildMode()
 	// 편집모드라면 편집모드 종료
 	if (bIsEditMode)
 	{
-		Subsystem->RemoveMappingContext(BuildEditIMC);
+		//TODO 은서 : 편집모드 IMC 장착을 편집모드 Comp에서 관리
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 		ServerRPC_SetEditModeTag(false);
 	}
 
 	// 건축모드 켜기
-	Subsystem->AddMappingContext(BuildPlaceIMC, 1);
+	BuildingModeComp->EnableBuildMode();
 	SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
 	ServerRPC_SetBuildModeTag(true);
-	
-	if (BuildingModeComp)
-	{
-		BuildingModeComp->bIsBuildMode = true;
-		BuildingModeComp->SetComponentTickEnabled(true);
-	}
 	
 	SM_LOG(this, LogSM, Log, TEXT("건축 모드 ON"));
 }
@@ -230,7 +221,7 @@ void ASMPlayerCharacter::ToggleEditMode()
 	// 건축 모드라면 건축모드 종료
 	if (bIsBuildMode)
 	{
-		Subsystem->RemoveMappingContext(BuildPlaceIMC);
+		BuildingModeComp->DisableBuildMode();
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
 		ServerRPC_SetBuildModeTag(false);
 	}
@@ -489,6 +480,10 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		}
 		
 	}
+	if (BuildingModeComp)
+	{
+		BuildingModeComp->SetupInputBindings();
+	}
 }
 
 void ASMPlayerCharacter::PawnClientRestart()
@@ -602,3 +597,4 @@ void ASMPlayerCharacter::ApplyCustomization()
 
 	ApplyCustomizationLocal(PS->GetSelectedWeaponIndex(), PS->GetSelectedMaterialIndex());
 }
+

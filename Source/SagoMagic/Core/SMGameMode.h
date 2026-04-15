@@ -32,6 +32,8 @@ public:
 	
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	
+	virtual AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName) override;
+	
 	/** 플레이어 사망시 호출되는 함수 */
 	void OnPlayerDead(ASMPlayerController* InPlayerController);
 	

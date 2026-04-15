@@ -235,7 +235,7 @@ void ASMGameMode::RespawnPlayer(TWeakObjectPtr<ASMPlayerController> InPlayerCont
 	SpectatorTimerMap.Remove(PC);
 	RespawnTimerMap.Remove(PC);
 
-	SM_LOG(this, LogSM, Error, TEXT("[GameMode] %s 플레이어 부활"), *PC->GetName());
+	SM_LOG(this, LogSM, Error, TEXT("[GameMode] %s 플레이어 부활"), *PC->GetName()); 
 }
 
 void ASMGameMode::TryStartGame()
@@ -250,4 +250,35 @@ void ASMGameMode::TryStartGame()
 		UE_LOG(LogTemp, Warning, TEXT("[GameMode] 모든 플레이어 도착 %d - 게임 시작"), MaxPlayers);
 		StateMachine->Initialize(this);
 	}
+}
+
+AActor* ASMGameMode::FindPlayerStart_Implementation(AController* Player, const FString& IncomingName)
+{
+	// 기본 로직 먼저 시도
+	AActor* FoundStart = Super::FindPlayerStart_Implementation(Player, IncomingName);
+	if (IsValid(FoundStart))
+	{
+		return FoundStart;
+	}
+
+	// 엔진이 적절한 위치를 못 찾았을 경우 맵의 모든 PlayerStart를 체크
+	TArray<APlayerStart*> AllStarts;
+	for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+	{
+		if (IsValid(*It))
+		{
+			AllStarts.Add(*It);
+		}
+	}
+
+	// PlayerStart 중 랜덤한 곳을 하나 선택해 반환
+	if (AllStarts.Num() > 0)
+	{
+		int32 RandIndex = FMath::RandRange(0, AllStarts.Num() - 1);
+		UE_LOG(LogTemp, Warning, TEXT("[GameMode] 스폰 포인트 충돌! 랜덤 PlayerStart 할당"));
+		return AllStarts[RandIndex];
+	}
+
+	// 맵에 PlayerStart가 아예 없을 경우에만 nullptr 반환
+	return nullptr;
 }

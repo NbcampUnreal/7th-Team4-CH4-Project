@@ -83,7 +83,7 @@ void UGA_LineTrace::OnSkillEffect(
 
 void UGA_LineTrace::OnMontageFinished()
 {
-	// 시작 애니메이션 종료 시 보모의 EndAbility 호출 X
+	// 시작 애니메이션 종료 시 부모의 EndAbility 호출 X
 	// 빔 종료는 DurationEndHandle -> OnDurationExpired가 EndAbility 호출
 }
 

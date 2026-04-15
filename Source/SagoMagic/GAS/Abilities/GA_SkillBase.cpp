@@ -1,10 +1,7 @@
 #include "GAS/Abilities/GA_SkillBase.h"
 
-#include <ThirdParty/ShaderConductor/ShaderConductor/External/SPIRV-Headers/include/spirv/unified1/spirv.h>
-
 #include "AbilitySystemComponent.h"
 #include "GameplayTags/Character/SMSkillTag.h"
-#include "Data/SMSkillData.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "GameplayEffectTypes.h"
 #include "SagoMagic.h"

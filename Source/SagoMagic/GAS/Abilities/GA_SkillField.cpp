@@ -1,6 +1,5 @@
 #include "GA_SkillField.h"
 #include "AbilitySystemComponent.h"
-#include "Abilities/GameplayAbilityTargetTypes.h"
 #include "SkillActor/SMASkillField.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameFramework/Pawn.h"
@@ -19,7 +18,7 @@ void UGA_SkillField::OnSkillEffect(
 	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
 	if (!Avatar) return;
 	
-	// 장팍 이펙트 예측 발생
+	// 장판 이펙트 예측 발생
 	if (Avatar->IsLocallyControlled() && !Avatar->HasAuthority())
 	{
 		UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();

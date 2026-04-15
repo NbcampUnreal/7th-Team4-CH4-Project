@@ -92,9 +92,12 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
     UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor);
     if (TargetASC && TargetASC->HasMatchingGameplayTag(SMGameFlowTag::Team)) return;
 
+	// ASC 없는 액터 무시하고 통과
+	if (!TargetASC || !DamageSpecHandle.IsValid()) return;
+
 	UE_LOG(LogTemp, Warning, TEXT("[Projectile] Hit: %s"), *OtherActor->GetName());
 
-	// 히트 GameplayCue 발동 GCN_ProjectileHit에서 이펙트 처리
+	// 히트 GameplayCue 발동 - 실제 피격 대상에만 실행
 	UAbilitySystemComponent* InstigatorASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(
 		InstigatorActor.Get());
 	if (InstigatorASC)
@@ -104,10 +107,6 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
 		CueParams.Normal = SweepResult.ImpactNormal;
 		InstigatorASC->ExecuteGameplayCue(SMSkillTag::GameplayCue_Skill_Projectile_Hit, CueParams);
 	}
-
-	// GA에서 미리 만든 Spec을 TargetASC에 직접 적용
-	// ASC가 없는 액터는 무시하고 통과
-	if (!TargetASC || !DamageSpecHandle.IsValid()) return;
 
 	TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data.Get());
 	Destroy();

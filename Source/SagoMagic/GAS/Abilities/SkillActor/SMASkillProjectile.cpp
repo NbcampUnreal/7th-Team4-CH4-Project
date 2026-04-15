@@ -104,11 +104,10 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
 	}
 
 	// GA에서 미리 만든 Spec을 TargetASC에 직접 적용
-	if (TargetASC && DamageSpecHandle.IsValid())
-	{
-		TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data.Get());
-	}
+	// ASC가 없는 액터는 무시하고 통과
+	if (!TargetASC || !DamageSpecHandle.IsValid()) return;
 
+	TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data.Get());
 	Destroy();
 }
 

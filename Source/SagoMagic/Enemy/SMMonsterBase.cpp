@@ -13,6 +13,8 @@
 #include "Inventory/World/SMBaseItemDropActor.h"
 #include "Inventory/Core/SMItemDropTypes.h"
 #include "Data/SMItemDropTableData.h"
+#include "Inventory/Items/Definitions/SMGemItemDefinition.h"
+#include "Inventory/Items/Definitions/SMSkillItemDefinition.h"
 #include "Net/UnrealNetwork.h"
 
 ASMMonsterBase::ASMMonsterBase()
@@ -267,12 +269,31 @@ void ASMMonsterBase::SpawnDropItem()
         }
     }
     if (SelectedItem.IsNull()) return;
+    
+    USMItemDefinition* SelectedItemDefinition = SelectedItem.LoadSynchronous();
+    if (SelectedItemDefinition == nullptr) return;
+
+    ESMItemType ResolvedItemType = ESMItemType::None;
+    if (SelectedItemDefinition->IsA<USMSkillItemDefinition>())
+    {
+        ResolvedItemType = ESMItemType::Skill;
+    }
+    else if (SelectedItemDefinition->IsA<USMGemItemDefinition>())
+    {
+        ResolvedItemType = ESMItemType::Gem;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[DropItem] Unsupported item definition type: %s"), *SelectedItemDefinition->GetClass()->GetName());
+        return;
+    }
 
     // 3) FSMItemDropPayload 생성
     FSMItemDropPayload Payload;
     Payload.SetInstanceId(FGuid::NewGuid());
     Payload.SetDefinition(SelectedItem);
-    // 몬스터 드롭이므로 ItemType, Rotation, bLocked, NestedItemSnapshots는 기본값 유지
+    Payload.ItemType = ResolvedItemType;
+    // 몬스터 드롭이므로 Rotation, bLocked, NestedItemSnapshots는 기본값 유지
 
     // 4) 월드에 ASMBaseItemDropActor 스폰
     FVector SpawnLocation = GetActorLocation();

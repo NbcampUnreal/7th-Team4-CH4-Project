@@ -17,7 +17,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameplayTags/Character/SMCharacterTag.h"
-#include "GameplayTags/Character/SMSkillTag.h"
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -55,6 +54,15 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 	
 	InteractionScannerComp = CreateDefaultSubobject<USMInteractionScannerComponent>(TEXT("InteractionScanner"));
 	InteractionScannerComp->SetupAttachment(RootComponent);
+	
+	// InteractionScanner는 공격 못하게 방어
+	
+	// 물리 X, 오버랩만 판정
+	InteractionScannerComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	// 모든 채널 무시
+	InteractionScannerComp->SetCollisionResponseToChannels(ECR_Ignore);
+	// 인터렉션만 오버랩 허용
+	InteractionScannerComp->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
 	
 	BuildingModeComp = CreateDefaultSubobject<USMBuildingModeComponent>(TEXT("BuildingModeComponent"));
 }
@@ -595,4 +603,3 @@ void ASMPlayerCharacter::ApplyCustomization()
 
 	ApplyCustomizationLocal(PS->GetSelectedWeaponIndex(), PS->GetSelectedMaterialIndex());
 }
-

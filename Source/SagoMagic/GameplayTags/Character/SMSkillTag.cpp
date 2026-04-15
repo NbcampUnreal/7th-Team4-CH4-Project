@@ -22,6 +22,10 @@ namespace SMSkillTag
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_LineTrace, TEXT("Cooldown.Skill.LineTrace"))
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_ApplyInstantDamage, TEXT("Cooldown.Skill.ApplyInstantDamage"))
 
+	//스킬 업그레이드 태그들
+	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Projectile_Multishot, TEXT("Upgrade.Projectile.Multishot"))
+	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Projectile_Homing, TEXT("Upgrade.Projectile.Homing"))
+	
 	//GE Spec 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Data_Damage_Amount, TEXT("Data.Damage.Amount"))
 	UE_DEFINE_GAMEPLAY_TAG(Data_Cooldown, TEXT("Data.Cooldown"))

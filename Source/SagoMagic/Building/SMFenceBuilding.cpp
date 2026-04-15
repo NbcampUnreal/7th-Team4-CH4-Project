@@ -18,6 +18,13 @@ void ASMFenceBuilding::ConvertToCorner(float Yaw)
 	CornerYaw = Yaw;
 }
 
+void ASMFenceBuilding::ConvertToCornerPreview(float Yaw)
+{
+	if (!CornerMesh) return;
+	MeshComponent->SetStaticMesh(CornerMesh);
+	SetActorRotation(FRotator(0.f, Yaw, 0.f));
+}
+
 void ASMFenceBuilding::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

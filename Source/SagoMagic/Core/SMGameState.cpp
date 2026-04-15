@@ -87,9 +87,6 @@ void ASMGameState::OnRep_WaveIndex()
 
 void ASMGameState::OnRep_BuildTimeRemaining()
 {
-    //TODO 현 : 현재 정비 시간 브로드케스트
-    SM_LOG(this, LogSM, Log, TEXT("[Build] 클라이언트 수신 - WaveIndex=%d TimeRemaining=%.1f"),
-        ReplicatedWaveIndex, BuildTimeRemaining);
     
     // 정비 상태, 동기화된 시간들로 UI 업데이트
     BroadcastWaveMsg(EWaveUIState::Preparing, ReplicatedWaveIndex, BuildTimeRemaining, MaxBuildTime);
@@ -97,9 +94,6 @@ void ASMGameState::OnRep_BuildTimeRemaining()
 
 void ASMGameState::OnRep_CombatTimeRemaining()
 {
-    //TODO 현 : 현재 전투 시간 브로드케스트
-    SM_LOG(this, LogSM, Log, TEXT("[Combat] 클라이언트 수신 - WaveIndex=%d TimeRemaining=%.1f"),
-        ReplicatedWaveIndex, CombatTimeRemaining);
     
     // 전투 진행 중 상태, 동기화된 시간들로 UI 업데이트
     BroadcastWaveMsg(EWaveUIState::Inprogress, ReplicatedWaveIndex, CombatTimeRemaining, MaxCombatTime);

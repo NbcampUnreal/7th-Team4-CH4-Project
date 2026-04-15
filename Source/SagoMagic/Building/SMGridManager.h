@@ -3,8 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "FGridCell.h"
-#include "FSMAStarNode.h"
-#include "FSMSelectActorInfo.h"
+#include "Landscape.h"
 #include "SMGridManager.generated.h"
 
 /**
@@ -43,7 +42,9 @@ protected:
 	/** GridData 복제 등록 */
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 public:
-	// 좌표 변환 (클라이언트/서버 모두 사용 가능)
+	/** 서버 전용 - 1회 Bake */
+	void BakeGridHeights();
+	FVector GridToWorldWithHeight(int32 X, int32 Y) const;
 	
 	/**
 	 * 월드 좌표 -> 그리드 셀 인덱스(X,Y) 변환
@@ -238,6 +239,9 @@ public:
 	/** 디버그용 그리드 라인 및 점유 셀 시각화 */
 	UPROPERTY(EditAnywhere, Category = "Grid|Debug")
 	bool bDrawDebugGrid = false;
+	
+	/** Grid좌표 → Landscape Z값 캐시 (서버 전용) */
+	TMap<FIntPoint, float> GridHeightCache;
 private:
 	/**
 	 * 그리드 좌표 -> 1D 배열 인덱스 변환
@@ -256,4 +260,5 @@ private:
 	
 	/** Tick에서 호출되는 디버그 그리드 라인 드로우 */
 	void DrawDebugGridLines() const;
+	
 };

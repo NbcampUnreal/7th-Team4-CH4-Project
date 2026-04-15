@@ -27,7 +27,8 @@ public class SagoMagic : ModuleRules
             "GameplayTasks",
             "GameplayMessageRuntime",
             "OnlineSubsystem",
-            "AnimGraphRuntime"
+            "Landscape",
+            "AnimGraphRuntime",
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

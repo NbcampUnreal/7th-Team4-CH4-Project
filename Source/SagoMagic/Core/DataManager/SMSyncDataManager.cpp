@@ -89,16 +89,28 @@ FSMSkillData USMSyncDataManager::GetSkillData(FGameplayTag SkillTag) const
 	return *Found;
 }
 
-FSMBuildingData USMSyncDataManager::GetBuildData(EGridBuildingType BuildingType) const
+const FSMBuildingData* USMSyncDataManager::GetBuildData(EGridBuildingType BuildingType) const
 {
 	const FSMBuildingData* Found = BuildingCache.Find(BuildingType);
 	if (!Found)
 	{
 		UE_LOG(LogTemp, Error, TEXT("[SMSyncDataManager] BuildingType %d 없음"),
 			   static_cast<int32>(BuildingType));
-		return FSMBuildingData();
+		return nullptr;
 	}
-	return *Found;
+	return Found;
+}
+
+bool USMSyncDataManager::IsValidBuild()
+{
+	if (BuildingCache.Num() <= 0)
+		return false;
+	return true;
+}
+
+int32 USMSyncDataManager::GetBuildDataSize()
+{
+	return BuildingCache.Num();
 }
 
 FSMItemDropTableData USMSyncDataManager::GetItemDropTableData(const TSoftObjectPtr<USMItemDefinition>& ItemDefinition) const

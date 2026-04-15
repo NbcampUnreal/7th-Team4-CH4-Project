@@ -10,6 +10,7 @@
 #include "SMInteractionScannerComponent.h"
 #include "SMPlayerController.h"
 #include "Camera/CameraComponent.h"
+#include "Components/BuildingModeComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Core/SMGameMode.h"
 #include "Core/SMPlayerState.h"
@@ -43,7 +44,7 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	CameraComp->SetupAttachment(SpringArmComp);
-
+	
 	// 캐릭터의 움직임으로 몸 회전 금지
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
@@ -51,9 +52,11 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
-
+	
 	InteractionScannerComp = CreateDefaultSubobject<USMInteractionScannerComponent>(TEXT("InteractionScanner"));
 	InteractionScannerComp->SetupAttachment(RootComponent);
+	
+	BuildingModeComp = CreateDefaultSubobject<USMBuildingModeComponent>(TEXT("BuildingModeComponent"));
 }
 
 UAbilitySystemComponent* ASMPlayerCharacter::GetAbilitySystemComponent() const
@@ -160,18 +163,15 @@ void ASMPlayerCharacter::ToggleBuildMode()
 {
 	ASMPlayerController* PC = Cast<ASMPlayerController>(Controller);
 	if (!PC || !PC->IsLocalController()) return;
-
-	UEnhancedInputLocalPlayerSubsystem* Subsystem =
-		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
-	if (!Subsystem || !BuildPlaceIMC || !SMAbilitySystemComponent) return;
-
+	if (!SMAbilitySystemComponent || !BuildingModeComp) return;
+	
 	bool bIsBuildMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place);
 	bool bIsEditMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit);
 
 	// 건축 모드에서 B입력 시 건축 모드 종료
 	if (bIsBuildMode)
 	{
-		Subsystem->RemoveMappingContext(BuildPlaceIMC);
+		BuildingModeComp->DisableBuildMode();
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
 		ServerRPC_SetBuildModeTag(false);
 
@@ -182,16 +182,16 @@ void ASMPlayerCharacter::ToggleBuildMode()
 	// 편집모드라면 편집모드 종료
 	if (bIsEditMode)
 	{
-		Subsystem->RemoveMappingContext(BuildEditIMC);
+		//TODO 은서 : 편집모드 IMC 장착을 편집모드 Comp에서 관리
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 		ServerRPC_SetEditModeTag(false);
 	}
 
 	// 건축모드 켜기
-	Subsystem->AddMappingContext(BuildPlaceIMC, 1);
+	BuildingModeComp->EnableBuildMode();
 	SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
 	ServerRPC_SetBuildModeTag(true);
-
+	
 	SM_LOG(this, LogSM, Log, TEXT("건축 모드 ON"));
 }
 
@@ -221,7 +221,7 @@ void ASMPlayerCharacter::ToggleEditMode()
 	// 건축 모드라면 건축모드 종료
 	if (bIsBuildMode)
 	{
-		Subsystem->RemoveMappingContext(BuildPlaceIMC);
+		BuildingModeComp->DisableBuildMode();
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Place);
 		ServerRPC_SetBuildModeTag(false);
 	}
@@ -259,24 +259,6 @@ void ASMPlayerCharacter::ServerRPC_SetEditModeTag_Implementation(bool bEnable)
 	{
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 	}
-}
-
-void ASMPlayerCharacter::OnBuildPlace()
-{
-	if (!SMAbilitySystemComponent) return;
-
-	// TODO: 추후에 GA_BuildPlace 구현 후 주석 제거
-	// SMAbilitySystemComponent->TryActivateAbilitiesByTag(SMCharacterTag::Ability_Build_Place);
-	SM_LOG(this, LogSM, Log, TEXT("건축 GA실행"));
-}
-
-void ASMPlayerCharacter::OnEditSelect()
-{
-	if (!SMAbilitySystemComponent) return;
-
-	// TODO: 추후에 GA_BuildEdit 구현 후 주석 제거
-	// SMAbilitySystemComponent->TryActivateAbilitiesByTag(SMCharacterTag::Ability_Build_Edit);
-	SM_LOG(this, LogSM, Log, TEXT("편집 GA 실행"));
 }
 
 void ASMPlayerCharacter::BeginPlay()
@@ -494,16 +476,11 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		{
 			EIC->BindAction(EditModeAction, ETriggerEvent::Started, this, &ThisClass::ToggleEditMode);
 		}
-
-		if (BuildPlaceAction)
-		{
-			EIC->BindAction(BuildPlaceAction, ETriggerEvent::Started, this, &ThisClass::OnBuildPlace);
-		}
-
-		if (EditSelectAction)
-		{
-			EIC->BindAction(EditSelectAction, ETriggerEvent::Started, this, &ThisClass::OnEditSelect);
-		}
+		
+	}
+	if (BuildingModeComp)
+	{
+		BuildingModeComp->SetupInputBindings();
 	}
 }
 
@@ -618,3 +595,4 @@ void ASMPlayerCharacter::ApplyCustomization()
 
 	ApplyCustomizationLocal(PS->GetSelectedWeaponIndex(), PS->GetSelectedMaterialIndex());
 }
+

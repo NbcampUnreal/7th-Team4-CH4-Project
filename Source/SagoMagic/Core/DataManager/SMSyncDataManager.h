@@ -57,8 +57,13 @@ public:
 	int32 GetWaveCount() const {return WaveCache.Num();}
 	
 	/** Building 데이터 조회 - EGridBuildingType 키 */
+	const FSMBuildingData* GetBuildData(EGridBuildingType BuildingType) const;
+	
 	UFUNCTION(BlueprintCallable, Category = "Data")
-	FSMBuildingData GetBuildData(EGridBuildingType BuildingType) const;
+	bool IsValidBuild();
+	
+	UFUNCTION(BlueprintCallable, Category = "Data")
+	int32 GetBuildDataSize();
 	
 public:
  	template<typename RowType, typename KeyType>

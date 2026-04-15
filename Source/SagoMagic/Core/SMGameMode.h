@@ -25,6 +25,8 @@ public:
 
 	/** 게임 시작 진입점 */
 	virtual void BeginPlay() override;
+	/** 모든 액터 BeginPlay 완료 후 */
+	virtual void StartPlay() override;
 	/** 매 프레임 StateMachine에 Tick 위임  */
 	virtual void Tick(float DeltaSeconds) override;
 	

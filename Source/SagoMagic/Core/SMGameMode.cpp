@@ -6,6 +6,7 @@
 #include "Core/SMStateMachine.h"
 #include "Wave/SMWaveManagerSubsystem.h"
 #include "EngineUtils.h"
+#include "Building/SMGridManager.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -54,6 +55,17 @@ void ASMGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+void ASMGameMode::StartPlay()
+{
+	Super::StartPlay();
+	
+	if (ASMGridManager* GridManager = Cast<ASMGridManager>(
+		UGameplayStatics::GetActorOfClass(GetWorld(), ASMGridManager::StaticClass())))
+	{
+		GridManager->BakeGridHeights();
+	}
 }
 
 void ASMGameMode::Tick(float DeltaSeconds)

@@ -11,7 +11,7 @@ USMPlayerAttributeSet::USMPlayerAttributeSet()
 	// TODO: GameplayEffect 또는 DataAsset으로 초기화 고려
 	InitHealth(100.0f);
 	InitMaxHealth(100.0f);
-	InitGold(0.0f);
+	InitGold(100.0f);
 
 	// 참고: AttributeSet은 32비트 float를 사용하므로 float의 최대값 자체는 매우 크지만,
 	// 정수 단위 값을 정확하게 표현할 수 있는 범위는 약 16,777,216까지임

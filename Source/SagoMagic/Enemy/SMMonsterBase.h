@@ -10,6 +10,7 @@
 
 class USMMonsterDataAsset;
 class USMMonsterAttributeSet;
+class ASMBaseItemDropActor;
 enum class EMonsterType : uint8;
 
 UCLASS()
@@ -51,6 +52,9 @@ public:
     /** 테스트용 */
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Mesh|Test")
     TSoftObjectPtr<USkeletalMesh> TestMesh;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Drop")
+    TSubclassOf<ASMBaseItemDropActor> DropActorClass;
     
     /** 몬스터가 기본적으로 가질 어빌리티 목록 **/
     UPROPERTY(EditAnywhere, Category = "GAS")

@@ -21,22 +21,25 @@ public:
 
 	//어빌리티 인터페이스
 
-	virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
-	                                const FGameplayAbilityActorInfo* ActorInfo,
-	                                const FGameplayTagContainer* SourceTags,
-	                                const FGameplayTagContainer* TargetTags,
-	                                FGameplayTagContainer* OptionalRelevantTags) const override;
+	virtual bool CanActivateAbility(
+		const FGameplayAbilitySpecHandle Handle,
+		const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayTagContainer* SourceTags,
+		const FGameplayTagContainer* TargetTags,
+		FGameplayTagContainer* OptionalRelevantTags) const override;
 
-	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle,
-	                             const FGameplayAbilityActorInfo* ActorInfo,
-	                             const FGameplayAbilityActivationInfo ActivationInfo,
-	                             const FGameplayEventData* TriggerEventData) override;
+	virtual void ActivateAbility(
+		const FGameplayAbilitySpecHandle Handle,
+		const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo,
+		const FGameplayEventData* TriggerEventData) override;
 
-	virtual void ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
-	                           const FGameplayAbilityActorInfo* ActorInfo,
-	                           const FGameplayAbilityActivationInfo ActivationInfo) const override;
+	virtual void ApplyCooldown(
+		const FGameplayAbilitySpecHandle Handle,
+		const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo) const override;
 
-	/** 현재 Prediction Key를 반환하고 더 많은? 예측에 유효한지 Vaild 한다 - 디버깅에 사용 */
+	/** 현재 Prediction Key를 반환하고 더 많은? 예측에 유효한지 Valid 한다 - 디버깅에 사용 */
 	UFUNCTION(BlueprintCallable, Category = "SagoMagic|Ability")
 	virtual FString GetCurrentPredictionKeyStatus();
 
@@ -45,12 +48,16 @@ public:
 	virtual bool IsPredictionKeyValidForMorePrediction() const;
 
 protected:
+	virtual void ExecuteSkillLogic(const FGameplayAbilityActorInfo* ActorInfo);
+
 	//스킬효과 서버
-	virtual void OnSkillEffect(const FGameplayAbilityActorInfo* ActorInfo){}
+	virtual void OnSkillEffect(
+		const FGameplayAbilityActorInfo* ActorInfo, const FVector& TargetLocation, const FVector& AimDirection) {}
 	
-	// 마우스 정보
-	void ExtractAimData(const FGameplayAbilityActorInfo* ActorInfo);
-	
+	// 몽타지 끝 콜백 함수
+	UFUNCTION()
+	virtual void OnMontageFinished();
+
 	//OnSkillEffect 내에서 호출. 유효하지 않으면 Invalid Handle 반환.
 	FGameplayEffectSpecHandle MakeDamageSpec(const FGameplayAbilityActorInfo* ActorInfo) const;
 
@@ -61,6 +68,12 @@ protected:
 	/** DT_SkillData에서 스킬 행 참조 - 에디터에서 테이블과 행 이름 지정 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Stats")
 	FDataTableRowHandle SkillStatRow;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Skill|Animation")
+	TObjectPtr<UAnimMontage> AttackMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Skill|Animation")
+	FGameplayTag SkillEventTag;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SagoMagic|Skill")
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
@@ -74,13 +87,25 @@ protected:
 	
 	//인벤토리에서 받아온 최종 요약 캐시
 	FSMCompiledSkillSummary CachedSummary;
-	
+
 	//인벤토리에서 최종 계산값 로드
 	bool LoadActiveSkillSummary(const FGameplayAbilityActorInfo* ActorInfo);
 
 	FVector CurrentAimOrigin = FVector::ZeroVector;
 	FVector CurrentAimDirection = FVector::ForwardVector;
+	FVector CurrentTargetLocation = FVector::ZeroVector;
 	
-	// DT에서 스킬 수치 로드 ActivateAbility 시작 시 호출
-	//bool LoadSkillStats();
+	// 서버에서 데이터 수신하는 함수
+	void OnTargetDataReadyCallBack(const FGameplayAbilityTargetDataHandle& TargetDataHandle,
+	                               FGameplayTag ApplicationTag);
+
+	// 몽타주와 이벤트 대기 Task를 실행하는 함수
+	virtual void StartMontageAndTasks();
+
+	// 이벤트 델리게이트 함수
+	UFUNCTION()
+	virtual void OnFireEventReceived(FGameplayEventData Payload);
+	
+	// 로컬에서 마우스가 가리키는 바닥 좌표 구하는 함수
+	bool TryGetMouseGroundLocation(APawn* Pawn, FVector& OutLocation) const;
 };

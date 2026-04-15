@@ -9,7 +9,7 @@ AGCN_SkillField::AGCN_SkillField()
 	bAutoDestroyOnRemove = false;
 
 	FieldNiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("FieldNiagaraComponent"));
-	FieldNiagaraComponent->SetupAttachment(RootComponent);
+	SetRootComponent(FieldNiagaraComponent);
 	FieldNiagaraComponent->SetAutoActivate(false);
 }
 

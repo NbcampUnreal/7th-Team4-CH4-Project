@@ -44,6 +44,25 @@ void ASMASkillField::InitField(FGameplayEffectSpecHandle InSpecHandle,
 	
 	OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(InInstigatorActor);
 	ActiveCueTag = SMSkillTag::GameplayCue_Skill_SpawnField_Tick;
+	
+	// 서버에서 Cue - GA의 예측키 스코프 밖이므로 모든 클라에 복제
+	// 서버가 Owner 클라에 대한 전송을 스킵하는 경우가 있음
+	// 명시적으로 예측키를 지움으로 local에 항상 복제
+	// RemoveGameplayCue는 OnDurationExpired에서 처리
+	if (HasAuthority() && IsValid(OwnerASC))
+	{
+		FPredictionKey Saved = OwnerASC->ScopedPredictionKey;
+		// 잔존 키 버리기
+		OwnerASC->ScopedPredictionKey = FPredictionKey();
+		
+		FGameplayCueParameters CueParams;
+		CueParams.Location = GetActorLocation();
+		CueParams.RawMagnitude = Duration;
+		CueParams.NormalizedMagnitude = InRangeCm;
+		OwnerASC->AddGameplayCue(ActiveCueTag, CueParams);
+		
+		OwnerASC->ScopedPredictionKey = Saved;
+	}
 
 	// 장판 지속 시간 종료 타이머
 	if (UWorld* World = GetWorld())

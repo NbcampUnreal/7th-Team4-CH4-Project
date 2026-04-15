@@ -84,6 +84,7 @@ protected:
 	float CooldownSeconds = 0.f;  // 쿨다운
 	float FieldDuration = 0.f;  // 지속 시간
 	float TickInterval = 0.f;  // 틱 간격
+	FGameplayTagContainer SkillUpgradeTags; // 스킬 업그레이드 태그
 	
 	//인벤토리에서 받아온 최종 요약 캐시
 	FSMCompiledSkillSummary CachedSummary;

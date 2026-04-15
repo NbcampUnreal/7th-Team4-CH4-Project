@@ -1,15 +1,15 @@
 #include "SMASkillProjectile.h"
-
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
 #include "Character/SMPlayerCharacter.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "SMASkillField.h"
+#include "Building/SMBaseCampActor.h"
+#include "Building/SMBaseBuilding.h"
 
 ASMASkillProjectile::ASMASkillProjectile()
 {
@@ -83,8 +83,10 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
 	// 플레이어 캐릭터는 통과
 	if (OtherActor->IsA<ASMPlayerCharacter>()) return;
 
-	// 아군 장판 스킬은 통과
+	// 아군 오브젝트는 통과 장판, 베이스캠프, 건축물
 	if (OtherActor->IsA<ASMASkillField>()) return;
+	if (OtherActor->IsA<ASMBaseCampActor>()) return;
+	if (OtherActor->IsA<ASMBaseBuilding>()) return;
 
     // 팀 태그 보유 액터 통과
     UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor);

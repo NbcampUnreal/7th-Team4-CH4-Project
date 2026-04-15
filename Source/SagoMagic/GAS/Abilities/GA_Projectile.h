@@ -20,4 +20,11 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Skill")
 	TSubclassOf<ASMASkillProjectile> ProjectileClass;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Skill")
+	float SpreadAngle = 15.f;
+	
+	int32 ProjectileCount = 1;
+	
+	bool bEnableHoming = false;
 };

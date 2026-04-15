@@ -2,6 +2,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "GameplayTags/Character/SMSkillTag.h"
 #include "SkillActor/SMASkillProjectile.h"
 
 
@@ -51,20 +52,39 @@ void UGA_Projectile::OnSkillEffect(
 	{
 		FinalDirection = (TargetLocation - SpawnLocation).GetSafeNormal2D();
 	}
+	
+	bEnableHoming = SkillUpgradeTags.HasTag(SMSkillTag::Upgrade_Projectile_Homing);
+	
+	//멀티샷 태그 소지시 발사체 개수 3개 추후 기획 방향성에 따라서 수정가능
+	if (SkillUpgradeTags.HasTag(SMSkillTag::Upgrade_Projectile_Multishot))
+	{
+		ProjectileCount = 3;
+	}
+	else
+	{
+		ProjectileCount = 1;
+	}
 
 	FActorSpawnParameters Params;
 	Params.Owner = Avatar;
 	Params.Instigator = Avatar;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	ASMASkillProjectile* Proj = World->SpawnActor<ASMASkillProjectile>(
+	for (int32 i = 0; i < ProjectileCount; i++)
+	{
+		//projectile 사이의 간격을 SpreadAngle만큼 띄움 ex) SpreadAngle = 15 -> -15 0 15
+		float AngleOffset = (i - (ProjectileCount - 1) * 0.5f) * SpreadAngle;
+		FVector ShotDirection = FinalDirection.RotateAngleAxis(AngleOffset, FVector::UpVector);
+		
+		ASMASkillProjectile* Proj = World->SpawnActor<ASMASkillProjectile>(
 		ProjectileClass,
 		SpawnLocation,
-		FinalDirection.Rotation(),
+		ShotDirection.Rotation(),
 		Params);
 
-	if (Proj)
-	{
-		Proj->InitProjectile(SpecHandle, RangeCm, FinalDirection, Avatar);
+		if (Proj)
+		{
+			Proj->InitProjectile(SpecHandle, RangeCm, ShotDirection, Avatar,bEnableHoming);
+		}
 	}
 }

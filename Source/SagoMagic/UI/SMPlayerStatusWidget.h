@@ -8,7 +8,7 @@
 class USMPlayerHPBarWidget;
 class USMPlayerGoldWidget;
 class UAbilitySystemComponent;
-
+class USMQuickSlotBarWidget;
 /**
  * 플레이어의 상태(HP, 골드)를 모아두는 컨테이너 위젯 클래스
  * HUDManager로부터 ASC 받아 하위 세부 위젯에게 데이터 분배
@@ -29,4 +29,7 @@ protected:
 	
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<USMPlayerGoldWidget> WBP_GoldDisplay;
+	
+	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="HUD")
+	TObjectPtr<USMQuickSlotBarWidget> WBP_QuickSlotBar;
 };

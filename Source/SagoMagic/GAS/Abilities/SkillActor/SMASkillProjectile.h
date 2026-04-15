@@ -19,7 +19,7 @@ public:
 
     // GA에서 미리 만든 GE Spec을 받아 보관, 충돌 시 TargetASC에 직접 적용
     void InitProjectile(FGameplayEffectSpecHandle InSpecHandle, float InRangeCm,
-        const FVector& InDirection, AActor* InInstigatorActor);
+        const FVector& InDirection, AActor* InInstigatorActor, bool bEnableHoming = false);
 
 protected:
     virtual void BeginPlay() override;
@@ -54,4 +54,26 @@ private:
     TWeakObjectPtr<AActor> InstigatorActor;
 
     FTimerHandle TimerHandleMaxRange;
+    
+    // 호밍기능
+private:
+    virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+    
+    UPROPERTY(ReplicatedUsing= OnRep_HomingTarget)
+    TObjectPtr<AActor> HomingTarget;
+    
+    UFUNCTION()
+    void OnRep_HomingTarget();
+protected:
+    
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
+    float HomingAccelerationMagnitude = 3000.f;
+    
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
+    float HomingSearchRadius = 1500.f;
+    
+private:
+    
+    void FindAndSetHomingTarget();
+    
 };

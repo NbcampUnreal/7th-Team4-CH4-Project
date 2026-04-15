@@ -1,12 +1,17 @@
 #include "SMASkillProjectile.h"
+
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Character/SMPlayerCharacter.h"
+#include "Enemy/SMMonsterBase.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
+#include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 #include "SMASkillField.h"
 #include "Building/SMBaseCampActor.h"
 #include "Building/SMBaseBuilding.h"
@@ -41,7 +46,8 @@ ASMASkillProjectile::ASMASkillProjectile()
 void ASMASkillProjectile::InitProjectile(FGameplayEffectSpecHandle InSpecHandle,
                                          float InRangeCm,
                                          const FVector& InDirection,
-                                         AActor* InInstigatorActor)
+                                         AActor* InInstigatorActor,
+                                         bool bEnableHoming)
 {
 	DamageSpecHandle = InSpecHandle;
 	RangeCm = InRangeCm;
@@ -50,6 +56,11 @@ void ASMASkillProjectile::InitProjectile(FGameplayEffectSpecHandle InSpecHandle,
 
 	//발사방향 -> 커서방향 값
 	ProjectileMovement->Velocity = InDirection.GetSafeNormal() * ProjectileSpeed;
+
+	if (bEnableHoming == true)
+	{
+		FindAndSetHomingTarget();
+	}
 
 	//최대 사거리 도달 시 없어지게
 	if (RangeCm > 0.f && ProjectileSpeed > 0.f)
@@ -62,7 +73,7 @@ void ASMASkillProjectile::InitProjectile(FGameplayEffectSpecHandle InSpecHandle,
 
 void ASMASkillProjectile::BeginPlay()
 {
-    Super::BeginPlay();
+	Super::BeginPlay();
 }
 
 void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedComponent,
@@ -79,6 +90,9 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
 	// 자기 자신 또는 다른 시전자 무시
 	if (OtherActor == this) return;
 	if (OtherActor == InstigatorActor.Get()) return;
+
+	//같은 종류 프로젝타일은 무시
+	if (Cast<ASMASkillProjectile>(OtherActor)) return;
 
 	// 플레이어 캐릭터는 통과
 	if (OtherActor->IsA<ASMPlayerCharacter>()) return;
@@ -115,4 +129,63 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
 void ASMASkillProjectile::OnMaxRangeReached()
 {
 	Destroy();
+}
+
+void ASMASkillProjectile::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ASMASkillProjectile, HomingTarget);
+}
+
+void ASMASkillProjectile::OnRep_HomingTarget()
+{
+	if (!HomingTarget || !ProjectileMovement) return;
+
+	ProjectileMovement->bIsHomingProjectile = true;
+	ProjectileMovement->HomingTargetComponent = HomingTarget->GetRootComponent();
+	ProjectileMovement->HomingAccelerationMagnitude = HomingAccelerationMagnitude;
+}
+
+void ASMASkillProjectile::FindAndSetHomingTarget()
+{
+	if (!ProjectileMovement) return;
+	
+	UE_LOG(LogTemp,Warning,TEXT("Start FindAndSetHomingTarget"));
+
+	FVector CurrentDir = ProjectileMovement->Velocity.GetSafeNormal();
+
+	//반경 내 액터만 수집
+	TArray<AActor*> OverlappedActors;
+	UKismetSystemLibrary::SphereOverlapActors(
+		this,
+		GetActorLocation(),
+		HomingSearchRadius,
+		{UEngineTypes::ConvertToObjectType(ECC_Pawn)},
+		ASMMonsterBase::StaticClass(),
+		{this},
+		OverlappedActors);
+
+	ASMMonsterBase* BestTarget = nullptr;
+	float BestDot = -1.f;
+
+	for (AActor* Actor : OverlappedActors)
+	{
+		if (!IsValid(Actor)) continue;
+		FVector ToTarget = (Actor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+		float Dot = FVector::DotProduct(CurrentDir, ToTarget);
+		if (Dot > BestDot)
+		{
+			BestDot = Dot;
+			BestTarget = Cast<ASMMonsterBase>(Actor);
+		}
+	}
+
+	if (BestTarget)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("BestTarget: %s"), *BestTarget->GetName());
+		HomingTarget = BestTarget; //클라이언트 복제용
+		ProjectileMovement->bIsHomingProjectile = true;
+		ProjectileMovement->HomingTargetComponent = BestTarget->GetRootComponent();
+		ProjectileMovement->HomingAccelerationMagnitude = HomingAccelerationMagnitude;
+	}
 }

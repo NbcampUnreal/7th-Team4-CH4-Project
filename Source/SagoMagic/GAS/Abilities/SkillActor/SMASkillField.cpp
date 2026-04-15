@@ -14,6 +14,7 @@ ASMASkillField::ASMASkillField()
 	CollisionComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Collision"));
 	CollisionComponent->InitBoxExtent(FieldBoxExtent);
 	CollisionComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &ASMASkillField::OnFieldBeginOverlap);
 	CollisionComponent->OnComponentEndOverlap.AddDynamic(this, &ASMASkillField::OnFieldEndOverlap);
 	SetRootComponent(CollisionComponent);

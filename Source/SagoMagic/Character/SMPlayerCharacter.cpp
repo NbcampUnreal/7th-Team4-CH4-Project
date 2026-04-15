@@ -62,7 +62,7 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 	// 모든 채널 무시
 	InteractionScannerComp->SetCollisionResponseToChannels(ECR_Ignore);
 	// 인터렉션만 오버랩 허용
-	InteractionScannerComp->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
+	InteractionScannerComp->SetCollisionResponseToChannel(ECC_GameTraceChannel2, ECR_Overlap);
 	
 	BuildingModeComp = CreateDefaultSubobject<USMBuildingModeComponent>(TEXT("BuildingModeComponent"));
 }

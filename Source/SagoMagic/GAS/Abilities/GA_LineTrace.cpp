@@ -44,14 +44,16 @@ void UGA_LineTrace::OnSkillEffect(
 
 
 	// CashedSummary에서 Duration / TickInterval 읽기
-	const float SkillDuration =
-		CachedSummary.GetFinalDuration() > 0.0f ? CachedSummary.GetFinalDuration() : 3.0f;
+	const float SkillDuration = FieldDuration > 0.0f ? FieldDuration : 3.0f;
 
-	const float DamageInterval =
-		CachedSummary.GetFinalTickInterval() > 0.0f ? CachedSummary.GetFinalTickInterval() : 0.1f;
+	const float DamageInterval = TickInterval > 0.0f ? TickInterval : 0.1f;
 
 	if (Avatar->HasAuthority() == false)
 	{
+		// 클라: 큐 예측 + 종료 타이머
+		GetAbilitySystemComponentFromActorInfo()->AddGameplayCue(
+			SMSkillTag::GameplayCue_Skill_LineTrace_Beam, CueParameters);
+		
 		//클라이언트인 경우 타이머만 적용
 		World->GetTimerManager().SetTimer(
 			DurationEndHandle,
@@ -62,7 +64,12 @@ void UGA_LineTrace::OnSkillEffect(
 		);
 		return;
 	}
-	//반복 데미지 타이머 - 매 Tick마다 LineTrace발사
+	
+	// 서버: 큐 권한 추가 + 두 타이머
+	// 반복 데미지 타이머 - 매 Tick마다 LineTrace발사
+	GetAbilitySystemComponentFromActorInfo()->AddGameplayCue(
+			SMSkillTag::GameplayCue_Skill_LineTrace_Beam, CueParameters);
+	
 	World->GetTimerManager().SetTimer(
 		DamageTickHandle,
 		this,

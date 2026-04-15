@@ -1,7 +1,7 @@
 #include "SMASkillField.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
-#include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "Building/SMBaseCampActor.h"
 #include "Building/SMBaseBuilding.h"
@@ -12,8 +12,8 @@ ASMASkillField::ASMASkillField()
 	bReplicates = true;
 
 	// 범위 콜리전
-	CollisionComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Collision"));
-	CollisionComponent->InitBoxExtent(FieldBoxExtent);
+	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
+	CollisionComponent->InitSphereRadius(FieldRadius);
 	CollisionComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &ASMASkillField::OnFieldBeginOverlap);
@@ -38,7 +38,7 @@ void ASMASkillField::InitField(FGameplayEffectSpecHandle InSpecHandle,
 	
 	if (InRangeCm > 0.f && CollisionComponent)
 	{
-		CollisionComponent->SetBoxExtent(FVector(InRangeCm, InRangeCm, FieldBoxExtent.Z));
+		CollisionComponent->SetSphereRadius(InRangeCm);
 	}
 
 	// 장판 지속 시간 종료 타이머

@@ -251,7 +251,7 @@ void UGA_SkillBase::OnFireEventReceived(FGameplayEventData Payload)
 	// Notify시점에 마우스 좌표 획득 및 서버 전송
 	if (Avatar->IsLocallyControlled())
 	{
-		// Target데이터 보낼 때는 반드시 새로운 에측 창열기
+		// Target데이터 보낼 때는 반드시 새로운 클라이언트 예측 창열기
 		FScopedPredictionWindow ScopedPredictionWindow(ASC, true);
 		FVector MouseLocation;
 

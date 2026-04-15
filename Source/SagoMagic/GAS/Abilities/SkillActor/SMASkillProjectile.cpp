@@ -9,6 +9,7 @@
 #include "Character/SMPlayerCharacter.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
+#include "SMASkillField.h"
 
 ASMASkillProjectile::ASMASkillProjectile()
 {
@@ -81,6 +82,9 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
 
 	// 플레이어 캐릭터는 통과
 	if (OtherActor->IsA<ASMPlayerCharacter>()) return;
+
+	// 아군 장판 스킬은 통과
+	if (OtherActor->IsA<ASMASkillField>()) return;
 
     // 팀 태그 보유 액터 통과
     UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor);

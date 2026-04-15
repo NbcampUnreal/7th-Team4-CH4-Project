@@ -5,7 +5,7 @@
 #include "GameplayEffectTypes.h"
 #include "SMASkillField.generated.h"
 
-class UBoxComponent;
+class USphereComponent;
 class UAbilitySystemComponent;
 
 UCLASS()
@@ -24,11 +24,11 @@ protected:
 
 	/** 장판 범위 콜리전 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Field")
-	TObjectPtr<UBoxComponent> CollisionComponent;
+	TObjectPtr<USphereComponent> CollisionComponent;
 
-	/** 장판 박스 범위 - BP에서 조정 가능 */
+	/** 장판 구체 반경 - BP에서 조정 가능 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field")
-	FVector FieldBoxExtent = FVector(500.f, 500.f, 100.f);
+	float FieldRadius = 500.f;
 
 	/** 스폰 직후 즉시 데미지 방지용 딜레이 - BP에서 조정 가능 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field")

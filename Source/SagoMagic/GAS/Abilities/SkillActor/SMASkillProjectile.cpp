@@ -1,14 +1,15 @@
 #include "SMASkillProjectile.h"
-
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
 #include "Character/SMPlayerCharacter.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
+#include "SMASkillField.h"
+#include "Building/SMBaseCampActor.h"
+#include "Building/SMBaseBuilding.h"
 
 ASMASkillProjectile::ASMASkillProjectile()
 {
@@ -82,13 +83,21 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
 	// 플레이어 캐릭터는 통과
 	if (OtherActor->IsA<ASMPlayerCharacter>()) return;
 
+	// 아군 오브젝트는 통과 장판, 베이스캠프, 건축물
+	if (OtherActor->IsA<ASMASkillField>()) return;
+	if (OtherActor->IsA<ASMBaseCampActor>()) return;
+	if (OtherActor->IsA<ASMBaseBuilding>()) return;
+
     // 팀 태그 보유 액터 통과
     UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor);
     if (TargetASC && TargetASC->HasMatchingGameplayTag(SMGameFlowTag::Team)) return;
 
+	// ASC 없는 액터 무시하고 통과
+	if (!TargetASC || !DamageSpecHandle.IsValid()) return;
+
 	UE_LOG(LogTemp, Warning, TEXT("[Projectile] Hit: %s"), *OtherActor->GetName());
 
-	// 히트 GameplayCue 발동 GCN_ProjectileHit에서 이펙트 처리
+	// 히트 GameplayCue 발동 - 실제 피격 대상에만 실행
 	UAbilitySystemComponent* InstigatorASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(
 		InstigatorActor.Get());
 	if (InstigatorASC)
@@ -99,12 +108,7 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
 		InstigatorASC->ExecuteGameplayCue(SMSkillTag::GameplayCue_Skill_Projectile_Hit, CueParams);
 	}
 
-	// GA에서 미리 만든 Spec을 TargetASC에 직접 적용
-	if (TargetASC && DamageSpecHandle.IsValid())
-	{
-		TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data.Get());
-	}
-
+	TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data.Get());
 	Destroy();
 }
 

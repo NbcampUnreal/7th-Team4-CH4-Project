@@ -1,9 +1,10 @@
 #include "SMASkillField.h"
-
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
-#include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
+#include "Building/SMBaseCampActor.h"
+#include "Building/SMBaseBuilding.h"
 
 ASMASkillField::ASMASkillField()
 {
@@ -11,9 +12,10 @@ ASMASkillField::ASMASkillField()
 	bReplicates = true;
 
 	// 범위 콜리전
-	CollisionComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Collision"));
-	CollisionComponent->InitBoxExtent(FieldBoxExtent);
+	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
+	CollisionComponent->InitSphereRadius(FieldRadius);
 	CollisionComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &ASMASkillField::OnFieldBeginOverlap);
 	CollisionComponent->OnComponentEndOverlap.AddDynamic(this, &ASMASkillField::OnFieldEndOverlap);
 	SetRootComponent(CollisionComponent);
@@ -36,7 +38,7 @@ void ASMASkillField::InitField(FGameplayEffectSpecHandle InSpecHandle,
 	
 	if (InRangeCm > 0.f && CollisionComponent)
 	{
-		CollisionComponent->SetBoxExtent(FVector(InRangeCm, InRangeCm, FieldBoxExtent.Z));
+		CollisionComponent->SetSphereRadius(InRangeCm);
 	}
 
 	// 장판 지속 시간 종료 타이머
@@ -93,6 +95,10 @@ void ASMASkillField::OnFieldBeginOverlap(UPrimitiveComponent* OverlappedComponen
 	if (!OtherActor) return;
 	// 시전자가 죽어도 장판은 계속 동작
 	if (InstigatorActor.IsValid() && OtherActor == InstigatorActor.Get()) return;
+
+	// 아군 구조물 통과 베이스캠프, 건축물
+	if (OtherActor->IsA<ASMBaseCampActor>()) return;
+	if (OtherActor->IsA<ASMBaseBuilding>()) return;
 
 	// 팀 태그 공격x
 	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor);

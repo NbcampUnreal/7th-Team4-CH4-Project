@@ -1,9 +1,10 @@
 #include "SMASkillField.h"
-
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "Components/BoxComponent.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
+#include "Building/SMBaseCampActor.h"
+#include "Building/SMBaseBuilding.h"
 
 ASMASkillField::ASMASkillField()
 {
@@ -94,6 +95,10 @@ void ASMASkillField::OnFieldBeginOverlap(UPrimitiveComponent* OverlappedComponen
 	if (!OtherActor) return;
 	// 시전자가 죽어도 장판은 계속 동작
 	if (InstigatorActor.IsValid() && OtherActor == InstigatorActor.Get()) return;
+
+	// 아군 구조물 통과 베이스캠프, 건축물
+	if (OtherActor->IsA<ASMBaseCampActor>()) return;
+	if (OtherActor->IsA<ASMBaseBuilding>()) return;
 
 	// 팀 태그 공격x
 	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor);

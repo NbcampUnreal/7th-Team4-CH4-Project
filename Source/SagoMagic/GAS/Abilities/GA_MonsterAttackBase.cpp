@@ -10,6 +10,7 @@
 #include "Enemy/SMMonsterAIController.h"
 #include "Building/SMBaseCampActor.h"
 #include "Building/SMBaseBuilding.h"
+#include "Gas/AttributeSets/SMBuildingAttributeSet.h"
 
 UGA_MonsterAttackBase::UGA_MonsterAttackBase()
 {    // 서버에서만 실행, 클라이언트는 복제로 받음
@@ -33,7 +34,7 @@ void UGA_MonsterAttackBase::ActivateAbility(
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
-    // 공격 시작 시 State.Attacking 태그 부착
+    // 공격 시작 시 Enemy.Attacking 태그 부착
     if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
     {
         ASC->AddLooseGameplayTags(AttackingTags);
@@ -106,6 +107,28 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
 
         if (TargetASC && SourceASC && DamageEffectClass)
         {
+            // ── Building 대상일 때만 HP 추적 ── //
+            const USMBuildingAttributeSet* BuildingAttr = nullptr;
+            float HealthBefore = -1.f;
+            bool bIsBuilding = Cast<ASMBaseBuilding>(HitResult.GetActor()) != nullptr;
+
+            if (bIsBuilding)
+            {
+                BuildingAttr = TargetASC->GetSet<USMBuildingAttributeSet>();
+                if (BuildingAttr)
+                {
+                    HealthBefore = BuildingAttr->GetHealth();
+                    UE_LOG(LogTemp, Warning, TEXT("[Attack] Building HP (적용 전): %.1f / %.1f"),
+                        BuildingAttr->GetHealth(), BuildingAttr->GetMaxHealth());
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("[Attack] Building에 USMBuildingAttributeSet 없음!"));
+                }
+            }
+            // ── Building 대상일 때만 HP 추적 ──//
+
+
             FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
             EffectContext.AddHitResult(HitResult);
 
@@ -122,6 +145,14 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
                 //SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
                 bool bApplied = SourceASC->ApplyGameplayEffectSpecToTarget(
                     *SpecHandle.Data.Get(), TargetASC).IsValid();
+
+                // ── Building일 때만 적용 후 HP 확인 ──//
+                if (bIsBuilding && BuildingAttr)
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("[Attack] Building HP (적용 후): %.1f (변화량: %.1f)"),
+                        BuildingAttr->GetHealth(), BuildingAttr->GetHealth() - HealthBefore);
+                }
+                // ── Building일 때만 적용 후 HP 확인 ──//
 
                 // 디버그 로그 추가
                 UE_LOG(LogTemp, Warning, TEXT("[Attack] GE Apply 결과: %s"),

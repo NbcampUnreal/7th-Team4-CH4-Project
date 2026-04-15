@@ -6,21 +6,32 @@
 #include "GAS/AttributeSets/SMBuildingAttributeSet.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "NavModifierComponent.h"
+#include "NavAreas/NavArea_Default.h"
+#include "NavAreas/NavArea_Obstacle.h" 
 
 
 ASMBaseBuilding::ASMBaseBuilding()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
-	
+
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	RootComponent = MeshComponent;
-	
+
+	// StaticMesh가 NavMesh를 차단하지 않도록 설정
+	MeshComponent->SetCanEverAffectNavigation(false);
+
+	// NavModifier로 통과 가능하되 비용이 높은 영역으로 설정
+	NavModifierComp = CreateDefaultSubobject<UNavModifierComponent>(TEXT("NavModifier"));
+	//NavModifierComp->SetupAttachment(RootComponent);
+	NavModifierComp->SetAreaClass(UNavArea_Default::StaticClass());
+
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("ASC"));
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(
 		EGameplayEffectReplicationMode::Minimal);
-	
+
 	AttributeSet = CreateDefaultSubobject<USMBuildingAttributeSet>(TEXT("AttributeSet"));
 }
 

@@ -5,6 +5,7 @@
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "Building/SMBaseCampActor.h"
 #include "Building/SMBaseBuilding.h"
+#include "GameplayTags/Character/SMSkillTag.h"
 
 ASMASkillField::ASMASkillField()
 {
@@ -40,6 +41,9 @@ void ASMASkillField::InitField(FGameplayEffectSpecHandle InSpecHandle,
 	{
 		CollisionComponent->SetSphereRadius(InRangeCm);
 	}
+	
+	OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(InInstigatorActor);
+	ActiveCueTag = SMSkillTag::GameplayCue_Skill_SpawnField_Tick;
 
 	// 장판 지속 시간 종료 타이머
 	if (UWorld* World = GetWorld())
@@ -146,7 +150,7 @@ void ASMASkillField::OnDurationExpired()
 	{
 		CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
-
+	
 	// 범위 내 액터들의 GE 전부 제거
 	for (auto& Pair : ActiveEffectHandles)
 	{
@@ -158,6 +162,11 @@ void ASMASkillField::OnDurationExpired()
 		}
 	}
 	ActiveEffectHandles.Empty();
+	
+	if (IsValid(OwnerASC))
+	{
+		OwnerASC->RemoveGameplayCue(ActiveCueTag);
+	}
 
 	Destroy();
 }

@@ -64,4 +64,9 @@ private:
 
 	//지속시간
 	float Duration = 5.f;
+	
+	UPROPERTY()
+	TObjectPtr<UAbilitySystemComponent> OwnerASC;
+	
+	FGameplayTag ActiveCueTag;
 };

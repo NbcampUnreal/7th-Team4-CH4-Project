@@ -9,6 +9,7 @@
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Enemy/SMMonsterAIController.h"
 #include "Building/SMBaseCampActor.h"
+#include "Building/SMBaseBuilding.h"
 
 UGA_MonsterAttackBase::UGA_MonsterAttackBase()
 {    // 서버에서만 실행, 클라이언트는 복제로 받음
@@ -96,10 +97,12 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
         {
             TargetASC = ASCInterface->GetAbilitySystemComponent();
         }
-        // 디버그 로그 추가
-        //UE_LOG(LogTemp, Warning, TEXT("[Attack] TargetASC: %s, DamageEffectClass: %s"),
-        //    TargetASC ? TEXT("Valid") : TEXT("NULL"),
-        //    DamageEffectClass ? TEXT("Valid") : TEXT("NULL"));
+
+        // ★ BaseCamp HP 확인 로그
+        UE_LOG(LogTemp, Warning, TEXT("[Attack] Target: %s, TargetASC: %s, DamageEffectClass: %s"),
+            *HitResult.GetActor()->GetName(),
+            TargetASC ? TEXT("Valid") : TEXT("NULL"),
+            DamageEffectClass ? TEXT("Valid") : TEXT("NULL"));
 
         if (TargetASC && SourceASC && DamageEffectClass)
         {
@@ -116,11 +119,11 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
                 SpecHandle.Data.Get()->SetSetByCallerMagnitude(
                     FGameplayTag::RequestGameplayTag("Data.Damage.Amount"), -DamageAmount);
 
-                SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
-                // ★ 디버그 로그 추가
+                //SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
                 bool bApplied = SourceASC->ApplyGameplayEffectSpecToTarget(
                     *SpecHandle.Data.Get(), TargetASC).IsValid();
 
+                // 디버그 로그 추가
                 UE_LOG(LogTemp, Warning, TEXT("[Attack] GE Apply 결과: %s"),
                     bApplied ? TEXT("SUCCESS") : TEXT("FAILED"));
 
@@ -199,8 +202,11 @@ bool UGA_MonsterAttackBase::PerformHitCheck(FHitResult& OutHitResult) const
         switch (TargetType)
         {
         case EMonsterAttackTargetType::Building:
-            // TODO: 구조물 클래스 완성 후 Cast 대상 교체
-            // if (Cast<ASMStructureBase>(HitActor)) { OutHitResult = Hit; return true; }
+            if (Cast<ASMBaseBuilding>(HitActor))
+            {
+                OutHitResult = Hit;
+                return true;
+            }
             break;
 
         case EMonsterAttackTargetType::Player:

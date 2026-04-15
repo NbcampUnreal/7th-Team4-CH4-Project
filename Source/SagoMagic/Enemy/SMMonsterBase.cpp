@@ -34,6 +34,7 @@ ASMMonsterBase::ASMMonsterBase()
     // 몬스터는 보통 서버에서만 판정하므로 Minimal 모드로 설정하여 네트워크 대역폭 절약
     MonsterAbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
+
     // AttributeSet 생성
     MonsterAttributeSet = CreateDefaultSubobject<USMMonsterAttributeSet>(TEXT("AttributeSet"));
 
@@ -281,8 +282,14 @@ void ASMMonsterBase::SpawnDropItem()
     SpawnParams.SpawnCollisionHandlingOverride =
         ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
+    UClass* ActorClassToSpawn = DropActorClass.Get();
+    if (ActorClassToSpawn == nullptr)
+    {
+        ActorClassToSpawn = ASMBaseItemDropActor::StaticClass();
+    }
+
     ASMBaseItemDropActor* DroppedActor = GetWorld()->SpawnActor<ASMBaseItemDropActor>(
-        ASMBaseItemDropActor::StaticClass(), SpawnLocation, SpawnRotation, SpawnParams);
+        ActorClassToSpawn, SpawnLocation, SpawnRotation, SpawnParams);
 
     if (DroppedActor)
     {

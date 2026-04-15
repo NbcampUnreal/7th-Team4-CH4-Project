@@ -33,7 +33,7 @@ void UAN_SendEvent::Notify(
 
 	if (!EventTag.IsValid())
 	{
-		SM_LOG(this, LogSM, Error, TEXT("EventTag가 없습니다."))
+		SM_LOG(this, LogSM, Error, TEXT("EventTag가 없습니다."));
 		return;
 	}
 	

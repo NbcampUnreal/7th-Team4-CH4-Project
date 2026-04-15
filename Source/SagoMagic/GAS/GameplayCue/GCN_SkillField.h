@@ -30,7 +30,7 @@ protected:
 
 	/** Niagara Scale_All = 1.0 일 때의 이펙트 반경 */
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
-	float NiagaraBaseRadiusCm = 380.f;
+	float NiagaraBaseRadiusCm = 275.f;
 
 private:
 	UPROPERTY()

@@ -33,7 +33,7 @@ void UGA_MonsterAttackBase::ActivateAbility(
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
-    // 공격 시작 시 State.Attacking 태그 부착
+    // 공격 시작 시 Enemy.Attacking 태그 부착
     if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
     {
         ASC->AddLooseGameplayTags(AttackingTags);

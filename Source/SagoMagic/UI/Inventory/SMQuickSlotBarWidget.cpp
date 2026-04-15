@@ -48,6 +48,19 @@ void USMQuickSlotBarWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
+void USMQuickSlotBarWidget::NativeTick(const FGeometry& InGeometry, float InDeltaTime)
+{
+	Super::NativeTick(InGeometry, InDeltaTime);
+
+	if (bPendingPreviewRebuild == false)
+	{
+		return;
+	}
+
+	ForceLayoutPrepass();
+	RebuildSlotPreviewVisuals();
+}
+
 FReply USMQuickSlotBarWidget::NativeOnPreviewMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	if (InventoryComponent == nullptr)
@@ -469,8 +482,11 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 
 	if (InventoryComponent == nullptr)
 	{
+		bPendingPreviewRebuild = false;
 		return;
 	}
+
+	bool bNeedsDeferredRebuild = false;
 
 	for (const FSMQuickSlotEntry& SlotEntry : Slots)
 	{
@@ -579,12 +595,9 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 
 		const int32 PreviewWidth = FMath::Max(1, MaxX - MinX + 1);
 		const int32 PreviewHeight = FMath::Max(1, MaxY - MinY + 1);
-		FVector2D EffectivePreviewAreaSize = PreviewAreaSize;
-		if (const FVector2D BoundsSize = TargetPreviewBoundsWidget->GetCachedGeometry().GetLocalSize();
-			BoundsSize.X > 0.0f && BoundsSize.Y > 0.0f)
-		{
-			EffectivePreviewAreaSize = BoundsSize;
-		}
+		bool bHasCachedGeometry = false;
+		const FVector2D EffectivePreviewAreaSize = ResolvePreviewAreaSize(TargetPreviewBoundsWidget, bHasCachedGeometry);
+		bNeedsDeferredRebuild |= (bHasCachedGeometry == false);
 
 		const float PreviewCellSpacing = PreviewCellPadding * 2.0f;
 		const float PreviewOuterPadding = PreviewCellPadding * 2.0f;
@@ -645,6 +658,35 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 			}
 		}
 	}
+
+	bPendingPreviewRebuild = bNeedsDeferredRebuild;
+}
+
+FVector2D USMQuickSlotBarWidget::ResolvePreviewAreaSize(
+	const UWidget* InPreviewBoundsWidget,
+	bool& bOutHasCachedGeometry) const
+{
+	bOutHasCachedGeometry = false;
+
+	if (InPreviewBoundsWidget == nullptr)
+	{
+		return PreviewAreaSize;
+	}
+
+	const FVector2D CachedSize = InPreviewBoundsWidget->GetCachedGeometry().GetLocalSize();
+	if (CachedSize.X > 0.0f && CachedSize.Y > 0.0f)
+	{
+		bOutHasCachedGeometry = true;
+		return CachedSize;
+	}
+
+	const FVector2D DesiredSize = InPreviewBoundsWidget->GetDesiredSize();
+	if (DesiredSize.X > 0.0f && DesiredSize.Y > 0.0f)
+	{
+		return DesiredSize;
+	}
+
+	return PreviewAreaSize;
 }
 
 bool USMQuickSlotBarWidget::FindSlotIndexAtScreenPosition(const FVector2D& InScreenPosition, int32& OutSlotIndex) const

@@ -44,6 +44,8 @@ public:
 	/** NativeDestruct 오버라이드 */
 	virtual void NativeDestruct() override;
 
+	virtual void NativeTick(const FGeometry& InGeometry, float InDeltaTime) override;
+
 	virtual FReply NativeOnPreviewMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
@@ -113,6 +115,9 @@ protected:
 
 	/** 퀵슬롯 슬롯 프리뷰 재구성 */
 	void RebuildSlotPreviewVisuals();
+
+	/** 프리뷰 영역 크기 해석 */
+	FVector2D ResolvePreviewAreaSize(const UWidget* InPreviewBoundsWidget, bool& bOutHasCachedGeometry) const;
 
 	/** 화면 좌표 기준 슬롯 인덱스 계산 */
 	bool FindSlotIndexAtScreenPosition(const FVector2D& InScreenPosition, int32& OutSlotIndex) const;
@@ -209,4 +214,5 @@ protected:
 private:
 	FGameplayMessageListenerHandle QuickSlotUpdatedListenerHandle;
 	int32 PendingDragSlotIndex = INDEX_NONE;
+	bool bPendingPreviewRebuild = false;
 };

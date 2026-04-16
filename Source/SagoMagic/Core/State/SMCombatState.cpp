@@ -1,4 +1,4 @@
-﻿#include "SMCombatState.h"
+#include "SMCombatState.h"
 
 #include "SagoMagic.h"
 #include "Building/SMBaseCampActor.h"
@@ -15,6 +15,7 @@ void USMCombatState::Enter()
 {
     Super::Enter();
     Elapsed = 0.f;
+    bTimeExpiredHandled = false;
 
     int32 WaveIndex = StateMachine->GetCurrentWaveIndex();
     UE_LOG(LogTemp, Log, TEXT("[CombatState] Enter - WaveIndex : %d"),WaveIndex);
@@ -102,10 +103,19 @@ void USMCombatState::Tick(float DeltaTime)
         }
     }
     
-    if (Elapsed >= Duration)
+    if (Elapsed >= Duration && !bTimeExpiredHandled)
     {
+        // 중복 실행 방지 (매 Tick마다 호출되면 안 됨)
+        bTimeExpiredHandled = true;
+        // 시간 종료 알림
+        BroadcastNotification(FText::FromString(TEXT("시간 초과! 몬스터가 자폭합니다!")), 2.0f);
+
         UE_LOG(LogTemp, Warning, TEXT("[CombatState] 제한 시간 초과 (%.1f) -> 패배"),Duration);
-        ChangeState(EGameState::Result);
+        if (CachedWaveManager)
+        {
+            CachedWaveManager->SelfKillAllAliveMonsters();
+            //ChangeState(EGameState::Result);
+        }
     }
     //TODO 은서 : 몬스터가 다 죽었을 때도 체크
     //TODO 은서 : 베이스 캠프 HP 0일때 체크

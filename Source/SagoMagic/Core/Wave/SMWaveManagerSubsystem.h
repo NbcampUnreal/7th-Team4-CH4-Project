@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "SMMonsterSpawner.h"
@@ -41,7 +41,9 @@ public:
     
     /** 서버 + 모든 클라이언트 로드 완료 혹인 */
     void CheckAllReady();
-    
+
+    /** Wave 종료 시 남아있는 모든 몬스터를 자폭시킴 (BaseCamp 데미지 + 제거) */
+    void SelfKillAllAliveMonsters();
 private:
     /** SetTimer로 PreLoading을 담당하는 함수 */
     void TickPreSpawning();

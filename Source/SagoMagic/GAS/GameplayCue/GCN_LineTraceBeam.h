@@ -48,4 +48,7 @@ private:
 	void UpdateBeam();
 
 	bool HasAnyTeamTag(AActor* Actor) const;
+	
+private:
+	bool bPenetrate = false;
 };

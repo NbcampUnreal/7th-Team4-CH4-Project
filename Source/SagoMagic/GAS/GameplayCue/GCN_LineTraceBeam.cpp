@@ -63,6 +63,7 @@ void AGCN_LineTraceBeam::InitializeBeam(AActor* MyTarget, const FGameplayCuePara
 
 	TargetActor = MyTarget;
 	BeamRange = Parameters.RawMagnitude; //GA_LineTrace에서 RangeCm으로 전달한 값
+	bPenetrate = Parameters.NormalizedMagnitude >= 1.f;
 
 	if (IsValid(BeamNiagaraSystem) == false) return;
 	BeamNiagaraComponent->SetAsset(BeamNiagaraSystem);
@@ -86,19 +87,19 @@ void AGCN_LineTraceBeam::UpdateBeam()
 
 	ACharacter* Character = Cast<ACharacter>(TargetActor.Get());
 	if (IsValid(Character) == false) return;
-	
+
 	const FVector Origin = Character->GetActorLocation();
 	FVector AimDirection = Character->GetBaseAimRotation().Vector();
-	
+
 	AController* Controller = Character->GetController();
 	if (IsValid(Controller) == true)
 	{
 		//스킬 사용플레이어인 경우 Controller 방향으로
 		AimDirection = Controller->GetControlRotation().Vector();
 	}
-	
+
 	const FVector TraceEnd = Origin + AimDirection * BeamRange;
-	
+
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(TargetActor.Get());
 
@@ -107,15 +108,18 @@ void AGCN_LineTraceBeam::UpdateBeam()
 	GetWorld()->LineTraceMultiByChannel(HitResults, Origin, TraceEnd, ECC_Pawn, Params);
 
 	FVector BeamEndPoint = TraceEnd;
-	for (const FHitResult& Hit : HitResults)
+	if (bPenetrate == false)
 	{
-		AActor* HitActor = Hit.GetActor();
-		if (IsValid(HitActor) == false) continue;
+		for (const FHitResult& Hit : HitResults)
+		{
+			AActor* HitActor = Hit.GetActor();
+			if (IsValid(HitActor) == false) continue;
 
-		if (HasAnyTeamTag(HitActor) == true) continue;
+			if (HasAnyTeamTag(HitActor) == true) continue;
 
-		BeamEndPoint = Hit.ImpactPoint;
-		break;
+			BeamEndPoint = Hit.ImpactPoint;
+			break;
+		}
 	}
 	//Niagara USER파라미터 "BeamEnd" 갱신
 	BeamNiagaraComponent->SetVariableVec3(TEXT("BeamEnd"), BeamEndPoint);

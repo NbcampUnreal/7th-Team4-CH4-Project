@@ -35,7 +35,8 @@ void UGA_SkillField::OnSkillEffect(
 	ASMASkillField* Field = World->SpawnActor<ASMASkillField>(
 		FieldClass, TargetLocation, FRotator::ZeroRotator, Params);
 
-	
-
-	Field->InitField(SpecHandle, Avatar, FieldDuration, RangeCm);
+	if (IsValid(Field))
+	{
+		Field->InitField(SpecHandle, Avatar, FieldDuration, RangeCm);
+	}
 }

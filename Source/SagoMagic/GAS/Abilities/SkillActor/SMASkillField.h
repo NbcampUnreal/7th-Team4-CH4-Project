@@ -18,7 +18,7 @@ public:
 	ASMASkillField();
 
 	void InitField(FGameplayEffectSpecHandle InSpecHandle, AActor* InInstigatorActor,
-		float InDuration, float InRangeCm, bool bEnablePull = false, bool bEnableChase = false);
+		float InDuration, float InRangeCm, bool bEnablePull = false, bool bEnableSlow = false);
 	
 public:
 	float GetFieldDuration() const { return Duration; }

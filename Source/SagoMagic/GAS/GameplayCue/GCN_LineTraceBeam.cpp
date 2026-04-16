@@ -67,14 +67,12 @@ void AGCN_LineTraceBeam::InitializeBeam(AActor* MyTarget, const FGameplayCuePara
 
 	if (IsValid(BeamNiagaraSystem) == false) return;
 	BeamNiagaraComponent->SetAsset(BeamNiagaraSystem);
-
-	//TODO: 스태프 무기 추가시 변경필요
+	
 	ACharacter* Character = Cast<ACharacter>(MyTarget);
 	if (IsValid(Character) == false || IsValid(Character->GetMesh()) == false) return;
 	BeamNiagaraComponent->AttachToComponent(
 		Character->GetMesh(),
-		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-		AttachSocketName
+		FAttachmentTransformRules::SnapToTargetNotIncludingScale
 	);
 
 	BeamNiagaraComponent->Activate(true);
@@ -88,7 +86,10 @@ void AGCN_LineTraceBeam::UpdateBeam()
 	ACharacter* Character = Cast<ACharacter>(TargetActor.Get());
 	if (IsValid(Character) == false) return;
 
-	const FVector Origin = Character->GetActorLocation();
+	//Staff_Tip소켓 위치를 LineTrace시작점으로 사용
+	FVector Origin = GetAttachSocketLocation(Character);
+	BeamNiagaraComponent->SetWorldLocation(Origin);
+	
 	FVector AimDirection = Character->GetBaseAimRotation().Vector();
 
 	AController* Controller = Character->GetController();
@@ -133,4 +134,24 @@ bool AGCN_LineTraceBeam::HasAnyTeamTag(AActor* Actor) const
 	if (IsValid(ASC) == false) return false;
 
 	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Team);
+}
+
+FVector AGCN_LineTraceBeam::GetAttachSocketLocation(ACharacter* Character) const
+{
+	// WeaponSocket에 붙은 StaticMesh에서 탐색
+	TArray<UStaticMeshComponent*> Comps;
+	Character->GetComponents<UStaticMeshComponent>(Comps);
+	for (UStaticMeshComponent* Comp : Comps)
+	{
+		if (IsValid(Comp) == false) continue;
+		if (Comp->GetAttachSocketName() != FName("WeaponSocket")) continue;
+		if (Comp->DoesSocketExist(AttachSocketName))
+		{
+			return Comp->GetSocketLocation(AttachSocketName);
+		}
+		break;
+	}
+
+	// 못 찾으면 캐릭터 루트 위치 반환
+	return Character->GetActorLocation();
 }

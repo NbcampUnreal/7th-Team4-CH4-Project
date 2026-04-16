@@ -66,9 +66,11 @@ void AGCN_LineTraceChain::InitializeChain(AActor* MyTarget, const FGameplayCuePa
 	ChainSearchRadius = BeamRange * ChainSearchRadiusMultiplier;
 	MaxChainCount = FMath::Max(1, FMath::RoundToInt(Parameters.NormalizedMagnitude));
 
-	if (IsValid(ChainBeamNiagaraSystem) == false) return;
-	
-
+	if (IsValid(ChainBeamNiagaraSystem) == false)
+	{
+		UE_LOG(LogTemp,Warning,TEXT("ChainBeamNiagaraSystem is Not valid"))
+		return;
+	}
 	// MaxChainCount개의 컴포넌트 생성 (구간 수 = 체인 횟수)
 	// 예) MaxChainCount=3 → [시전자→적1], [적1→적2], [적2→적3]
 	for (int32 i = 0; i < MaxChainCount; ++i)
@@ -93,7 +95,8 @@ void AGCN_LineTraceChain::UpdateChain()
 	if (Character == nullptr) return;
 	
 	//시전자 소켓 위치 및 조준 방향
-	FVector Origin = Character->GetActorLocation();
+	FVector Origin = GetAttachSocketLocation(Character);
+	
 	FVector AimDirection = Character->GetBaseAimRotation().Vector();
 	
 	AController* Controller = Character->GetController();
@@ -220,6 +223,26 @@ bool AGCN_LineTraceChain::HasAnyTeamTag(AActor* Actor) const
 	if (IsValid(ASC) == false) return false;
 
 	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Team);
+}
+
+FVector AGCN_LineTraceChain::GetAttachSocketLocation(ACharacter* Character) const
+{
+	//  WeaponSocket에 붙은 StaticMesh에서 탐색
+	TArray<UStaticMeshComponent*> Comps;
+	Character->GetComponents<UStaticMeshComponent>(Comps);
+	for (UStaticMeshComponent* Comp : Comps)
+	{
+		if (IsValid(Comp) == false) continue;
+		if (Comp->GetAttachSocketName() != FName("WeaponSocket")) continue;
+		if (Comp->DoesSocketExist(AttachSocketName))
+		{
+			return Comp->GetSocketLocation(AttachSocketName);
+		}
+		break;
+	}
+
+	// 못 찾으면 캐릭터 루트 위치 반환
+	return Character->GetActorLocation();
 }
 
 

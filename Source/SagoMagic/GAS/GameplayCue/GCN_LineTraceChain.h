@@ -31,7 +31,7 @@ protected:
 
 	/** 시전자 빔 시작 소켓 (0번 구간 시작점) */
 	UPROPERTY(EditDefaultsOnly, Category = "Chain")
-	FName AttachSocketName = TEXT("pelvis");
+	FName AttachSocketName = TEXT("Staff_Tip");
 
 	/** 체인 탐색 반경 배수 */
 	UPROPERTY(EditDefaultsOnly, Category = "Chain")
@@ -59,4 +59,6 @@ private:
 						  AActor*& OutEnemy) const;
 
 	bool HasAnyTeamTag(AActor* Actor) const;
+	
+	FVector GetAttachSocketLocation(ACharacter* Character) const;
 };

@@ -28,40 +28,42 @@ void ASMASkillField::BeginPlay()
 }
 
 
-void ASMASkillField::InitField(FGameplayEffectSpecHandle InSpecHandle,
-                               AActor* InInstigatorActor,
-                               float InDuration,
-                               float InRangeCm)
+void ASMASkillField::InitField(
+	FGameplayEffectSpecHandle InSpecHandle,
+	AActor* InInstigatorActor,
+	float InDuration,
+	float InRangeCm)
 {
 	DamageSpecHandle = InSpecHandle;
 	InstigatorActor = InInstigatorActor;
 	Duration = InDuration;
-	
+
 	if (InRangeCm > 0.f && CollisionComponent)
 	{
 		CollisionComponent->SetSphereRadius(InRangeCm);
 	}
-	
+
 	OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(InInstigatorActor);
 	ActiveCueTag = SMSkillTag::GameplayCue_Skill_SpawnField_Tick;
+
+	
 	
 	// 서버에서 Cue - GA의 예측키 스코프 밖이므로 모든 클라에 복제
 	// 서버가 Owner 클라에 대한 전송을 스킵하는 경우가 있음
 	// 명시적으로 예측키를 지움으로 local에 항상 복제
 	// RemoveGameplayCue는 OnDurationExpired에서 처리
-	if (HasAuthority() && IsValid(OwnerASC))
+	if (HasAuthority() && IsValid(OwnerASC) && CueEffectClass)
 	{
-		FPredictionKey Saved = OwnerASC->ScopedPredictionKey;
-		// 잔존 키 버리기
-		OwnerASC->ScopedPredictionKey = FPredictionKey();
+		FGameplayEffectContextHandle Context = OwnerASC->MakeEffectContext();
+		Context.AddOrigin(GetActorLocation());
+		Context.AddInstigator(this, this);
 		
-		FGameplayCueParameters CueParams;
-		CueParams.Location = GetActorLocation();
-		CueParams.RawMagnitude = Duration;
-		CueParams.NormalizedMagnitude = InRangeCm;
-		OwnerASC->AddGameplayCue(ActiveCueTag, CueParams);
+		FGameplayEffectSpecHandle Spec = OwnerASC->MakeOutgoingSpec(CueEffectClass, 1.0f, Context);
 		
-		OwnerASC->ScopedPredictionKey = Saved;
+		if (Spec.IsValid())
+		{
+			CueEffectHandle = OwnerASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+		}
 	}
 
 	// 장판 지속 시간 종료 타이머
@@ -169,7 +171,7 @@ void ASMASkillField::OnDurationExpired()
 	{
 		CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
-	
+
 	// 범위 내 액터들의 GE 전부 제거
 	for (auto& Pair : ActiveEffectHandles)
 	{
@@ -181,10 +183,10 @@ void ASMASkillField::OnDurationExpired()
 		}
 	}
 	ActiveEffectHandles.Empty();
-	
+
 	if (IsValid(OwnerASC))
 	{
-		OwnerASC->RemoveGameplayCue(ActiveCueTag);
+		OwnerASC->RemoveActiveGameplayEffect(CueEffectHandle);
 	}
 
 	Destroy();

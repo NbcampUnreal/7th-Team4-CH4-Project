@@ -7,6 +7,7 @@
 
 class USphereComponent;
 class UAbilitySystemComponent;
+class UGameplayEffect;
 
 UCLASS()
 class SAGOMAGIC_API ASMASkillField : public AActor
@@ -18,6 +19,10 @@ public:
 
 	void InitField(FGameplayEffectSpecHandle InSpecHandle, AActor* InInstigatorActor,
 		float InDuration, float InRangeCm);
+	
+public:
+	float GetFieldDuration() const { return Duration; }
+	float GetFieldRangeCm() const { return FieldRadius; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -61,7 +66,12 @@ private:
 
 	// 딜레이 후 스폰 시점 오버랩 액터 처리
 	void CheckInitialOverlaps();
-
+	
+	UPROPERTY(EditDefaultsOnly, Category = "FieldEffects")
+	TSubclassOf<UGameplayEffect> CueEffectClass;
+	
+	FActiveGameplayEffectHandle CueEffectHandle;
+	
 	//지속시간
 	float Duration = 5.f;
 	

@@ -1,5 +1,6 @@
 #include "GAS/GameplayCue/GCN_SkillField.h"
 #include "NiagaraComponent.h"
+#include "GAS/Abilities/SkillActor/SMASkillField.h"
 
 
 AGCN_SkillField::AGCN_SkillField()
@@ -19,27 +20,31 @@ bool AGCN_SkillField::OnActive_Implementation(AActor* MyTarget, const FGameplayC
 
 	if (!FieldNiagaraSystem) return false;
 
+	ASMASkillField* SourceField = Cast<ASMASkillField>(Parameters.EffectContext.GetEffectCauser());
+	const float Lifetime = SourceField ? SourceField->GetFieldDuration() : 5.0f;
+	const float RangCm = SourceField ? SourceField->GetFieldRangeCm() : 0.f;
+	
 	// 장판 스폰 위치로 이동
-	const FVector FieldLocation = Parameters.Location.IsNearlyZero()
+	const FVector Origin = Parameters.EffectContext.GetOrigin();
+	const FVector FieldLocation = Origin.IsNearlyZero()
 		? (MyTarget ? MyTarget->GetActorLocation() : FVector::ZeroVector)
-		: Parameters.Location;
-
+		: Origin;
 	SetActorLocation(FieldLocation);
+	
+	
 
 	FieldNiagaraComponent->SetAsset(FieldNiagaraSystem);
 
 	// 스킬 범위에 맞게 이펙트 스케일 조정
 	// NormalizedMagnitude = RangeCm, NiagaraBaseRadiusCm = Scale_All 1.0일 때의 기본 반경
-	if (Parameters.NormalizedMagnitude > 0.f && NiagaraBaseRadiusCm > 0.f)
+	if (RangCm > 0.f && NiagaraBaseRadiusCm > 0.f)
 	{
-		const float ScaleValue = Parameters.NormalizedMagnitude / NiagaraBaseRadiusCm;
-		FieldNiagaraComponent->SetVariableFloat(FName("User.Scale_All"), ScaleValue);
+		FieldNiagaraComponent->SetVariableFloat(FName("User.Scale_All"), RangCm / NiagaraBaseRadiusCm);
 	}
 
 	FieldNiagaraComponent->Activate(true);
 
 	// 지속시간 후 파티클 신규 스폰 중단 → 기존 파티클은 자연 소멸
-	const float Lifetime = Parameters.RawMagnitude > 0.f ? Parameters.RawMagnitude : 5.f;
 	GetWorldTimerManager().SetTimer(
 		FadeoutTimerHandle,
 		this,
@@ -51,6 +56,11 @@ bool AGCN_SkillField::OnActive_Implementation(AActor* MyTarget, const FGameplayC
 	SetLifeSpan(Lifetime + FadeoutDuration);
 
 	return true;
+}
+
+bool AGCN_SkillField::WhileActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)
+{
+	return OnActive_Implementation(MyTarget, Parameters);
 }
 
 bool AGCN_SkillField::OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters)

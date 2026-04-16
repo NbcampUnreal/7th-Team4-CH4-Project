@@ -31,7 +31,7 @@ ASMBaseBuilding::ASMBaseBuilding()
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(
 		EGameplayEffectReplicationMode::Minimal);
-
+	SetReplicatingMovement(true);	
 	AttributeSet = CreateDefaultSubobject<USMBuildingAttributeSet>(TEXT("AttributeSet"));
 }
 

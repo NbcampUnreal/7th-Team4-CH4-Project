@@ -9,7 +9,6 @@
 #include "Building/SMBuildPlaceTargetData.h"
 #include "Building/SMFenceBuilding.h"
 #include "Core/SMPlayerState.h"
-#include "Core/DataManager/SMSyncDataManager.h"
 #include "GameFramework/PlayerState.h"
 #include "GameplayTags/Character/SMCharacterTag.h"
 #include "Kismet/GameplayStatics.h"
@@ -19,6 +18,7 @@ USMBuildingModeComponent::USMBuildingModeComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 	BuildPlaceEventTag = SMCharacterTag::Ability_Build_Place;
+	SetIsReplicatedByDefault(true);
 }
 
 void USMBuildingModeComponent::EnableBuildMode()
@@ -90,16 +90,10 @@ void USMBuildingModeComponent::SetupInputBindings()
 	if (bInputBound) return;
 	
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
-	if (!OwnerPawn || !OwnerPawn->InputComponent)
-	{
-		return;
-	}
+	if (!OwnerPawn || !OwnerPawn->InputComponent) return;
 	
 	UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(OwnerPawn->InputComponent);
-	if (!Input)
-	{
-		return;
-	}
+	if (!Input) return;
 
 	LoadBuildingDataTable();
 	

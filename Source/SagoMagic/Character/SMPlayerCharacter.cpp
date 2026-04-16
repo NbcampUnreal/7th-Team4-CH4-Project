@@ -12,6 +12,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/BuildingModeComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SMEditModeComponent.h"
 #include "Core/SMGameMode.h"
 #include "Core/SMPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -65,6 +66,7 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 	InteractionScannerComp->SetCollisionResponseToChannel(ECC_GameTraceChannel2, ECR_Overlap);
 	
 	BuildingModeComp = CreateDefaultSubobject<USMBuildingModeComponent>(TEXT("BuildingModeComponent"));
+	EditModeComp = CreateDefaultSubobject<USMEditModeComponent>(TEXT("EditModeComponent"));
 }
 
 UAbilitySystemComponent* ASMPlayerCharacter::GetAbilitySystemComponent() const
@@ -190,7 +192,7 @@ void ASMPlayerCharacter::ToggleBuildMode()
 	// 편집모드라면 편집모드 종료
 	if (bIsEditMode)
 	{
-		//TODO 은서 : 편집모드 IMC 장착을 편집모드 Comp에서 관리
+		EditModeComp->DisableEditMode();
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 		ServerRPC_SetEditModeTag(false);
 	}
@@ -210,7 +212,7 @@ void ASMPlayerCharacter::ToggleEditMode()
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem =
 		ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer());
-	if (!Subsystem || !BuildEditIMC || !SMAbilitySystemComponent) return;
+	if (!Subsystem || !SMAbilitySystemComponent) return;
 
 	bool bIsBuildMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place);
 	bool bIsEditMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit);
@@ -218,7 +220,7 @@ void ASMPlayerCharacter::ToggleEditMode()
 	// 이미 편집 모드라면 편집모드 종료
 	if (bIsEditMode)
 	{
-		Subsystem->RemoveMappingContext(BuildEditIMC);
+		EditModeComp->DisableEditMode();
 		SMAbilitySystemComponent->RemoveLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 		ServerRPC_SetEditModeTag(false);
 
@@ -234,7 +236,7 @@ void ASMPlayerCharacter::ToggleEditMode()
 		ServerRPC_SetBuildModeTag(false);
 	}
 
-	Subsystem->AddMappingContext(BuildEditIMC, 1);
+	EditModeComp->EnableEditMode();
 	SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Edit);
 	ServerRPC_SetEditModeTag(true);
 
@@ -489,6 +491,10 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	if (BuildingModeComp)
 	{
 		BuildingModeComp->SetupInputBindings();
+	}
+	if (EditModeComp)
+	{
+		EditModeComp->SetupInputBindings();
 	}
 }
 

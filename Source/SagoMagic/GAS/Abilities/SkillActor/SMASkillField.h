@@ -47,17 +47,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Pull")
 	float PullInterval = 0.1f;
 	
-	/** 장판 이동 속도 cm/s */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Chase")
-	float ChaseSpeed = 150.f;
-
-	/** 추적 대상 탐색 반경 - 장판 반경보다 크게 설정해야됨 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Chase")
-	float ChaseSearchRadius = 1000.f;
-
-	/** 위치 갱신 주기 초 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Chase")
-	float ChaseUpdateInterval = 0.1f;
+	/** 이동속도 감소 배율 0.5 = 50%로 감소 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Slow")
+	float SlowMultiplier = 0.5f;
 
 private:
 	UFUNCTION()
@@ -99,4 +91,15 @@ private:
 	TObjectPtr<UAbilitySystemComponent> OwnerASC;
 	
 	FGameplayTag ActiveCueTag;
+	
+	FTimerHandle PullTimerHandle;
+
+	bool bSlowEnabled = false;
+
+	// 범위 내 액터 원래 이동속도 저장 슬로우 해제용
+	TMap<AActor*, float> OriginalMoveSpeeds;
+
+	void ApplyPull();
+	void ApplySlow(AActor* Actor);
+	void RestoreSpeed(AActor* Actor);
 };

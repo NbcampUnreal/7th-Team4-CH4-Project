@@ -4,7 +4,6 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "Building/SMBaseCampActor.h"
 #include "Building/SMBaseBuilding.h"
@@ -42,6 +41,7 @@ void ASMASkillField::InitField(
 	DamageSpecHandle = InSpecHandle;
 	InstigatorActor = InInstigatorActor;
 	Duration = InDuration;
+	bSlowEnabled = bEnableSlow;
 
 	if (InRangeCm > 0.f && CollisionComponent)
 	{
@@ -97,18 +97,6 @@ void ASMASkillField::InitField(
 			false
 		);
 	}
-
-	//체이스 타이머
-	if (bEnableSlow)
-	{
-		World->GetTimerManager().SetTimer(
-			SlowTimerHandle,
-			this,
-			&ASMASkillField::UpdateChaseMovement,
-			ChaseUpdateInterval,
-			true
-		);
-	}
 }
 
 void ASMASkillField::CheckInitialOverlaps()
@@ -160,6 +148,12 @@ void ASMASkillField::OnFieldBeginOverlap(UPrimitiveComponent* OverlappedComponen
 	{
 		ActiveEffectHandles.Add(OtherActor, EffectHandle);
 	}
+
+	// 슬로우 적용
+	if (bSlowEnabled)
+	{
+		ApplySlow(OtherActor);
+	}
 }
 
 //콜리전에서 몬스터가 밖으로 나갔을때 GE제거
@@ -180,6 +174,9 @@ void ASMASkillField::OnFieldEndOverlap(UPrimitiveComponent* OverlappedComponent,
 		}
 		ActiveEffectHandles.Remove(OtherActor);
 	}
+
+	// 슬로우 해제
+	RestoreSpeed(OtherActor);
 }
 
 void ASMASkillField::OnDurationExpired()
@@ -203,6 +200,13 @@ void ASMASkillField::OnDurationExpired()
 		}
 	}
 	ActiveEffectHandles.Empty();
+
+	// 슬로우 전체 해제
+	for (auto& Pair : OriginalMoveSpeeds)
+	{
+		RestoreSpeed(Pair.Key);
+	}
+	OriginalMoveSpeeds.Empty();
 
 	if (IsValid(OwnerASC))
 	{
@@ -237,45 +241,33 @@ void ASMASkillField::ApplyPull()
 	}
 }
 
-void ASMASkillField::UpdateChaseMovement()
+void ASMASkillField::ApplySlow(AActor* Actor)
 {
-	if (!HasAuthority()) return;
+	if (!IsValid(Actor)) return;
+	if (OriginalMoveSpeeds.Contains(Actor)) return; // 이미 슬로우 중
 
-	TArray<AActor*> FoundActors;
-	UKismetSystemLibrary::SphereOverlapActors(
-		this,
-		GetActorLocation(),
-		ChaseSearchRadius, //이 반경 안에 있는 적만 탐색
-		{UEngineTypes::ConvertToObjectType(ECC_Pawn)},
-		nullptr,
-		{this},
-		FoundActors
-	);
+	ACharacter* Character = Cast<ACharacter>(Actor);
+	if (!Character) return;
 
-	AActor* NearestTarget = nullptr;
-	float NearestDistSq = FLT_MAX; //탐색
+	UCharacterMovementComponent* Movement = Character->GetCharacterMovement();
+	if (!Movement) return;
 
-	for (AActor* Actor : FoundActors)
+	// 원래 속도 저장 후 감소
+	OriginalMoveSpeeds.Add(Actor, Movement->MaxWalkSpeed);
+	Movement->MaxWalkSpeed *= SlowMultiplier;
+}
+
+void ASMASkillField::RestoreSpeed(AActor* Actor)
+{
+	if (!IsValid(Actor)) return;
+
+	float* OriginalSpeed = OriginalMoveSpeeds.Find(Actor);
+	if (!OriginalSpeed) return;
+
+	ACharacter* Character = Cast<ACharacter>(Actor);
+	if (Character && Character->GetCharacterMovement())
 	{
-		if (!IsValid(Actor)) continue;
-		if (InstigatorActor.IsValid() && Actor == InstigatorActor.Get()) continue;
-
-		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
-		if (!TargetASC || TargetASC->HasMatchingGameplayTag(SMGameFlowTag::Team)) continue;
-
-		float DistSq = FVector::DistSquared2D(GetActorLocation(), Actor->GetActorLocation());
-		if (DistSq < NearestDistSq)
-		{
-			NearestDistSq = DistSq;
-			NearestTarget = Actor;
-		}
+		Character->GetCharacterMovement()->MaxWalkSpeed = *OriginalSpeed;
 	}
-
-	// 타겟이 있을 때만 이동
-	if (NearestTarget)
-	{
-		FVector Dir = (NearestTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
-		FVector NewLocation = GetActorLocation() + Dir * ChaseSpeed * ChaseUpdateInterval;
-		SetActorLocation(NewLocation, true);
-	}
+	OriginalMoveSpeeds.Remove(Actor);
 }

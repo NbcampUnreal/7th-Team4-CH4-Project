@@ -7,6 +7,7 @@
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "GAS/SMAbilitySystemComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 UGA_LineTrace::UGA_LineTrace()
 {
@@ -36,11 +37,19 @@ void UGA_LineTrace::OnSkillEffect(
 
 	bIsPenetrate = SkillUpgradeTags.HasTag(SMSkillTag::Upgrade_LineTrace_Penetrate);
 	bIsChainAttacking = SkillUpgradeTags.HasTag(SMSkillTag::Upgrade_LineTrace_Chain);
-	
+	ChainSearchRadius = RangeCm * ChainSearchRadiusMultiplier;
+
 	FGameplayCueParameters CueParameters;
 	CueParameters.RawMagnitude = RangeCm;
-	CueParameters.NormalizedMagnitude = bIsPenetrate ? 1.0f : 0.0f;
 	CueParameters.EffectContext = GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
+	if (bIsChainAttacking == true)
+	{
+		CueParameters.NormalizedMagnitude = (float)MaxChainCount;
+	}
+	else
+	{
+		CueParameters.NormalizedMagnitude = bIsPenetrate ? 1.0f : 0.0f;
+	}
 
 	// CashedSummary에서 Duration / TickInterval 읽기
 	const float SkillDuration = FieldDuration > 0.0f ? FieldDuration : 3.0f;
@@ -50,8 +59,16 @@ void UGA_LineTrace::OnSkillEffect(
 	if (Avatar->HasAuthority() == false)
 	{
 		// 클라: 큐 예측 + 종료 타이머
-		GetAbilitySystemComponentFromActorInfo()->AddGameplayCue(
-			SMSkillTag::GameplayCue_Skill_LineTrace_Beam, CueParameters);
+		if (bIsChainAttacking == true)
+		{
+			GetAbilitySystemComponentFromActorInfo()->AddGameplayCue(
+				SMSkillTag::GameplayCue_Skill_LineTrace_Chain, CueParameters);
+		}
+		else
+		{
+			GetAbilitySystemComponentFromActorInfo()->AddGameplayCue(
+				SMSkillTag::GameplayCue_Skill_LineTrace_Beam, CueParameters);
+		}
 
 		//클라이언트인 경우 타이머만 적용
 		World->GetTimerManager().SetTimer(
@@ -66,8 +83,16 @@ void UGA_LineTrace::OnSkillEffect(
 
 	// 서버: 큐 권한 추가 + 두 타이머
 	// 반복 데미지 타이머 - 매 Tick마다 LineTrace발사
-	GetAbilitySystemComponentFromActorInfo()->AddGameplayCue(
-		SMSkillTag::GameplayCue_Skill_LineTrace_Beam, CueParameters);
+	if (bIsChainAttacking == true)
+	{
+		GetAbilitySystemComponentFromActorInfo()->AddGameplayCue(
+			SMSkillTag::GameplayCue_Skill_LineTrace_Chain, CueParameters);
+	}
+	else
+	{
+		GetAbilitySystemComponentFromActorInfo()->AddGameplayCue(
+			SMSkillTag::GameplayCue_Skill_LineTrace_Beam, CueParameters);
+	}
 
 	World->GetTimerManager().SetTimer(
 		DamageTickHandle,
@@ -110,9 +135,18 @@ void UGA_LineTrace::EndAbility(const FGameplayAbilitySpecHandle Handle,
 		APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
 		if (IsValid(Avatar) == true && Avatar->HasAuthority() == true)
 		{
-			GetAbilitySystemComponentFromActorInfo()->RemoveGameplayCue(
-				SMSkillTag::GameplayCue_Skill_LineTrace_Beam
-			);
+			if (bIsChainAttacking == true)
+			{
+				GetAbilitySystemComponentFromActorInfo()->RemoveGameplayCue(
+					SMSkillTag::GameplayCue_Skill_LineTrace_Chain
+				);
+			}
+			else
+			{
+				GetAbilitySystemComponentFromActorInfo()->RemoveGameplayCue(
+					SMSkillTag::GameplayCue_Skill_LineTrace_Beam
+				);
+			}
 		}
 
 		if (ActorInfo->AbilitySystemComponent.IsValid())
@@ -188,7 +222,7 @@ void UGA_LineTrace::ApplyDamageTick()
 	}
 	else if (bIsChainAttacking == true)
 	{
-		
+		ChainAttack(World, ActorInfo);
 	}
 	else
 	{
@@ -304,34 +338,115 @@ bool UGA_LineTrace::FindAllEnemies(UWorld* World, const FGameplayAbilityActorInf
 	{
 		CollisionParams.AddIgnoredActor(ActorInfo->AvatarActor.Get());
 	}
-	
+
 	//collision 채널 문제로 singleTrace를 여러번 쏴서 판단하여 추가 OutEnemies에 추가
 	while (true)
 	{
 		FHitResult Hit;
 		if (World->LineTraceSingleByChannel(Hit, Start, End, ECC_Pawn, CollisionParams) == false)
-			break;  // 더 이상 hit 없음
+			break; // 더 이상 hit 없음
 
 		AActor* HitActor = Hit.GetActor();
 		if (IsValid(HitActor) == false) break;
 
-		CollisionParams.AddIgnoredActor(HitActor);  // 다음 트레이스에서 무시
+		CollisionParams.AddIgnoredActor(HitActor); // 다음 트레이스에서 무시
 
-		if (HasAnyTeamTag(HitActor) == true) continue;  // 아군은 스킵
+		if (HasAnyTeamTag(HitActor) == true) continue; // 아군은 스킵
 
 		OutEnemies.Add(HitActor);
 	}
-	
+
 	return OutEnemies.Num() > 0;
 }
 
 
-void UGA_LineTrace::ChainAttack()
+void UGA_LineTrace::ChainAttack(UWorld* World, const FGameplayAbilityActorInfo* ActorInfo)
 {
+	if (IsValid(World) == false) return;
+
+	// 1. 첫 번째 적 탐색 (기존 FindFirstEnemy 재사용)
+	FHitResult FirstHit;
+	if (FindFirstEnemy(World, ActorInfo, FirstHit) == false) return;
+
+	AActor* FirstEnemy = FirstHit.GetActor();
+	if (IsValid(FirstEnemy) == false) return;
+
+	// 2. 체인 배열 초기화
+	TArray<AActor*> ChainedEnemies;
+	ChainedEnemies.Add(FirstEnemy);
+
+	// 3. 첫 번째 적에게 데미지
+	if (UAbilitySystemComponent* TargetASC =
+		FirstEnemy->FindComponentByClass<UAbilitySystemComponent>())
+	{
+		FGameplayEffectSpecHandle SpecHandle = MakeDamageSpec(ActorInfo);
+		if (SpecHandle.IsValid())
+		{
+			GetAbilitySystemComponentFromActorInfo()
+				->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+		}
+	}
+
+	// 4. 최대 MaxChainCount - 1번 추가 체인
+	//    (첫 번째 적이 이미 1번이므로 MaxChainCount - 1번 더 탐색)
+	for (int32 ChainIndex = 1; ChainIndex < MaxChainCount; ++ChainIndex)
+	{
+		// 마지막으로 체인된 적의 위치에서 가장 가까운 새 적 탐색
+		const FVector SearchOrigin = ChainedEnemies.Last()->GetActorLocation();
+		AActor* NextEnemy = nullptr;
+		if (FindNearestEnemy(World, SearchOrigin, ChainSearchRadius,
+		                     ChainedEnemies, NextEnemy) == false)
+			break; // 더 이상 튕길 대상 없음
+
+		ChainedEnemies.Add(NextEnemy);
+
+		// 체인 대상에게 데미지
+		if (UAbilitySystemComponent* TargetASC =
+			NextEnemy->FindComponentByClass<UAbilitySystemComponent>())
+		{
+			FGameplayEffectSpecHandle SpecHandle = MakeDamageSpec(ActorInfo);
+			if (SpecHandle.IsValid())
+			{
+				GetAbilitySystemComponentFromActorInfo()
+					->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+			}
+		}
+	}
 }
 
 bool UGA_LineTrace::FindNearestEnemy(UWorld* World, const FVector& Origin, float SearchRadius,
                                      const TArray<AActor*>& ExcludeActors, AActor*& OutEnemy) const
 {
-	return false;
+	if (IsValid(World) == false) return false;
+
+	// ObjectTypes: SMASkillProjectile과 동일한 타입 사용
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+
+	TArray<AActor*> OverlapActors;
+	UKismetSystemLibrary::SphereOverlapActors(
+		GetWorld(),
+		Origin,
+		SearchRadius,
+		ObjectTypes,
+		nullptr, // 필터 클래스 없음
+		ExcludeActors, // 이미 체인된 적 + 시전자 자동 제외
+		OverlapActors
+	);
+
+	float NearestDistSq = FLT_MAX;
+
+	for (AActor* Actor : OverlapActors)
+	{
+		if (IsValid(Actor) == false) continue;
+		if (HasAnyTeamTag(Actor) == true) continue; // 아군 제외
+
+		const float DistSq = FVector::DistSquared(Origin, Actor->GetActorLocation());
+		if (DistSq < NearestDistSq)
+		{
+			NearestDistSq = DistSq;
+			OutEnemy = Actor;
+		}
+	}
+	return IsValid(OutEnemy); // false면 체인 종료
 }

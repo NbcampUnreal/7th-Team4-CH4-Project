@@ -65,7 +65,7 @@ private:
 	bool bIsPenetrate = false;
 	
 	//체인 공격
-	void ChainAttack();
+	void ChainAttack(UWorld* World, const FGameplayAbilityActorInfo* ActorInfo);
 	
 	bool FindNearestEnemy(UWorld* World, const FVector& Origin,
 					  float SearchRadius,
@@ -76,6 +76,8 @@ private:
 	int32 MaxChainCount = 4;
 	
 	UPROPERTY(EditDefaultsOnly, Category="Attack|Chain")
+	float ChainSearchRadiusMultiplier = 0.8f;
+	
 	float ChainSearchRadius = 800.f;	
 	
 	bool bIsChainAttacking = false;

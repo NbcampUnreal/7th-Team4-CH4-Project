@@ -352,6 +352,14 @@ bool USMInventoryComponent::RemoveItem(const FGuid& InItemInstanceId)
 		return false;
 	}
 
+	if (const UWorld* World = GetWorld())
+	{
+		if (World->GetMapName().Contains(TEXT("L_Lobby")))
+		{
+			return false;
+		}
+	}
+
 	return RemoveItemInternal(InItemInstanceId, true);
 }
 
@@ -2200,6 +2208,14 @@ bool USMInventoryComponent::IsSkillActuallyEmpty(const FGuid& InSkillInstanceId)
 
 bool USMInventoryComponent::CanDropItemInternal(const FGuid& InItemInstanceId) const
 {
+	if (const UWorld* World = GetWorld())
+	{
+		if (World->GetMapName().Contains(TEXT("L_Lobby")))
+		{
+			return false;
+		}
+	}
+
 	const FSMItemInstanceData* ItemData = FindItem(InItemInstanceId);
 	const FSMItemInstanceData* BaseItemData = ItemData;
 

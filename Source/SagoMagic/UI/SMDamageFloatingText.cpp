@@ -1,5 +1,6 @@
 ﻿#include "SMDamageFloatingText.h"
 #include "Components/WidgetComponent.h"
+#include "SMDamageTextWidget.h"
 
 ASMDamageFloatingText::ASMDamageFloatingText()
 {
@@ -18,6 +19,16 @@ void ASMDamageFloatingText::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (DamageWidgetComp && PendingDamage > 0.f)
+	{
+		USMDamageTextWidget* DamageWidget = Cast<USMDamageTextWidget>(
+			DamageWidgetComp->GetUserWidgetObject());
+		if (DamageWidget)
+		{
+			DamageWidget->SetDamageText(PendingDamage);
+		}
+	}
+	
 	// 겹침 방지
 	float RandomX = FMath::RandRange(-50.0f, 50.0f);
 	float RandomY = FMath::RandRange(-50.0f, 50.0f);
@@ -30,6 +41,15 @@ void ASMDamageFloatingText::BeginPlay()
 
 void ASMDamageFloatingText::SetDamageValue(float DamageAmount)
 {
-	// C++에서 정의한 OnSetDamage 이벤트를 호출
-	OnSetDamage(DamageAmount);
+	PendingDamage = DamageAmount;
+	
+	if (DamageWidgetComp)
+	{
+		USMDamageTextWidget* DamageWidget = Cast<USMDamageTextWidget>(DamageWidgetComp->GetUserWidgetObject());
+        
+		if (DamageWidget)
+		{
+			DamageWidget->SetDamageText(DamageAmount);
+		}
+	}
 }

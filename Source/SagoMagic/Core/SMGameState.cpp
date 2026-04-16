@@ -140,3 +140,15 @@ void ASMGameState::BroadcastWaveMsg(EWaveUIState InState, int32 InWaveIndex, flo
 
     UGameplayMessageSubsystem::Get(this).BroadcastMessage(SMUITag::Event_Wave, Msg);
 }
+
+void ASMGameState::Multicast_BroadcastNotification_Implementation(const FText& InMessage, float InDuration)
+{
+    UWorld* World = GetWorld();
+    if (!World) return;
+    
+    FNotificationMsg Msg;
+    Msg.Message = InMessage;
+    Msg.DisplayDuration = InDuration;
+    
+    UGameplayMessageSubsystem::Get(World).BroadcastMessage(SMUITag::Event_Notification, Msg);
+}

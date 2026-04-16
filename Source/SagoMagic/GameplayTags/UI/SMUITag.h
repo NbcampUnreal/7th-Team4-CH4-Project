@@ -14,4 +14,7 @@ namespace SMUITag
     /** 베이스캠프 UI 이벤트 태그 선언 */
     UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_BaseCamp);
     UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Wave);
+    
+    /** 알림 로그 이벤트 태그 선언 */
+    UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Notification);
 }

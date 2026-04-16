@@ -29,6 +29,9 @@ public:
 private:
     /** 웨이브 클리어 시 호출 - 마지막 웨이브면 Result, 아니면 Build */
     void OnWaveCleared();
+    
+    /** 알림 메시지 브로드캐스트 용도 */
+    void BroadcastNotification(const FText& InMessage, float InDuration);
 private:
     /** 총 전투 시간 (초) */
     float Duration = 180.f;

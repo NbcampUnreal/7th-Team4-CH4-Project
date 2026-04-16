@@ -33,6 +33,8 @@ namespace SMSkillTag
 	//스킬 업그레이드 태그들
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_Projectile_Multishot)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_Projectile_Homing)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_LineTrace_Penetrate)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_LineTrace_Chain)
 
 	//Set By Caller 데이터 태그
 	//UGE_SkillDamage 에서 피해량

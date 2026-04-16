@@ -20,8 +20,7 @@ void USMBuildState::Enter()
     CurrentWaveIndex = StateMachine->GetCurrentWaveIndex();
     
     // 정비 시작 알림
-    BroadcastNotification(FText::Format(FText::FromString(TEXT("정비 단계 시작")),
-        FText::AsNumber(CurrentWaveIndex)), 2.0f);
+    BroadcastNotification(FText::FromString(TEXT("정비 단계 시작")), 2.0f);
     
     USMWaveManagerSubsystem* WM = USMWaveManagerSubsystem::Get(this);
     if (!WM) return;
@@ -64,8 +63,7 @@ void USMBuildState::Tick(float DeltaTime)
 void USMBuildState::Exit()
 {
     // 정비 종료 알림
-    BroadcastNotification(FText::Format(FText::FromString(TEXT("정비 단계 종료")),
-        FText::AsNumber(CurrentWaveIndex)), 1.5f);
+    BroadcastNotification(FText::FromString(TEXT("정비 단계 종료")), 1.5f);
     
     Elapsed = 0;
     Super::Exit();

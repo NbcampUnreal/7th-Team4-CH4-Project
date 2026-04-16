@@ -24,8 +24,7 @@ void USMCombatState::Enter()
     CachedWaveManager = USMWaveManagerSubsystem::Get(this);
     
     // 웨이브 시작 알림
-    BroadcastNotification(FText::Format(FText::FromString(TEXT("전투 시작!")),
-        FText::AsNumber(WaveIndex)), 2.0f);
+    BroadcastNotification(FText::FromString(TEXT("전투 시작!")), 2.0f);
     
     ASMGameMode* GM = GetGameMode();
     if (!GM) return;
@@ -56,8 +55,7 @@ void USMCombatState::OnWaveCleared()
     UE_LOG(LogTemp, Log, TEXT("[CombatState] 웨이브 %d 클리어"),WaveIndex);
 
     // 웨이브 클리어 알림
-    BroadcastNotification(FText::Format(FText::FromString(TEXT("웨이브 클리어!")),
-        FText::AsNumber(WaveIndex)), 2.0f);
+    BroadcastNotification(FText::FromString(TEXT("웨이브 클리어!")), 1.5f);
     
     //마지막 웨이브(보스전) 클리어 -> 승리
     if (WaveIndex >= StateMachine->GetMaxWaveCount())

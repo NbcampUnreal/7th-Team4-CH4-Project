@@ -1,7 +1,8 @@
 ﻿#include "SMPlayerStatusWidget.h"
 #include "SMPlayerHPBarWidget.h"
 #include "SMPlayerGoldWidget.h"
-
+#include "UI/Inventory/SMQuickSlotBarWidget.h"
+#include "Inventory/Components/SMInventoryComponent.h"
 
 void USMPlayerStatusWidget::InitializeStatus(UAbilitySystemComponent* InASC)
 {
@@ -15,5 +16,19 @@ void USMPlayerStatusWidget::InitializeStatus(UAbilitySystemComponent* InASC)
 	if (WBP_GoldDisplay)
 	{
 		WBP_GoldDisplay->InitializeWithASC(InASC);
+	}
+	
+	if (WBP_QuickSlotBar)
+	{
+		if (APlayerController* PC = GetOwningPlayer())
+		{
+			if (APlayerState* PS = PC->GetPlayerState<APlayerState>())
+			{
+				if (USMInventoryComponent* Inv = PS->FindComponentByClass<USMInventoryComponent>())
+				{
+					WBP_QuickSlotBar->InitializeQuickSlotBarWidget(Inv);
+				}
+			}
+		}
 	}
 }

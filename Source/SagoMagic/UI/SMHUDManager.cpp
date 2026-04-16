@@ -8,7 +8,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/Pawn.h"
-#include "UI/SmNotificationWidget.h"
+#include "UI/SMNotificationWidget.h"
 
 void USMHUDManager::NativeConstruct()
 {

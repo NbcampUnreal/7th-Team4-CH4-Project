@@ -5,7 +5,7 @@
 #include "GameFramework/GameplayMessageSubsystem.h"
 #include "UI/SMGameplayMessages.h"
 #include "Containers/Queue.h"
-#include "SmNotificationWidget.generated.h"
+#include "SMNotificationWidget.generated.h"
 
 class UTextBlock;
 

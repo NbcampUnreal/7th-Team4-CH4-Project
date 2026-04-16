@@ -27,6 +27,8 @@ namespace SMSkillTag
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Projectile_Homing, TEXT("Upgrade.Projectile.Homing"))
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_LineTrace_Penetrate, TEXT("Upgrade.LineTrace.Penetrate"))
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_LineTrace_Chain, TEXT("Upgrade.LineTrace.Chain"))
+	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Field_Pull, TEXT("Upgrade.Field.Pull"))
+	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Field_Chase, TEXT("Upgrade.Field.Chase"))
 
 	//GE Spec 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Data_Damage_Amount, TEXT("Data.Damage.Amount"))

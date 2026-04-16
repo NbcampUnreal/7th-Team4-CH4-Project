@@ -11,9 +11,9 @@ UENUM()
 enum class EMonsterType : uint8
 {
     None    UMETA(DisplayName = "없음"),
-    Snake   UMETA(DisplayName = "Snake"),
+    Monkey   UMETA(DisplayName = "Monkey"),
     Squid   UMETA(DisplayName = "Squid"),
-    Bird    UMETA(DisplayName = "Bird")
+    Elite    UMETA(DisplayName = "Elite")
 };
 
 USTRUCT(BlueprintType)

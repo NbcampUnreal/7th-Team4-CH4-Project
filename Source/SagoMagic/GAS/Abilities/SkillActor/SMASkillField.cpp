@@ -75,28 +75,22 @@ void ASMASkillField::InitField(
 	if (!World) return;
 
 	// 장판 지속 시간 종료 타이머
-	if (UWorld* World = GetWorld())
-	{
-		World->GetTimerManager().SetTimer(
-			DurationEndHandle,
-			this,
-			&ASMASkillField::OnDurationExpired,
-			Duration,
-			false
-		);
-	}
+	World->GetTimerManager().SetTimer(
+		DurationEndHandle,
+		this,
+		&ASMASkillField::OnDurationExpired,
+		Duration,
+		false
+	);
 
 	// 스폰 직후 즉시 데미지 방지 딜레이 후 그 시점 오버랩 액터만 처리
-	if (UWorld* World = GetWorld())
-	{
-		World->GetTimerManager().SetTimer(
-			InitialOverlapHandle,
-			this,
-			&ASMASkillField::CheckInitialOverlaps,
-			StartDelay,
-			false
-		);
-	}
+	World->GetTimerManager().SetTimer(
+		InitialOverlapHandle,
+		this,
+		&ASMASkillField::CheckInitialOverlaps,
+		StartDelay,
+		false
+	);
 }
 
 void ASMASkillField::CheckInitialOverlaps()

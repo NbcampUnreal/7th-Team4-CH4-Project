@@ -8,6 +8,7 @@
 #include "Building/SMBaseCampActor.h"
 #include "Building/SMBaseBuilding.h"
 #include "GameplayTags/Character/SMSkillTag.h"
+#include "Character/SMPlayerCharacter.h"
 
 ASMASkillField::ASMASkillField()
 {
@@ -91,6 +92,18 @@ void ASMASkillField::InitField(
 		StartDelay,
 		false
 	);
+
+	// 당기기 타이머
+	if (bEnablePull)
+	{
+		World->GetTimerManager().SetTimer(
+			PullTimerHandle,
+			this,
+			&ASMASkillField::ApplyPull,
+			PullInterval,
+			true
+		);
+	}
 }
 
 void ASMASkillField::CheckInitialOverlaps()
@@ -217,14 +230,18 @@ void ASMASkillField::ApplyPull()
 
 	TArray<AActor*> OverlappingActors;
 	CollisionComponent->GetOverlappingActors(OverlappingActors);
-
+	
 	for (AActor* Actor : OverlappingActors)
 	{
 		if (!IsValid(Actor)) continue;
 		if (InstigatorActor.IsValid() && Actor == InstigatorActor.Get()) continue;
 		if (Actor->IsA<ASMBaseCampActor>() || Actor->IsA<ASMBaseBuilding>()) continue;
+		
+		// TODO 태린: 플레이어에 Team 태그 부여되면 이 부분 제거
+		if (Actor->IsA<ASMPlayerCharacter>()) continue;
 
 		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
+		
 		if (!TargetASC || TargetASC->HasMatchingGameplayTag(SMGameFlowTag::Team)) continue;
 
 		ACharacter* Character = Cast<ACharacter>(Actor);
@@ -238,6 +255,9 @@ void ASMASkillField::ApplyPull()
 void ASMASkillField::ApplySlow(AActor* Actor)
 {
 	if (!IsValid(Actor)) return;
+	// TODO: 플레이어에 Team 태그 부여되면 이 체크 제거
+	if (Actor->IsA<ASMPlayerCharacter>()) return;
+	
 	if (OriginalMoveSpeeds.Contains(Actor)) return; // 이미 슬로우 중
 
 	ACharacter* Character = Cast<ACharacter>(Actor);

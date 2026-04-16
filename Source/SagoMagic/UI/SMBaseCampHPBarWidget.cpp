@@ -40,13 +40,31 @@ void USMBaseCampHPBarWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
+void USMBaseCampHPBarWidget::NativeTick(const FGeometry& Geometry, float DeltaTime)
+{
+	Super::NativeTick(Geometry, DeltaTime);
+
+	if (!FMath::IsNearlyEqual(CurrentPercent, TargetPercent, 0.001f))
+	{
+		CurrentPercent = FMath::FInterpTo(CurrentPercent, TargetPercent, DeltaTime, InterpSpeed);
+		if (ProgressBar_BaseCampHP)
+		{
+			ProgressBar_BaseCampHP->SetPercent(CurrentPercent);
+		}
+	}
+	else
+	{
+		CurrentPercent = TargetPercent;
+		if (ProgressBar_BaseCampHP)
+		{
+			ProgressBar_BaseCampHP->SetPercent(CurrentPercent);
+		}
+	}
+}
+
 void USMBaseCampHPBarWidget::OnBaseCampMessageReceived(FGameplayTag Channel, const FBaseCampMsg& Message)
 {
-	// 방송 수신하면 프로그레스 바 갱신
-	if (ProgressBar_BaseCampHP)
-	{
-		ProgressBar_BaseCampHP->SetPercent(Message.BaseCampHP);
-	}
+	TargetPercent = FMath::Clamp(Message.BaseCampHP, 0.0f, 1.0f);
 
 	if (TextBlock_BaseCampHP)
 	{
@@ -79,6 +97,15 @@ bool USMBaseCampHPBarWidget::TryInitializeFromBaseCamp()
 		float CurrentHP = ASC->GetNumericAttribute(
 			USMBaseCampAttributeSet::GetHealthAttribute());
 
+		float InitialPercent = CurrentHP / MaxHP;
+		CurrentPercent = InitialPercent;
+		TargetPercent = InitialPercent;
+		
+		if (ProgressBar_BaseCampHP)
+		{
+			ProgressBar_BaseCampHP->SetPercent(CurrentPercent);
+		}
+		
 		FBaseCampMsg Msg;
 		Msg.EventType  = EBaseCampEvent::Attacked;
 		Msg.BaseCampHP = CurrentHP / MaxHP;

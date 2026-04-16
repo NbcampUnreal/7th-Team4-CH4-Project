@@ -18,11 +18,19 @@ class SAGOMAGIC_API USMBaseCampHPBarWidget : public UUserWidget
 protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
+	virtual void NativeTick(const FGeometry& Geometry, float DeltaTime) override;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UProgressBar> ProgressBar_BaseCampHP;
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> TextBlock_BaseCampHP;
+	
+	// 체력 보간용
+	float TargetPercent = 1.0f;
+	float CurrentPercent = 1.0f;
+
+	UPROPERTY(EditAnywhere, Category = "UI Settings")
+	float InterpSpeed = 10.0f;
 	
 private:
 	/** 방송을 수신했을 때 실행될 콜백 함수 */

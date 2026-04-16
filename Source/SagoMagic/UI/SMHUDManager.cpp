@@ -8,6 +8,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/Pawn.h"
+#include "UI/SMNotificationWidget.h"
 
 void USMHUDManager::NativeConstruct()
 {
@@ -72,6 +73,20 @@ void USMHUDManager::RefreshHUD(UAbilitySystemComponent* InPlayerASC)
 
 void USMHUDManager::ShowGameResult(bool bIsVictory, float InReturnDelay)
 {
+	// 다른 HUD 위젯 숨기기
+	if (WBP_PlayerStatus)
+	{
+		WBP_PlayerStatus->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	if (WBP_PlayerDeath)
+	{
+		WBP_PlayerDeath->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	if (WBP_Notification)
+	{
+		WBP_Notification->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	
 	if (WBP_GameResult)
 	{
 		WBP_GameResult->SetVisibility(ESlateVisibility::Visible);

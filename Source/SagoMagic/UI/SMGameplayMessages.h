@@ -110,35 +110,19 @@ struct FResultMsg
 };
 
 /**
- * UI.Event.SystemLog
+ * UI.Event.Notification
  * Listener :
  */
 USTRUCT(BlueprintType)
-struct FSystemMsg
+struct FNotificationMsg
 {
     GENERATED_BODY()
-
+ 
+    /** 표시할 알림 텍스트 */
     UPROPERTY(BlueprintReadOnly)
-    FName LogID;
+    FText Message;
+ 
+    /** 표시 지속 시간 */
     UPROPERTY(BlueprintReadOnly)
-    float LogDuration = 0.0f;
-};
-
-/**
- * UI.Event.Boss
- * Listener :
- */
-USTRUCT(BlueprintType)
-struct FBossMsg
-{
-    GENERATED_BODY()
-
-    UPROPERTY(BlueprintReadOnly)
-    FName BossName;
-    UPROPERTY(BlueprintReadOnly)
-    int32 MaxPhase = 2;
-    UPROPERTY(BlueprintReadOnly)
-    int32 CurrentPhase = 1;
-    UPROPERTY(BlueprintReadOnly)
-    float HPPercent = 1.f;
+    float DisplayDuration = 2.0f;
 };

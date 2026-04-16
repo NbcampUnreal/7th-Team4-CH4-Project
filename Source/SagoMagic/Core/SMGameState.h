@@ -46,6 +46,11 @@ public:
     
     //클라이언트 구독용
     FOnGameStateChanged OnGameStateChanged;
+    
+    
+    UFUNCTION(NetMulticast, Reliable)
+    void Multicast_BroadcastNotification(const FText& InMessage, float InDuration);
+    
 private:
     /** CurrentState 복제 완료 시 클라이언트에서 자동 호출 -> OnGameStateChanged 브로드캐스트 */
     UFUNCTION()

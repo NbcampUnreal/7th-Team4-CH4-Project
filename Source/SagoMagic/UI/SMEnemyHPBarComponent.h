@@ -7,6 +7,7 @@
 
 
 class UAbilitySystemComponent;
+class ASMDamageFloatingText;
 
 UCLASS(meta=(BlueprintSpawnableComponent))
 class SAGOMAGIC_API USMEnemyHPBarComponent : public UWidgetComponent
@@ -30,6 +31,8 @@ protected:
 private:
     /** ASC를 안전하게 가져오기 위해 재시도 */
     void TryInitASC();
+    /** 데미지 플로팅 텍스트 띄우기 위한 함수 */
+    void SpawnDamageFloatingText(float DamageAmount);
     
     /** 캐싱해둘 ASC 포인터 */
     UPROPERTY()
@@ -40,4 +43,11 @@ private:
     
     UPROPERTY(EditAnywhere, Category = "UI")
     float DisplayDuration = 2.0f;
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<ASMDamageFloatingText> DamageTextClass;
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    float DamageTextSpawnCooldown = 0.1f;
+
+    /** 마지막으로 텍스트를 스폰한 시간 기록용 */
+    float LastDamageTextSpawnTime = 0.f;
 };

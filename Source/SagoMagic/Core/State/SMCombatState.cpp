@@ -8,6 +8,8 @@
 #include "Core/DataManager/SMSyncDataManager.h"
 #include "Core/Wave/SMWaveManagerSubsystem.h"
 #include "Data/SMWaveData.h"
+#include "GameplayTags/UI/SMUITag.h"
+#include "UI/SMGameplayMessages.h"
 
 void USMCombatState::Enter()
 {
@@ -20,6 +22,9 @@ void USMCombatState::Enter()
     UWorld* World = StateMachine->GetOwner()->GetWorld();
     CachedGameState   = World->GetGameState<ASMGameState>();
     CachedWaveManager = USMWaveManagerSubsystem::Get(this);
+    
+    // 웨이브 시작 알림
+    BroadcastNotification(FText::FromString(TEXT("전투 시작!")), 2.0f);
     
     ASMGameMode* GM = GetGameMode();
     if (!GM) return;
@@ -49,6 +54,9 @@ void USMCombatState::OnWaveCleared()
     int32 WaveIndex = StateMachine->GetCurrentWaveIndex();
     UE_LOG(LogTemp, Log, TEXT("[CombatState] 웨이브 %d 클리어"),WaveIndex);
 
+    // 웨이브 클리어 알림
+    BroadcastNotification(FText::FromString(TEXT("웨이브 클리어!")), 1.5f);
+    
     //마지막 웨이브(보스전) 클리어 -> 승리
     if (WaveIndex >= StateMachine->GetMaxWaveCount())
     {
@@ -111,4 +119,17 @@ void USMCombatState::Exit()
 
     UE_LOG(LogTemp, Log, TEXT("[CombatState] Exit"));
 
+}
+
+void USMCombatState::BroadcastNotification(const FText& InMessage, float InDuration)
+{
+    if (CachedGameState)
+    {
+        // 캐싱된 GameState를 통해 Multicast 함수 호출
+        CachedGameState->Multicast_BroadcastNotification(InMessage, InDuration);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[CombatState] CachedGameState가 null입니다! 알림을 보낼 수 없습니다."));
+    }
 }

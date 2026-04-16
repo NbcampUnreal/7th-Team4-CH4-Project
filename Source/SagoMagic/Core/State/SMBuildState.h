@@ -23,6 +23,9 @@ public:
 
     virtual EGameState GetStateType() const override { return EGameState::Build; }
 private:
+    /** GMS 브로드캐스트 용도 */
+    void BroadcastNotification(const FText& InMessage, float InDuration);
+    
     /** 총 정비 시간 (초) */
     float Duration = 10.f;
     

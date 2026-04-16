@@ -4,6 +4,8 @@
 #include "Core/SMGameMode.h"
 #include "Core/SMStateMachine.h"
 #include "Core/Wave/SMWaveManagerSubsystem.h"
+#include "GameplayTags/UI/SMUITag.h"
+#include "UI/SMGameplayMessages.h"
 #include "Core/SMGameState.h"
 
 void USMBuildState::Enter()
@@ -16,6 +18,10 @@ void USMBuildState::Enter()
     int32 WaveIndex = StateMachine->GetCurrentWaveIndex();
     CachedGameState = StateMachine->GetOwner()->GetWorld()->GetGameState<ASMGameState>();
     CurrentWaveIndex = StateMachine->GetCurrentWaveIndex();
+    
+    // 정비 시작 알림
+    BroadcastNotification(FText::FromString(TEXT("정비 단계 시작")), 2.0f);
+    
     USMWaveManagerSubsystem* WM = USMWaveManagerSubsystem::Get(this);
     if (!WM) return;
     WM->OnReadyForCombat.BindLambda([this]()
@@ -56,6 +62,22 @@ void USMBuildState::Tick(float DeltaTime)
 
 void USMBuildState::Exit()
 {
+    // 정비 종료 알림
+    BroadcastNotification(FText::FromString(TEXT("정비 단계 종료")), 1.5f);
+    
     Elapsed = 0;
     Super::Exit();
+}
+
+void USMBuildState::BroadcastNotification(const FText& InMessage, float InDuration)
+{
+    if (CachedGameState)
+    {
+        // 캐싱된 GameState를 통해 Multicast 함수 호출
+        CachedGameState->Multicast_BroadcastNotification(InMessage, InDuration);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[BuildState] CachedGameState가 null입니다! 알림을 보낼 수 없습니다."));
+    }
 }

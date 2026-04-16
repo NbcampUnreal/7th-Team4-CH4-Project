@@ -2,6 +2,7 @@
 #include "UI/SMEnemyHPBarWidget.h"
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"
+#include "SMDamageFloatingText.h"
 #include "TimerManager.h"
 #include "GAS/AttributeSets/SMMonsterAttributeSet.h"
 
@@ -78,7 +79,6 @@ void USMEnemyHPBarComponent::InitializeHPBar(UAbilitySystemComponent* InASC)
 	}
 }
 
-
 void USMEnemyHPBarComponent::OnHPChanged(const FOnAttributeChangeData& Data)
 {
 	SetVisibility(true);
@@ -88,7 +88,19 @@ void USMEnemyHPBarComponent::OnHPChanged(const FOnAttributeChangeData& Data)
 		GetWorld()->GetTimerManager().SetTimer(HideTimerHandle, this, &USMEnemyHPBarComponent::HideHPBar,
 		                                       DisplayDuration, false);
 	}
-
+	
+	float Damage = Data.OldValue - Data.NewValue; // 데미지 텍스트 추가
+	if (Damage > 0.f)
+	{
+		// 쿨다운 체크 로직
+		float CurrentTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+		if (CurrentTime - LastDamageTextSpawnTime >= DamageTextSpawnCooldown)
+		{
+			SpawnDamageFloatingText(Damage);
+			LastDamageTextSpawnTime = CurrentTime;
+		}
+	}
+	
 	if (USMEnemyHPBarWidget* HPWidget = Cast<USMEnemyHPBarWidget>(GetUserWidgetObject()))
 	{
 		if (ASC)
@@ -124,4 +136,34 @@ void USMEnemyHPBarComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 
 	Super::EndPlay(EndPlayReason);
+}
+
+void USMEnemyHPBarComponent::SpawnDamageFloatingText(float DamageAmount)
+{
+	if (!DamageTextClass) return;
+
+	AActor* Owner = GetOwner();
+	if (!Owner) return;
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+	
+	if (World->GetNetMode() == NM_DedicatedServer) // 데디 서버 스폰 방지
+	{
+		return;
+	}
+	
+	// 몬스터 머리 위 랜덤 위치에 스폰
+	FVector SpawnLocation = Owner->GetActorLocation() + FVector(0.f, 0.f, 100.f);
+
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	ASMDamageFloatingText* DamageText = World->SpawnActor<ASMDamageFloatingText>(
+		DamageTextClass, SpawnLocation, FRotator::ZeroRotator, Params);
+
+	if (DamageText)
+	{
+		DamageText->SetDamageValue(DamageAmount);
+	}
 }

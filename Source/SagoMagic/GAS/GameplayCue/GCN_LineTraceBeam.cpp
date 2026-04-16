@@ -63,17 +63,16 @@ void AGCN_LineTraceBeam::InitializeBeam(AActor* MyTarget, const FGameplayCuePara
 
 	TargetActor = MyTarget;
 	BeamRange = Parameters.RawMagnitude; //GA_LineTrace에서 RangeCm으로 전달한 값
+	bPenetrate = Parameters.NormalizedMagnitude >= 1.f;
 
 	if (IsValid(BeamNiagaraSystem) == false) return;
 	BeamNiagaraComponent->SetAsset(BeamNiagaraSystem);
-
-	//TODO: 스태프 무기 추가시 변경필요
+	
 	ACharacter* Character = Cast<ACharacter>(MyTarget);
 	if (IsValid(Character) == false || IsValid(Character->GetMesh()) == false) return;
 	BeamNiagaraComponent->AttachToComponent(
 		Character->GetMesh(),
-		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-		AttachSocketName
+		FAttachmentTransformRules::SnapToTargetNotIncludingScale
 	);
 
 	BeamNiagaraComponent->Activate(true);
@@ -86,19 +85,22 @@ void AGCN_LineTraceBeam::UpdateBeam()
 
 	ACharacter* Character = Cast<ACharacter>(TargetActor.Get());
 	if (IsValid(Character) == false) return;
+
+	//Staff_Tip소켓 위치를 LineTrace시작점으로 사용
+	FVector Origin = GetAttachSocketLocation(Character);
+	BeamNiagaraComponent->SetWorldLocation(Origin);
 	
-	const FVector Origin = Character->GetActorLocation();
 	FVector AimDirection = Character->GetBaseAimRotation().Vector();
-	
+
 	AController* Controller = Character->GetController();
 	if (IsValid(Controller) == true)
 	{
 		//스킬 사용플레이어인 경우 Controller 방향으로
 		AimDirection = Controller->GetControlRotation().Vector();
 	}
-	
+
 	const FVector TraceEnd = Origin + AimDirection * BeamRange;
-	
+
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(TargetActor.Get());
 
@@ -107,15 +109,18 @@ void AGCN_LineTraceBeam::UpdateBeam()
 	GetWorld()->LineTraceMultiByChannel(HitResults, Origin, TraceEnd, ECC_Pawn, Params);
 
 	FVector BeamEndPoint = TraceEnd;
-	for (const FHitResult& Hit : HitResults)
+	if (bPenetrate == false)
 	{
-		AActor* HitActor = Hit.GetActor();
-		if (IsValid(HitActor) == false) continue;
+		for (const FHitResult& Hit : HitResults)
+		{
+			AActor* HitActor = Hit.GetActor();
+			if (IsValid(HitActor) == false) continue;
 
-		if (HasAnyTeamTag(HitActor) == true) continue;
+			if (HasAnyTeamTag(HitActor) == true) continue;
 
-		BeamEndPoint = Hit.ImpactPoint;
-		break;
+			BeamEndPoint = Hit.ImpactPoint;
+			break;
+		}
 	}
 	//Niagara USER파라미터 "BeamEnd" 갱신
 	BeamNiagaraComponent->SetVariableVec3(TEXT("BeamEnd"), BeamEndPoint);
@@ -129,4 +134,24 @@ bool AGCN_LineTraceBeam::HasAnyTeamTag(AActor* Actor) const
 	if (IsValid(ASC) == false) return false;
 
 	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Team);
+}
+
+FVector AGCN_LineTraceBeam::GetAttachSocketLocation(ACharacter* Character) const
+{
+	// WeaponSocket에 붙은 StaticMesh에서 탐색
+	TArray<UStaticMeshComponent*> Comps;
+	Character->GetComponents<UStaticMeshComponent>(Comps);
+	for (UStaticMeshComponent* Comp : Comps)
+	{
+		if (IsValid(Comp) == false) continue;
+		if (Comp->GetAttachSocketName() != FName("WeaponSocket")) continue;
+		if (Comp->DoesSocketExist(AttachSocketName))
+		{
+			return Comp->GetSocketLocation(AttachSocketName);
+		}
+		break;
+	}
+
+	// 못 찾으면 캐릭터 루트 위치 반환
+	return Character->GetActorLocation();
 }

@@ -25,7 +25,9 @@ namespace SMSkillTag
 	//스킬 업그레이드 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Projectile_Multishot, TEXT("Upgrade.Projectile.Multishot"))
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Projectile_Homing, TEXT("Upgrade.Projectile.Homing"))
-	
+	UE_DEFINE_GAMEPLAY_TAG(Upgrade_LineTrace_Penetrate, TEXT("Upgrade.LineTrace.Penetrate"))
+	UE_DEFINE_GAMEPLAY_TAG(Upgrade_LineTrace_Chain, TEXT("Upgrade.LineTrace.Chain"))
+
 	//GE Spec 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Data_Damage_Amount, TEXT("Data.Damage.Amount"))
 	UE_DEFINE_GAMEPLAY_TAG(Data_Cooldown, TEXT("Data.Cooldown"))
@@ -35,5 +37,6 @@ namespace SMSkillTag
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Skill_SpawnField_Tick, TEXT("GameplayCue.Skill.SpawnField_Tick"))
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Skill_LineTrace_Hit, TEXT("GameplayCue.Skill.LineTrace.Hit"))
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Skill_LineTrace_Beam, TEXT("GameplayCue.Skill.LineTrace.Beam"))
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Skill_LineTrace_Chain, TEXT("GameplayCue.Skill.LineTrace.Chain"))
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Skill_ApplyInstantDamage_Hit, TEXT("GameplayCue.Skill.ApplyInstantDamage_Hit"))
 }

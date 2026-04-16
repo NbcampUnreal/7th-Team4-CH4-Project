@@ -29,11 +29,9 @@ protected:
 	/** BP에서 나이아가라 빔 에셋 할당*/
 	UPROPERTY(EditDefaultsOnly, Category = "Beam")
 	TObjectPtr<UNiagaraSystem> BeamNiagaraSystem;
-
-	//TODO: 스태프 무기 추가시 스태프 끝 소켓 이름으로 변경
-	//현재는 스태프가 없으므로 몸 중앙에 임시 부착
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Beam")
-	FName AttachSocketName = TEXT("pelvis");
+	FName AttachSocketName = TEXT("Staff_Tip");
 
 private:
 	UPROPERTY()
@@ -48,4 +46,8 @@ private:
 	void UpdateBeam();
 
 	bool HasAnyTeamTag(AActor* Actor) const;
+	
+	bool bPenetrate = false;
+	
+	FVector GetAttachSocketLocation(ACharacter* Character) const;
 };

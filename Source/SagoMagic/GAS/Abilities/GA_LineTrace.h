@@ -47,9 +47,38 @@ private:
 	// 반복 데미지 틱 콜백: 매 틱마다 LineTrace → 맞으면 데미지, 아니면 스킵
 	void ApplyDamageTick();
 
+	//기본 공격 로직, 빔에 맞는 첫번제 적에게만 데미지
+	void NormalAttack(UWorld* World, const FGameplayAbilityActorInfo* ActorInfo);	
+	
 	// 지속시간 종료 콜백: EndAbility 호출
 	void OnDurationExpired();
 
 	FTimerHandle DamageTickHandle;
 	FTimerHandle DurationEndHandle;
+	
+	//관통 공격, 빔에 맞는 모든 적에게 데미지
+	void PenetrateAttack(UWorld* World, const FGameplayAbilityActorInfo* ActorInfo);
+	
+	bool FindAllEnemies(UWorld* World, const FGameplayAbilityActorInfo* ActorInfo,
+					TArray<AActor*>& OutEnemies) const;
+	
+	bool bIsPenetrate = false;
+	
+	//체인 공격
+	void ChainAttack(UWorld* World, const FGameplayAbilityActorInfo* ActorInfo);
+	
+	bool FindNearestEnemy(UWorld* World, const FVector& Origin,
+					  float SearchRadius,
+					  const TArray<AActor*>& ExcludeActors,
+					  AActor*& OutEnemy) const;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Attack|Chain")
+	int32 MaxChainCount = 4;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Attack|Chain")
+	float ChainSearchRadiusMultiplier = 0.8f;
+	
+	float ChainSearchRadius = 800.f;	
+	
+	bool bIsChainAttacking = false;
 };

@@ -14,6 +14,7 @@
 #include "GameFramework/Pawn.h"
 #include "InputAction.h"
 #include "Core/SMGameMode.h"
+#include "GameFramework/PawnMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/Inventory/SMInventoryRootWidget.h"
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
@@ -27,6 +28,9 @@ void ASMPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// 게임이 종료된 후 로비로 돌아와 다시 컨트롤러를 생성하면 설정들 초기화
+	ResetIgnoreInputFlags();
+	
 	SetShowMouseCursor(true);
 
 	FInputModeGameAndUI InputMode;
@@ -158,6 +162,21 @@ void ASMPlayerController::ClientRPC_ShowGameResult_Implementation(bool bIsVictor
 			HUDMgr->ShowGameResult(bIsVictory, InReturnDelay);
 		}
 	}
+}
+
+void ASMPlayerController::ClientRPC_LockPlayerControl_Implementation()
+{
+	SetIgnoreMoveInput(true);
+	
+	if (APawn* ControlledPawn = GetPawn())
+	{
+		if (UPawnMovementComponent* MovementComp = ControlledPawn->GetMovementComponent())
+		{
+			MovementComp->StopMovementImmediately();
+		}
+	}
+	
+	SM_LOG(this, LogSM, Log, TEXT("게임 종료료 인해 조작 잠김"));
 }
 
 void ASMPlayerController::ApplyControllerMappingContext()

@@ -4,7 +4,6 @@
 #include "SMPlayerState.h"
 #include "Character/SMPlayerController.h"
 #include "Core/SMStateMachine.h"
-#include "Wave/SMWaveManagerSubsystem.h"
 #include "EngineUtils.h"
 #include "Building/SMGridManager.h"
 #include "GameFramework/PlayerStart.h"
@@ -139,6 +138,8 @@ void ASMGameMode::BroadcastGameResult(bool bIsVictory)
 	{
 		if (IsValid(PC))
 		{
+			PC->ClientRPC_LockPlayerControl();
+			
 			PC->ClientRPC_ShowGameResult(bIsVictory, ReturnToLobbyDelay);
 		}
 	}

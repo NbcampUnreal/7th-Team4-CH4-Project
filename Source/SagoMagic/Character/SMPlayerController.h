@@ -113,6 +113,10 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientRPC_ShowGameResult(bool bIsVictory, float InReturnDelay);
 	
+	/** 게임 종료 시 캐릭터의 조작을 잠그는 함수 */
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_LockPlayerControl();
+	
 private:
 	/** 컨트롤러 입력 매핑 컨텍스트 적용 */
 	void ApplyControllerMappingContext();

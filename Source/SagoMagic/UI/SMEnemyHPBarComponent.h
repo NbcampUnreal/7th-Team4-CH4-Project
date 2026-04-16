@@ -44,5 +44,10 @@ private:
     UPROPERTY(EditAnywhere, Category = "UI")
     float DisplayDuration = 2.0f;
     UPROPERTY(EditDefaultsOnly, Category = "UI")
-    TSubclassOf<ASMDamageFloatingText> DamageTextClass; // 플로팅 텍스트
+    TSubclassOf<ASMDamageFloatingText> DamageTextClass;
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    float DamageTextSpawnCooldown = 0.1f;
+
+    /** 마지막으로 텍스트를 스폰한 시간 기록용 */
+    float LastDamageTextSpawnTime = 0.f;
 };

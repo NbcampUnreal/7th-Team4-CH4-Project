@@ -2,6 +2,9 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "Components/SphereComponent.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "Building/SMBaseCampActor.h"
 #include "Building/SMBaseBuilding.h"
@@ -32,7 +35,9 @@ void ASMASkillField::InitField(
 	FGameplayEffectSpecHandle InSpecHandle,
 	AActor* InInstigatorActor,
 	float InDuration,
-	float InRangeCm)
+	float InRangeCm,
+	bool bEnablePull,
+	bool bEnableSlow)
 {
 	DamageSpecHandle = InSpecHandle;
 	InstigatorActor = InInstigatorActor;
@@ -66,6 +71,9 @@ void ASMASkillField::InitField(
 		}
 	}
 
+	UWorld* World = GetWorld();
+	if (!World) return;
+
 	// 장판 지속 시간 종료 타이머
 	if (UWorld* World = GetWorld())
 	{
@@ -87,6 +95,18 @@ void ASMASkillField::InitField(
 			&ASMASkillField::CheckInitialOverlaps,
 			StartDelay,
 			false
+		);
+	}
+
+	//체이스 타이머
+	if (bEnableSlow)
+	{
+		World->GetTimerManager().SetTimer(
+			SlowTimerHandle,
+			this,
+			&ASMASkillField::UpdateChaseMovement,
+			ChaseUpdateInterval,
+			true
 		);
 	}
 }
@@ -190,4 +210,72 @@ void ASMASkillField::OnDurationExpired()
 	}
 
 	Destroy();
+}
+
+
+void ASMASkillField::ApplyPull()
+{
+	if (!HasAuthority()) return;
+
+	TArray<AActor*> OverlappingActors;
+	CollisionComponent->GetOverlappingActors(OverlappingActors);
+
+	for (AActor* Actor : OverlappingActors)
+	{
+		if (!IsValid(Actor)) continue;
+		if (InstigatorActor.IsValid() && Actor == InstigatorActor.Get()) continue;
+		if (Actor->IsA<ASMBaseCampActor>() || Actor->IsA<ASMBaseBuilding>()) continue;
+
+		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
+		if (!TargetASC || TargetASC->HasMatchingGameplayTag(SMGameFlowTag::Team)) continue;
+
+		ACharacter* Character = Cast<ACharacter>(Actor);
+		if (!Character) continue;
+
+		FVector PullDir = (GetActorLocation() - Actor->GetActorLocation()).GetSafeNormal2D();
+		Character->LaunchCharacter(PullDir * PullStrength, true, false);
+	}
+}
+
+void ASMASkillField::UpdateChaseMovement()
+{
+	if (!HasAuthority()) return;
+
+	TArray<AActor*> FoundActors;
+	UKismetSystemLibrary::SphereOverlapActors(
+		this,
+		GetActorLocation(),
+		ChaseSearchRadius, //이 반경 안에 있는 적만 탐색
+		{UEngineTypes::ConvertToObjectType(ECC_Pawn)},
+		nullptr,
+		{this},
+		FoundActors
+	);
+
+	AActor* NearestTarget = nullptr;
+	float NearestDistSq = FLT_MAX; //탐색
+
+	for (AActor* Actor : FoundActors)
+	{
+		if (!IsValid(Actor)) continue;
+		if (InstigatorActor.IsValid() && Actor == InstigatorActor.Get()) continue;
+
+		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
+		if (!TargetASC || TargetASC->HasMatchingGameplayTag(SMGameFlowTag::Team)) continue;
+
+		float DistSq = FVector::DistSquared2D(GetActorLocation(), Actor->GetActorLocation());
+		if (DistSq < NearestDistSq)
+		{
+			NearestDistSq = DistSq;
+			NearestTarget = Actor;
+		}
+	}
+
+	// 타겟이 있을 때만 이동
+	if (NearestTarget)
+	{
+		FVector Dir = (NearestTarget->GetActorLocation() - GetActorLocation()).GetSafeNormal2D();
+		FVector NewLocation = GetActorLocation() + Dir * ChaseSpeed * ChaseUpdateInterval;
+		SetActorLocation(NewLocation, true);
+	}
 }

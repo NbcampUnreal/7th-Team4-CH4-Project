@@ -18,7 +18,7 @@ public:
 	ASMASkillField();
 
 	void InitField(FGameplayEffectSpecHandle InSpecHandle, AActor* InInstigatorActor,
-		float InDuration, float InRangeCm);
+		float InDuration, float InRangeCm, bool bEnablePull = false, bool bEnableChase = false);
 	
 public:
 	float GetFieldDuration() const { return Duration; }
@@ -38,6 +38,26 @@ protected:
 	/** 스폰 직후 즉시 데미지 방지용 딜레이 - BP에서 조정 가능 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field")
 	float StartDelay = 0.5f;
+	
+	/** 당기는 힘 cm/s */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Pull")
+	float PullStrength = 500.f;
+
+	/** 당기기 적용 주기 초 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Pull")
+	float PullInterval = 0.1f;
+	
+	/** 장판 이동 속도 cm/s */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Chase")
+	float ChaseSpeed = 150.f;
+
+	/** 추적 대상 탐색 반경 - 장판 반경보다 크게 설정해야됨 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Chase")
+	float ChaseSearchRadius = 1000.f;
+
+	/** 위치 갱신 주기 초 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Chase")
+	float ChaseUpdateInterval = 0.1f;
 
 private:
 	UFUNCTION()

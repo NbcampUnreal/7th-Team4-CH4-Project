@@ -11,9 +11,8 @@ USMInteractionWorldWidgetComponent::USMInteractionWorldWidgetComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 	SetComponentTickEnabled(true);
 
-	SetWidgetSpace(EWidgetSpace::World);
-	SetDrawAtDesiredSize(false);
-	SetDrawSize(FIntPoint(1000, 600));
+	SetWidgetSpace(EWidgetSpace::Screen);
+	SetDrawAtDesiredSize(true);
 	SetPivot(FVector2D(0.5f, 1.0f));
 	SetTwoSided(true);
 	SetBlendMode(EWidgetBlendMode::Transparent);
@@ -24,14 +23,6 @@ USMInteractionWorldWidgetComponent::USMInteractionWorldWidgetComponent()
 void USMInteractionWorldWidgetComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	SetWidgetSpace(EWidgetSpace::Screen);
-	SetDrawAtDesiredSize(true);
-	SetDrawSize(FVector2D(360.0f, 180.0f));
-	SetPivot(FVector2D(0.5f, 1.0f));
-	SetTwoSided(true);
-	SetBlendMode(EWidgetBlendMode::Transparent);
-	SetHiddenInGame(true);
 
 	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0))
 	{

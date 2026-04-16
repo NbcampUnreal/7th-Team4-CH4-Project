@@ -57,6 +57,13 @@ void USMQuickSlotBarWidget::NativeTick(const FGeometry& InGeometry, float InDelt
 		return;
 	}
 
+	const ESlateVisibility WidgetVisibility = GetVisibility();
+	if (WidgetVisibility == ESlateVisibility::Collapsed || WidgetVisibility == ESlateVisibility::Hidden)
+	{
+		bPendingPreviewRebuild = false;
+		return;
+	}
+
 	ForceLayoutPrepass();
 	RebuildSlotPreviewVisuals();
 }
@@ -486,6 +493,14 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 		return;
 	}
 
+	auto IsRenderableVisibility = [](const ESlateVisibility InVisibility)
+	{
+		return InVisibility == ESlateVisibility::Visible ||
+			InVisibility == ESlateVisibility::HitTestInvisible ||
+			InVisibility == ESlateVisibility::SelfHitTestInvisible;
+	};
+
+	const bool bWidgetVisibleForDeferredRebuild = IsRenderableVisibility(GetVisibility());
 	bool bNeedsDeferredRebuild = false;
 
 	for (const FSMQuickSlotEntry& SlotEntry : Slots)
@@ -597,7 +612,14 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 		const int32 PreviewHeight = FMath::Max(1, MaxY - MinY + 1);
 		bool bHasCachedGeometry = false;
 		const FVector2D EffectivePreviewAreaSize = ResolvePreviewAreaSize(TargetPreviewBoundsWidget, bHasCachedGeometry);
-		bNeedsDeferredRebuild |= (bHasCachedGeometry == false);
+		const FVector2D DesiredPreviewAreaSize = TargetPreviewBoundsWidget->GetDesiredSize();
+		const bool bHasDesiredPreviewSize = DesiredPreviewAreaSize.X > 0.0f && DesiredPreviewAreaSize.Y > 0.0f;
+		const bool bTargetWidgetVisibleForDeferredRebuild = IsRenderableVisibility(TargetPreviewBoundsWidget->GetVisibility());
+		bNeedsDeferredRebuild |=
+			(bHasCachedGeometry == false &&
+			 bHasDesiredPreviewSize == false &&
+			 bWidgetVisibleForDeferredRebuild &&
+			 bTargetWidgetVisibleForDeferredRebuild);
 
 		const float PreviewCellSpacing = PreviewCellPadding * 2.0f;
 		const float PreviewOuterPadding = PreviewCellPadding * 2.0f;

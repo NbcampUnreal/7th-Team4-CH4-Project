@@ -53,6 +53,14 @@ void USMInventoryContextMenuWidget::InitializeContextMenu(const FGuid& InItemIns
 		bCanDropItem = InventoryComponent->CanDropItem(ItemInstanceId);
 		bCanDeleteItem = InventoryComponent->HasItem(ItemInstanceId);
 
+		if (const UWorld* World = GetWorld())
+		{
+			if (World->GetMapName().Contains(TEXT("L_Lobby")))
+			{
+				bCanDeleteItem = false;
+			}
+		}
+
 		if (bCanOpenSkillInventory)
 		{
 			int32 QuickSlotIndex = INDEX_NONE;

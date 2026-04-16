@@ -9,7 +9,9 @@ class APawn;
 class USceneComponent;
 class UStaticMeshComponent;
 class USMInteractionTargetComponent;
+class USMInteractionWorldWidgetComponent;
 class USMItemDefinition;
+struct FSMInteractionWorldInfoData;
 class USMWorldVisualFragment;
 
 
@@ -69,6 +71,12 @@ public:
 		return InteractionTargetComponent;
 	}
 
+	/** 월드 상호작용 정보 위젯 컴포넌트 Getter */
+	USMInteractionWorldWidgetComponent* GetInteractionWorldWidgetComponent() const
+	{
+		return InteractionWorldWidgetComponent;
+	}
+
 	/** 초기화 여부 Getter */
 	bool IsInitialized() const
 	{
@@ -84,6 +92,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Item Drop")
 	void HandleInteract(APawn* InInteractingPawn);
 
+	/** 월드 상호작용 정보 표시 요청 */
+	void ShowInteractionWorldInfo();
+
+	/** 월드 상호작용 정보 숨김 요청 */
+	void HideInteractionWorldInfo();
+
 private:
 	/** Payload 복제 수신 함수 */
 	UFUNCTION()
@@ -96,6 +110,9 @@ public:
 protected:
 	/** 월드 비주얼 적용 */
 	void ApplyWorldVisual();
+
+	/** 월드 상호작용 정보 데이터 구성 */
+	bool BuildInteractionWorldInfoData(FSMInteractionWorldInfoData& OutDisplayData) const;
 
 	/** 상호작용 가능 상태 갱신 */
 	void RefreshInteractionState();
@@ -120,10 +137,18 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item Drop")
 	TObjectPtr<USMInteractionTargetComponent> InteractionTargetComponent;
 
+	/** 월드 상호작용 정보 위젯 컴포넌트 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Item Drop")
+	TObjectPtr<USMInteractionWorldWidgetComponent> InteractionWorldWidgetComponent;
+
 protected:
 	/** 드랍 아이템 Payload */
 	UPROPERTY(ReplicatedUsing=OnRep_ItemDropPayload, VisibleAnywhere, BlueprintReadOnly, Category="Item Drop")
 	FSMItemDropPayload ItemDropPayload;
+
+	/** 드랍 월드 정보 위젯 표시 위치 오프셋 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item Drop|Interaction Widget")
+	FVector InteractionInfoWidgetOffset = FVector(0.0f, 0.0f, 120.0f);
 
 private:
 	/** 초기화 여부 */

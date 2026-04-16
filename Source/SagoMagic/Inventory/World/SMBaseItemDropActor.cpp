@@ -1,6 +1,7 @@
 ﻿#include "Inventory/World/SMBaseItemDropActor.h"
 
 #include "Net/UnrealNetwork.h"
+#include "Components/PrimitiveComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Pawn.h"
@@ -10,11 +11,18 @@
 #include "Materials/MaterialInstanceDynamic.h"
 
 #include "Components/SMInteractionTargetComponent.h"
+#include "Components/SMInteractionWorldWidgetComponent.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 
+#include "Inventory/Items/Definitions/SMGemItemDefinition.h"
 #include "Inventory/Items/Definitions/SMItemDefinition.h"
+#include "Inventory/Items/Definitions/SMSkillItemDefinition.h"
+#include "Inventory/Items/Fragments/SMGemModifierFragment.h"
+#include "Inventory/Items/Fragments/SMGridShapeFragment.h"
 #include "Inventory/Items/Fragments/SMDisplayInfoFragment.h"
+#include "Inventory/Items/Fragments/SMSkillProgressionFragment.h"
 #include "Inventory/Items/Fragments/SMWorldVisualFragment.h"
+#include "UI/Inventory/SMInteractionWorldInfoWidget.h"
 
 ASMBaseItemDropActor::ASMBaseItemDropActor()
 	: bInitialized(false)
@@ -31,6 +39,12 @@ ASMBaseItemDropActor::ASMBaseItemDropActor()
 	InteractionTargetComponent = CreateDefaultSubobject<USMInteractionTargetComponent>(
 		TEXT("InteractionTargetComponent"));
 
+	InteractionWorldWidgetComponent = CreateDefaultSubobject<USMInteractionWorldWidgetComponent>(
+		TEXT("InteractionWorldWidgetComponent"));
+	InteractionWorldWidgetComponent->SetupAttachment(RootSceneComponent);
+	InteractionWorldWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	InteractionWorldWidgetComponent->SetGenerateOverlapEvents(false);
+
 	if (InteractionTargetComponent != nullptr)
 	{
 		InteractionTargetComponent->SetInteractionDisplayText(FText::FromString(TEXT("습득")));
@@ -41,6 +55,11 @@ ASMBaseItemDropActor::ASMBaseItemDropActor()
 void ASMBaseItemDropActor::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (InteractionWorldWidgetComponent != nullptr)
+	{
+		InteractionWorldWidgetComponent->SetRelativeLocation(InteractionInfoWidgetOffset);
+	}
 
 	RefreshInteractionState();
 }
@@ -105,6 +124,33 @@ void ASMBaseItemDropActor::HandleInteract(APawn* InInteractingPawn)
 	UE_LOG(LogTemp, Log, TEXT("Successfully added item from drop payload to inventory. ItemInstanceId: %s"),
 	       *AddedItemInstanceId.ToString());
 	Destroy();
+}
+
+void ASMBaseItemDropActor::ShowInteractionWorldInfo()
+{
+	if (InteractionWorldWidgetComponent == nullptr)
+	{
+		return;
+	}
+
+	FSMInteractionWorldInfoData DisplayData;
+	if (BuildInteractionWorldInfoData(DisplayData) == false)
+	{
+		InteractionWorldWidgetComponent->HideInteractionInfo();
+		return;
+	}
+
+	InteractionWorldWidgetComponent->ShowInteractionInfo(DisplayData);
+}
+
+void ASMBaseItemDropActor::HideInteractionWorldInfo()
+{
+	if (InteractionWorldWidgetComponent == nullptr)
+	{
+		return;
+	}
+
+	InteractionWorldWidgetComponent->HideInteractionInfo();
 }
 
 void ASMBaseItemDropActor::OnRep_ItemDropPayload()
@@ -206,6 +252,113 @@ void ASMBaseItemDropActor::ApplyWorldVisual()
 
 		InteractionTargetComponent->SetHighlightOverlayMaterial(HighlightOverlayMaterial);
 	}
+}
+
+bool ASMBaseItemDropActor::BuildInteractionWorldInfoData(FSMInteractionWorldInfoData& OutDisplayData) const
+{
+	OutDisplayData = FSMInteractionWorldInfoData();
+
+	const USMItemDefinition* ItemDefinition = ResolveItemDefinition();
+	if (ItemDefinition == nullptr)
+	{
+		return false;
+	}
+
+	if (const USMDisplayInfoFragment* DisplayInfoFragment =
+		ItemDefinition->FindFragmentByClass<USMDisplayInfoFragment>())
+	{
+		OutDisplayData.DisplayName = DisplayInfoFragment->GetDisplayName();
+		OutDisplayData.Description = DisplayInfoFragment->GetDescription();
+		OutDisplayData.AccentColor = DisplayInfoFragment->GetAccentColor();
+	}
+
+	if (const USMGridShapeFragment* GridShapeFragment =
+		ItemDefinition->FindFragmentByClass<USMGridShapeFragment>())
+	{
+		OutDisplayData.ShapeMask = GridShapeFragment->GetShapeMask();
+	}
+
+	const bool bIsSkillItem =
+		ItemDropPayload.ItemType == ESMItemType::Skill || ItemDefinition->IsA<USMSkillItemDefinition>();
+	const bool bIsGemItem =
+		ItemDropPayload.ItemType == ESMItemType::Gem || ItemDefinition->IsA<USMGemItemDefinition>();
+
+	bool bHasEmbeddedGem = false;
+	for (const FSMNestedItemDropSnapshot& Snapshot : ItemDropPayload.GetNestedItemSnapshots())
+	{
+		if (Snapshot.ItemType == ESMItemType::Gem)
+		{
+			bHasEmbeddedGem = true;
+			break;
+		}
+	}
+
+	if (bIsGemItem)
+	{
+		int32 ModifierValue = 0;
+		if (const USMGemModifierFragment* GemModifierFragment =
+			ItemDefinition->FindFragmentByClass<USMGemModifierFragment>())
+		{
+			ModifierValue = GemModifierFragment->GetModifierValue();
+		}
+
+		FString SummaryString = FString::Printf(TEXT("%d%%"), ModifierValue);
+
+		OutDisplayData.SummaryText = FText::FromString(SummaryString);
+	}
+	else if (bIsSkillItem)
+	{
+		int32 CurrentLevel = 1;
+		int32 MaxLevel = TNumericLimits<int32>::Max();
+		bool bLevelFromEmbeddedSameSkill = true;
+
+		if (const USMSkillProgressionFragment* SkillProgressionFragment =
+			ItemDefinition->FindFragmentByClass<USMSkillProgressionFragment>())
+		{
+			CurrentLevel = FMath::Max(1, SkillProgressionFragment->GetBaseLevel());
+			MaxLevel = FMath::Max(CurrentLevel, SkillProgressionFragment->GetMaxLevel());
+			bLevelFromEmbeddedSameSkill = SkillProgressionFragment->IsLevelFromEmbeddedSameSkill();
+		}
+
+		if (bLevelFromEmbeddedSameSkill)
+		{
+			for (const FSMNestedItemDropSnapshot& Snapshot : ItemDropPayload.GetNestedItemSnapshots())
+			{
+				if (Snapshot.GetParentSkillInstanceId() != ItemDropPayload.GetInstanceId())
+				{
+					continue;
+				}
+
+				if (Snapshot.ItemType != ESMItemType::Skill)
+				{
+					continue;
+				}
+
+				if (Snapshot.GetDefinition().ToSoftObjectPath() != ItemDropPayload.GetDefinition().ToSoftObjectPath())
+				{
+					continue;
+				}
+
+				++CurrentLevel;
+			}
+		}
+
+		CurrentLevel = FMath::Clamp(CurrentLevel, 1, MaxLevel);
+
+		FString SummaryString = FString::Printf(TEXT("레벨: %d"), CurrentLevel);
+		if (bHasEmbeddedGem)
+		{
+			SummaryString += TEXT(" | 젬 장착중");
+		}
+
+		OutDisplayData.SummaryText = FText::FromString(SummaryString);
+	}
+	else if (InteractionTargetComponent != nullptr)
+	{
+		OutDisplayData.SummaryText = InteractionTargetComponent->GetInteractionDisplayText();
+	}
+
+	return true;
 }
 
 void ASMBaseItemDropActor::RefreshInteractionState()

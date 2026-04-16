@@ -352,6 +352,14 @@ bool USMInventoryComponent::RemoveItem(const FGuid& InItemInstanceId)
 		return false;
 	}
 
+	if (const UWorld* World = GetWorld())
+	{
+		if (World->GetMapName().Contains(TEXT("L_Lobby")))
+		{
+			return false;
+		}
+	}
+
 	return RemoveItemInternal(InItemInstanceId, true);
 }
 
@@ -554,6 +562,20 @@ bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid&
 			}
 
 			if (IsSkillActuallyEmpty(InItemInstanceId) == false)
+			{
+				return false;
+			}
+
+			const USMSkillProgressionFragment* SkillProgressionFragment =
+				TargetSkillDefinition->FindFragmentByClass<USMSkillProgressionFragment>();
+			if (SkillProgressionFragment == nullptr)
+			{
+				return false;
+			}
+
+			const int32 MaxLevel = FMath::Max(1, SkillProgressionFragment->GetMaxLevel());
+			const int32 CurrentLevel = FMath::Max(1, TargetOwningSkill->GetCachedSummary().GetCurrentLevel());
+			if (CurrentLevel >= MaxLevel)
 			{
 				return false;
 			}
@@ -2186,6 +2208,14 @@ bool USMInventoryComponent::IsSkillActuallyEmpty(const FGuid& InSkillInstanceId)
 
 bool USMInventoryComponent::CanDropItemInternal(const FGuid& InItemInstanceId) const
 {
+	if (const UWorld* World = GetWorld())
+	{
+		if (World->GetMapName().Contains(TEXT("L_Lobby")))
+		{
+			return false;
+		}
+	}
+
 	const FSMItemInstanceData* ItemData = FindItem(InItemInstanceId);
 	const FSMItemInstanceData* BaseItemData = ItemData;
 
@@ -2400,11 +2430,11 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 		return false;
 	}
 
-	float FinalDamage = SkillRuntimeData.BaseDamage + MatchedLevelData->BaseDamage;
-	float FinalTickInterval = SkillRuntimeData.TickInterval + MatchedLevelData->TickInterval;
-	float FinalRangeOrArea = SkillRuntimeData.RangeCm + MatchedLevelData->RangeCm;
-	float FinalDuration = SkillRuntimeData.Duration + MatchedLevelData->Duration;
-	float FinalCooldown = SkillRuntimeData.Cooldown + MatchedLevelData->Cooldown;
+	float FinalDamage = FMath::Max(0.0f, SkillRuntimeData.BaseDamage + MatchedLevelData->BaseDamage);
+	float FinalTickInterval = FMath::Max(0.01f, SkillRuntimeData.TickInterval - MatchedLevelData->TickInterval);
+	float FinalRangeOrArea = FMath::Max(0.0f, SkillRuntimeData.RangeCm + MatchedLevelData->RangeCm);
+	float FinalDuration = FMath::Max(0.0f, SkillRuntimeData.Duration + MatchedLevelData->Duration);
+	float FinalCooldown = FMath::Max(0.01f, SkillRuntimeData.Cooldown - MatchedLevelData->Cooldown);
 	FGameplayTagContainer BehaviorTags = MatchedLevelData->BehaviorTags;
 
 	for (const FSMItemInstanceData* EmbeddedGemData : EmbeddedGems)
@@ -2428,19 +2458,23 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 		switch (GemModifierFragment->GetModifierType())
 		{
 		case ESMGemModifierType::Effect:
-			FinalDamage += static_cast<float>(GemModifierFragment->GetModifierValue());
+			FinalDamage *= 1.0f + (static_cast<float>(GemModifierFragment->GetModifierValue()) / 100.0f);
 			break;
 		case ESMGemModifierType::TickInterval:
-			FinalTickInterval += static_cast<float>(GemModifierFragment->GetModifierValue());
+			FinalTickInterval *= FMath::Max(
+				0.0f,
+				1.0f - (static_cast<float>(GemModifierFragment->GetModifierValue()) / 100.0f));
 			break;
 		case ESMGemModifierType::RangeOrArea:
-			FinalRangeOrArea += static_cast<float>(GemModifierFragment->GetModifierValue());
+			FinalRangeOrArea *= 1.0f + (static_cast<float>(GemModifierFragment->GetModifierValue()) / 100.0f);
 			break;
 		case ESMGemModifierType::Duration:
-			FinalDuration += static_cast<float>(GemModifierFragment->GetModifierValue());
+			FinalDuration *= 1.0f + (static_cast<float>(GemModifierFragment->GetModifierValue()) / 100.0f);
 			break;
 		case ESMGemModifierType::Cooldown:
-			FinalCooldown += static_cast<float>(GemModifierFragment->GetModifierValue());
+			FinalCooldown *= FMath::Max(
+				0.0f,
+				1.0f - (static_cast<float>(GemModifierFragment->GetModifierValue()) / 100.0f));
 			break;
 		case ESMGemModifierType::None:
 		default:
@@ -2449,11 +2483,11 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 	}
 
 	OutSummary.SetCurrentLevel(CurrentLevel);
-	OutSummary.SetFinalDamage(FinalDamage);
-	OutSummary.SetFinalTickInterval(FMath::Max(0.0f, FinalTickInterval));
-	OutSummary.SetFinalRangeOrArea(FinalRangeOrArea);
+	OutSummary.SetFinalDamage(FMath::Max(0.0f, FinalDamage));
+	OutSummary.SetFinalTickInterval(FMath::Max(0.01f, FinalTickInterval));
+	OutSummary.SetFinalRangeOrArea(FMath::Max(0.0f, FinalRangeOrArea));
 	OutSummary.SetFinalDuration(FMath::Max(0.0f, FinalDuration));
-	OutSummary.SetFinalCooldown(FMath::Max(0.0f, FinalCooldown));
+	OutSummary.SetFinalCooldown(FMath::Max(0.01f, FinalCooldown));
 	OutSummary.SetBehaviorTags(BehaviorTags);
 	return true;
 }

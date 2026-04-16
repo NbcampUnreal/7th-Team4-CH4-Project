@@ -47,6 +47,18 @@ void USMInteractionTargetComponent::SetFocusedLocally(bool bInFocusedLocally)
 
 	bFocusedLocally = bInFocusedLocally;
 	ApplyHighlightState();
+
+	if (ASMBaseItemDropActor* DropActor = Cast<ASMBaseItemDropActor>(GetOwner()))
+	{
+		if (bFocusedLocally)
+		{
+			DropActor->ShowInteractionWorldInfo();
+		}
+		else
+		{
+			DropActor->HideInteractionWorldInfo();
+		}
+	}
 }
 
 void USMInteractionTargetComponent::ClearLocalFocus()

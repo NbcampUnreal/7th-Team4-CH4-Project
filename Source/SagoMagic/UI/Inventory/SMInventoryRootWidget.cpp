@@ -45,12 +45,12 @@ USMPlayerInventoryPanelWidget* USMInventoryRootWidget::CreateCurrentPanelWidget(
 		return nullptr;
 	}
 
-	CurrentPanelWidget->InitializePanelWidget(InventoryComponent);
-
 	if (PanelLayer != nullptr)
 	{
 		PanelLayer->AddChild(CurrentPanelWidget);
 	}
+
+	CurrentPanelWidget->InitializePanelWidget(InventoryComponent);
 
 	return CurrentPanelWidget;
 }

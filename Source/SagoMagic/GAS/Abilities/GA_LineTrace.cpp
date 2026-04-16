@@ -38,11 +38,7 @@ void UGA_LineTrace::OnSkillEffect(
 	CueParameters.RawMagnitude = RangeCm;
 	CueParameters.EffectContext = GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
 
-	GetAbilitySystemComponentFromActorInfo()->AddGameplayCue(
-		SMSkillTag::GameplayCue_Skill_LineTrace_Beam,
-		CueParameters);
-
-
+	
 	// CashedSummary에서 Duration / TickInterval 읽기
 	const float SkillDuration = FieldDuration > 0.0f ? FieldDuration : 3.0f;
 

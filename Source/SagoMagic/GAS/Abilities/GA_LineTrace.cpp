@@ -166,8 +166,16 @@ void UGA_LineTrace::ApplyDamageTick()
 	const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
 	if (!ActorInfo) return;
 
-	//매 틱마다 현재 커서 방향으로 AimData 갱신
-	//ExtractAimData(ActorInfo);
+	// ApplyDamageTick 호출 시마다 현재 캐릭터 위치 및 컨트롤러 방향으로 AimData 갱신
+	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
+	if (IsValid(Avatar) == true)
+	{
+		CurrentAimOrigin = Avatar->GetActorLocation();
+		if (AController* Controller = Avatar->GetController())
+		{
+			CurrentAimDirection = Controller->GetControlRotation().Vector();
+		}
+	}
 
 	FHitResult OutHit;
 	const bool bHit = FindFirstEnemy(GetWorld(), ActorInfo, OutHit);

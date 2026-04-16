@@ -557,6 +557,20 @@ bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid&
 			{
 				return false;
 			}
+
+			const USMSkillProgressionFragment* SkillProgressionFragment =
+				TargetSkillDefinition->FindFragmentByClass<USMSkillProgressionFragment>();
+			if (SkillProgressionFragment == nullptr)
+			{
+				return false;
+			}
+
+			const int32 MaxLevel = FMath::Max(1, SkillProgressionFragment->GetMaxLevel());
+			const int32 CurrentLevel = FMath::Max(1, TargetOwningSkill->GetCachedSummary().GetCurrentLevel());
+			if (CurrentLevel >= MaxLevel)
+			{
+				return false;
+			}
 		}
 		else
 		{

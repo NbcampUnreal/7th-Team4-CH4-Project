@@ -9,6 +9,7 @@
 #include "Core/DataManager/SMAsyncDataManager.h"
 #include "Core/DataManager/SMSyncDataManager.h"
 #include "Core/Wave/SMWaveManagerSubsystem.h"
+#include "Core/SMGameMode.h"
 #include "Engine/AssetManager.h"
 #include "Inventory/World/SMBaseItemDropActor.h"
 #include "Inventory/Core/SMItemDropTypes.h"
@@ -16,6 +17,9 @@
 #include "Inventory/Items/Definitions/SMGemItemDefinition.h"
 #include "Inventory/Items/Definitions/SMSkillItemDefinition.h"
 #include "Net/UnrealNetwork.h"
+#include "Building/SMBaseCampActor.h"
+#include "Kismet/GameplayStatics.h"
+
 
 ASMMonsterBase::ASMMonsterBase()
 {
@@ -84,6 +88,68 @@ void ASMMonsterBase::OnRep_MonsterAssetId()
     USMMonsterDataAsset* DataAsset = Cast<USMMonsterDataAsset>(AM->GetLoadAsset(MonsterAssetId));
     if (DataAsset)
         ApplyVisuals(DataAsset);
+}
+
+void ASMMonsterBase::SelfKill()
+{
+    if (!HasAuthority() || !IsValid(this)) return;
+
+    // ── 1) GameMode에서 BaseCamp 즉시 획득 (O(1)) ──
+    ASMGameMode* GM = GetWorld()->GetAuthGameMode<ASMGameMode>();
+    ASMBaseCampActor* TargetCamp = GM ? GM->GetBaseCamp() : nullptr;
+
+    // 파괴됐거나 무효하면 데미지 대상에서 제외 (몬스터 제거는 계속 진행)
+    if (IsValid(TargetCamp) && TargetCamp->GetCurrentHealth() > 0.f)
+    {
+        // ── 2) BaseCamp AttributeSet에 직접 HP 차감 ──
+        if (IAbilitySystemInterface* ASCInterface = Cast<IAbilitySystemInterface>(TargetCamp))
+        {
+            if (UAbilitySystemComponent* TargetASC = ASCInterface->GetAbilitySystemComponent())
+            {
+                if (USMBaseCampAttributeSet* CampAttr = const_cast<USMBaseCampAttributeSet*>(
+                    TargetASC->GetSet<USMBaseCampAttributeSet>()))
+                {
+                    const float OldHealth = CampAttr->GetHealth();
+                    const float NewHealth = FMath::Clamp(OldHealth - SelfKillDamage, 0.f, CampAttr->GetMaxHealth());
+                    CampAttr->SetHealth(NewHealth);
+
+                    UE_LOG(LogTemp, Log, TEXT("[SelfKill] %s → BaseCamp HP: %.1f → %.1f"),
+                        *GetName(), OldHealth, NewHealth);
+
+                    // HP 0 도달 시 GameMode에 패배 처리 요청
+                    // (PostGameplayEffectExecute를 우회했으므로 여기서 명시적으로 호출)
+                    if (NewHealth <= 0.f && OldHealth > 0.f && GM)
+                    {
+                        GM->OnBaseCampDestroyed();
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[SelfKill] %s - BaseCamp 없음/파괴됨"), *GetName());
+    }
+
+    // ── 3) AI / 이동 정리 ──
+    if (ASMMonsterAIController* AICtl = Cast<ASMMonsterAIController>(GetController()))
+    {
+        AICtl->StopMovement();
+        AICtl->StopAttackTimer();
+    }
+    if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+    {
+        MoveComp->StopMovementImmediately();
+        MoveComp->DisableMovement();
+    }
+
+    ResetMonster();
+
+    // ── 4) WaveManager에 알림 → ScheduleDestroy 경로로 안전하게 제거 ──
+    if (USMWaveManagerSubsystem* WM = USMWaveManagerSubsystem::Get(this))
+    {
+        WM->OnMonsterDied(this);
+    }
 }
 
 void ASMMonsterBase::BeginPlay()

@@ -1,4 +1,4 @@
-﻿#include "SMWaveManagerSubsystem.h"
+#include "SMWaveManagerSubsystem.h"
 
 #include "EngineUtils.h"
 #include "Core/SMGameMode.h"
@@ -311,6 +311,30 @@ void USMWaveManagerSubsystem::CheckAllReady()
         GetWorld()->GetTimerManager().SetTimer(
             PreSpawnTimerHandle,this,
             &USMWaveManagerSubsystem::TickPreSpawning,0.1f,true);
+    }
+}
+
+void USMWaveManagerSubsystem::SelfKillAllAliveMonsters()
+{
+    if (GetWorld()->GetNetMode() == NM_Client) return;
+
+    if (AliveMonsters.IsEmpty())
+    {
+        UE_LOG(LogTemp, Log, TEXT("[WaveManager] 자폭 대상 몬스터 없음"));
+        CheckWaveCleared();
+        return;
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("[WaveManager] 남은 몬스터 %d마리 자폭 시작"), AliveMonsters.Num());
+
+    // AliveMonsters는 SelfKill() → OnMonsterDied() 경로에서 수정되므로 복사본으로 순회
+    TArray<TObjectPtr<ASMMonsterBase>> MonstersToSelfKill = AliveMonsters;
+    for (ASMMonsterBase* Monster : MonstersToSelfKill)
+    {
+        if (IsValid(Monster))
+        {
+            Monster->SelfKill();
+        }
     }
 }
 

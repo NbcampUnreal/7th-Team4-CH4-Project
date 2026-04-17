@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "SMBaseState.h"
@@ -41,6 +41,9 @@ private:
     
     /** 1초마다 복제시간 */
     float SyncElapsed = 0.f;
+
+    /** 제한시간 초과 처리가 한 번만 실행되도록 하는 플래그 */
+    bool bTimeExpiredHandled = false;
     
     UPROPERTY()
     TObjectPtr<ASMGameState> CachedGameState = nullptr;

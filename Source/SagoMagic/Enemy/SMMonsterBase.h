@@ -34,7 +34,9 @@ public:
     UFUNCTION()
     void OnRep_MonsterAssetId();
 
-    
+    /** Wave 종료 시 호출 - BaseCamp에 데미지를 주고 자기 자신 제거 (서버 전용) */
+    void SelfKill();
+
 protected:
     virtual void BeginPlay() override;
     virtual void PossessedBy(AController* NewController) override;
@@ -73,6 +75,9 @@ public:
 
     UPROPERTY(ReplicatedUsing = OnRep_MonsterAssetId)
     FPrimaryAssetId MonsterAssetId;
-    
+
+    /** 자폭 시 1마리당 BaseCamp에 적용할 데미지 양 */
+    UPROPERTY(EditDefaultsOnly, Category = "SelfKill")
+    float SelfKillDamage = 5.0f;
 };
 

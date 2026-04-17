@@ -13,6 +13,7 @@
 #include "SMASkillField.h"
 #include "Building/SMBaseCampActor.h"
 #include "Building/SMBaseBuilding.h"
+#include "GameplayTags/Enemy/SMEnemyTag.h"
 
 ASMASkillProjectile::ASMASkillProjectile()
 {
@@ -196,7 +197,7 @@ bool ASMASkillProjectile::IsAvailableEnemy(AActor* Actor) const
 	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
 	if (IsValid(ASC) == false) return false;
 	
-	//TODO: Enemy Death태그 확인
+	if (ASC->HasMatchingGameplayTag(SMEnemyTag::Enemy_State_Death) == true) return false;
 	
 	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Enemy);
 }

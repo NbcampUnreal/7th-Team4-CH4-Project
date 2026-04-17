@@ -10,6 +10,7 @@
 #include "Abilities/GameplayAbilityTargetTypes.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "GameplayTags/Enemy/SMEnemyTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 
 UGA_SkillBase::UGA_SkillBase()
@@ -371,7 +372,7 @@ bool UGA_SkillBase::IsAvailableEnemy(AActor* Actor) const
 	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
 	if (IsValid(ASC) == false) return false;
 	
-	//TODO: Enemy Death태그 확인
+	if (ASC->HasMatchingGameplayTag(SMEnemyTag::Enemy_State_Death) == true) return false;
 	
 	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Enemy);
 }

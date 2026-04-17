@@ -7,6 +7,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
 #include "GameFramework/Character.h"
+#include "GameplayTags/Enemy/SMEnemyTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 
 
@@ -144,7 +145,7 @@ bool AGCN_LineTraceBeam::IsAvailableEnemy(AActor* Actor) const
 	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
 	if (IsValid(ASC) == false) return false;
 	
-	//TODO: Enemy Death태그 확인
+	if (ASC->HasMatchingGameplayTag(SMEnemyTag::Enemy_State_Death) == true) return false;
 	
 	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Enemy);
 }

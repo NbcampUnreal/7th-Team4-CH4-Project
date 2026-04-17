@@ -6,6 +6,8 @@
 #include "GAS/AttributeSets/SMBaseCampAttributeSet.h"
 #include "SMBaseCampActor.generated.h"
 
+class USMInteractionTargetComponent;
+
 UCLASS()
 class SAGOMAGIC_API ASMBaseCampActor : public AActor, public IAbilitySystemInterface
 {
@@ -16,6 +18,10 @@ public:
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	float GetCurrentHealth() const;
+	
+	/** 구조물 수리 요청 */
+	UFUNCTION(BlueprintCallable, Category="Interact|Repair")
+	void HandleInteract(APawn* InInteractingPawn);
 	
 protected:
 	virtual void BeginPlay() override;
@@ -29,4 +35,7 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
 	TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction")
+	TObjectPtr<USMInteractionTargetComponent> InteractionTargetComponent;
 };

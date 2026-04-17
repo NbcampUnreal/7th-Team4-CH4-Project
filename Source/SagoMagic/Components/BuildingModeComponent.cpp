@@ -584,11 +584,15 @@ void USMBuildingModeComponent::ServerRPC_RequestPlaceBuilding_Implementation(con
 
 float USMBuildingModeComponent::GetCornerYawFromConnections(FIntPoint DirA, FIntPoint DirB) const
 {
-	FIntPoint Sum = DirA + DirB;
-	if (Sum == FIntPoint( 1,  1)) return   0.f;
-	if (Sum == FIntPoint(-1,  1)) return  90.f;
-	if (Sum == FIntPoint(-1, -1)) return 180.f;
-	if (Sum == FIntPoint( 1, -1)) return 270.f;
+	if (DirA == FIntPoint(-1, 0) && DirB == FIntPoint( 0, 1)) return   0.f;  // ㄴ
+	if (DirA == FIntPoint(-1, 0) && DirB == FIntPoint( 0,-1)) return 270.f;  // 역ㄴ  ← 90→270
+	if (DirA == FIntPoint( 0, 1) && DirB == FIntPoint(-1, 0)) return 180.f;  // ㄱ
+	if (DirA == FIntPoint( 0,-1) && DirB == FIntPoint(-1, 0)) return  90.f;  // 역ㄱ  ← 270→90
+
+	if (DirA == FIntPoint( 0,-1) && DirB == FIntPoint( 1, 0)) return   0.f;
+	if (DirA == FIntPoint( 0, 1) && DirB == FIntPoint( 1, 0)) return 270.f;  // ← 90→270
+	if (DirA == FIntPoint( 1, 0) && DirB == FIntPoint( 0,-1)) return 180.f;
+	if (DirA == FIntPoint( 1, 0) && DirB == FIntPoint( 0, 1)) return  90.f;  // ← 270→90
 	return 0.f;
 }
 
@@ -613,7 +617,7 @@ FSMCornerInfo USMBuildingModeComponent::GetEffectiveCornerInfo(const TArray<FInt
 		FIntPoint N = Path[i] + PDir;
 		if (GridManager->IsValidGridPosition(N.X, N.Y) && !GridManager->IsCellEmpty(N.X, N.Y))
 		{
-			float Yaw = GetCornerYawFromConnections(PathDir, PDir);
+			float Yaw = GetCornerYawFromConnections(FIntPoint(-PathDir.X,-PathDir.Y), PDir);
 			return {true, Yaw};
 		}
 	}

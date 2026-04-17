@@ -6,6 +6,7 @@
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "DrawDebugHelpers.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 UGA_ApplyInstantDamage::UGA_ApplyInstantDamage()
@@ -23,6 +24,18 @@ void UGA_ApplyInstantDamage::OnSkillEffect(
 	// 부모가 넘겨준 TargetLocation 기준으로 가까운 적 찾기
 	AActor* FoundEnemy = nullptr;
 	bool bFound = FindClosestEnemy(GetWorld(), TargetLocation, DetectionRadius, Avatar, FoundEnemy);
+
+	// 시전 사운드 - 로컬에서 항상 재생
+	if (Avatar->IsLocallyControlled() && CastSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(Avatar, CastSound, Avatar->GetActorLocation());
+	}
+
+	// 어택 사운드 - 로컬에서 적 발견 시 재생
+	if (Avatar->IsLocallyControlled() && bFound && FoundEnemy && AttackSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(Avatar, AttackSound, Avatar->GetActorLocation());
+	}
 
 	// 적중 이펙트 예측
 	if (Avatar->IsLocallyControlled() && !Avatar->HasAuthority())

@@ -8,6 +8,8 @@
 
 class UNiagaraComponent;
 class UNiagaraSystem;
+class USoundBase;
+class UAudioComponent;
 /**
  * 레이저 빔 발사용 GameplayCueNotify_Actor 입니다
  */
@@ -29,13 +31,24 @@ protected:
 	/** BP에서 나이아가라 빔 에셋 할당*/
 	UPROPERTY(EditDefaultsOnly, Category = "Beam")
 	TObjectPtr<UNiagaraSystem> BeamNiagaraSystem;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = "Beam")
 	FName AttachSocketName = TEXT("Staff_Tip");
+
+	/** 빔 지속 루프 사운드 - BP에서 지정 */
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase> BeamSound;
+
+	/** 종료 시 페이드아웃 시간 */
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	float SoundFadeOutDuration = 0.5f;
 
 private:
 	UPROPERTY()
 	TObjectPtr<UNiagaraComponent> BeamNiagaraComponent;
+
+	UPROPERTY()
+	TObjectPtr<UAudioComponent> BeamAudioComponent;
 
 	TWeakObjectPtr<AActor> TargetActor;
 

@@ -47,6 +47,7 @@ namespace SMSkillTag
 	//코스메틱 태그
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Skill_Projectile_Hit)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Skill_SpawnField_Tick)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Skill_SpawnField_DamageTick)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Skill_LineTrace_Hit)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Skill_LineTrace_Beam)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Skill_LineTrace_Chain)

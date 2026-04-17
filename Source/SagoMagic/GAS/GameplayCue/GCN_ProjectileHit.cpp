@@ -1,6 +1,7 @@
 #include "GAS/GameplayCue/GCN_ProjectileHit.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 bool UGCN_ProjectileHit::OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
 {
@@ -28,6 +29,11 @@ bool UGCN_ProjectileHit::OnExecute_Implementation(AActor* MyTarget, const FGamep
 		NiagaraComp->SetVariableLinearColor(FName("Color_Spiral1"), Color_Spiral1);
 		NiagaraComp->SetVariableLinearColor(FName("Color_Trail"),   Color_Trail);
 		NiagaraComp->SetVariableFloat(FName("Scale_All"),           Scale_All);
+	}
+
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(MyTarget, HitSound, Location);
 	}
 
 	return true;

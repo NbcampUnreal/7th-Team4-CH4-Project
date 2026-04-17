@@ -37,6 +37,7 @@ namespace SMSkillTag
 	//Cue 태그
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Skill_Projectile_Hit, TEXT("GameplayCue.Skill.Projectile_Hit"))
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Skill_SpawnField_Tick, TEXT("GameplayCue.Skill.SpawnField_Tick"))
+	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Skill_SpawnField_DamageTick, TEXT("GameplayCue.Skill.SpawnField_DamageTick"))
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Skill_LineTrace_Hit, TEXT("GameplayCue.Skill.LineTrace.Hit"))
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Skill_LineTrace_Beam, TEXT("GameplayCue.Skill.LineTrace.Beam"))
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Skill_LineTrace_Chain, TEXT("GameplayCue.Skill.LineTrace.Chain"))

@@ -7,6 +7,9 @@
 #include "Building/SMGridManager.h"
 #include "Components/ActorComponent.h"
 #include "Data/SMBuildingData.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
+#include "UI/SMGameplayMessages.h"
+#include "GameplayTags/UI/SMUITag.h"
 #include "BuildingModeComponent.generated.h"
 
 class ASMBaseBuilding;

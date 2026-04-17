@@ -39,6 +39,12 @@ void USMBuildingModeComponent::EnableBuildMode()
 	Subsystem->AddMappingContext(BuildIMC, 1);
 	bIsBuildMode = true;
 	SetComponentTickEnabled(true);
+	
+	FBuildModeMsg Msg;
+	Msg.bIsActive = true;
+	Msg.CurrentSlotIndex = CurrentSlotIndex;
+	Msg.TotalSlotCount = CachedBuildingData.Num();
+	UGameplayMessageSubsystem::Get(GetWorld()).BroadcastMessage(SMUITag::Event_BuildMode, Msg);
 }
 
 void USMBuildingModeComponent::DisableBuildMode()
@@ -60,6 +66,10 @@ void USMBuildingModeComponent::DisableBuildMode()
 	bIsWaitingForEndPoint = false;
 	SetComponentTickEnabled(false);
 	ClearGhostActors();
+	
+	FBuildModeMsg Msg;
+	Msg.bIsActive = false;
+	UGameplayMessageSubsystem::Get(GetWorld()).BroadcastMessage(SMUITag::Event_BuildMode, Msg);
 }
 
 void USMBuildingModeComponent::BeginPlay()
@@ -231,6 +241,12 @@ void USMBuildingModeComponent::OnCycleBuilding(const FInputActionValue& Value)
 	CurrentRotationIndex = 0;
 	LastHoverGrid = FIntPoint(-1, -1);
 	ClearGhostActors();
+	
+	FBuildModeMsg Msg;
+	Msg.bIsActive = true;
+	Msg.CurrentSlotIndex = CurrentSlotIndex;
+	Msg.TotalSlotCount = CachedBuildingData.Num();
+	UGameplayMessageSubsystem::Get(GetWorld()).BroadcastMessage(SMUITag::Event_BuildMode, Msg);
 }
 
 void USMBuildingModeComponent::UpdateGhostTransform()

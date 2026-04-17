@@ -62,6 +62,10 @@ void USMEditModeComponent::EnableEditMode()
 	InputMode.SetHideCursorDuringCapture(false);
 	PC->SetInputMode(InputMode);
 	PC->SetShowMouseCursor(true);
+	
+	FEditModeMsg Msg;
+	Msg.bIsActive = true;
+	UGameplayMessageSubsystem::Get(GetWorld()).BroadcastMessage(SMUITag::Event_EditMode, Msg);
 }
 
 void USMEditModeComponent::DisableEditMode()
@@ -92,6 +96,10 @@ void USMEditModeComponent::DisableEditMode()
 	bLastDeltaValid = false;
 	SetComponentTickEnabled(false);
 	ClearSelection();
+	
+	FEditModeMsg Msg;
+	Msg.bIsActive = false;
+	UGameplayMessageSubsystem::Get(GetWorld()).BroadcastMessage(SMUITag::Event_EditMode, Msg);
 }
 
 

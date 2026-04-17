@@ -126,3 +126,35 @@ struct FNotificationMsg
     UPROPERTY(BlueprintReadOnly)
     float DisplayDuration = 2.0f;
 };
+
+/**
+ * UI.Event.BuildMode
+ * Listener :
+ */
+USTRUCT(BlueprintType)
+struct FBuildModeMsg
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsActive = false;
+
+    UPROPERTY(BlueprintReadOnly)
+    int32 CurrentSlotIndex = 0;
+
+    UPROPERTY(BlueprintReadOnly)
+    int32 TotalSlotCount = 0;
+};
+
+/**
+ * UI.Event.EditMode
+ * Listener :
+ */
+USTRUCT(BlueprintType)
+struct FEditModeMsg
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadOnly)
+    bool bIsActive = false;
+};

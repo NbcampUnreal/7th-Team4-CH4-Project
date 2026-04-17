@@ -9,6 +9,8 @@
 #include "GameFramework/PlayerState.h"
 #include "GameFramework/Pawn.h"
 #include "UI/SMNotificationWidget.h"
+#include "UI/SMSkillCooldownWidget.h"
+#include "GameplayTags/Character/SMSkillTag.h"
 
 void USMHUDManager::NativeConstruct()
 {
@@ -28,7 +30,7 @@ void USMHUDManager::NativeDestruct()
 
 void USMHUDManager::TryInitASC()
 {
-	/** HUD가 플레이어 폰을 찾아 ASC 연동 시도 */
+	// HUD가 플레이어 폰을 찾아 ASC 연동
 	if (APlayerController* PC = GetOwningPlayer())
 	{
 		if (APlayerState* PS = PC->GetPlayerState<APlayerState>()) // 폰이 죽어도 살아있어서 더 안정!
@@ -59,10 +61,16 @@ void USMHUDManager::TryInitASC()
 void USMHUDManager::InitializeHUD(UAbilitySystemComponent* InPlayerASC)
 {
 	if (!InPlayerASC) return;
-
-	if (WBP_PlayerStatus) // 자식 위젯으로 데이터를 넘겨줌
+	
+	if (WBP_PlayerStatus) 
 	{
 		WBP_PlayerStatus->InitializeStatus(InPlayerASC);
+	}
+    
+	// 스킬 쿨다운 위젯 초기화
+	if (WBP_SkillCooldown)
+	{
+		WBP_SkillCooldown->InitializeWithASC(InPlayerASC, SMSkillTag::Cooldown_Skill_Projectile); 
 	}
 }
 
@@ -86,7 +94,10 @@ void USMHUDManager::ShowGameResult(bool bIsVictory, float InReturnDelay)
 	{
 		WBP_Notification->SetVisibility(ESlateVisibility::Collapsed);
 	}
-	
+	if (WBP_SkillCooldown)
+	{
+		WBP_SkillCooldown->SetVisibility(ESlateVisibility::Collapsed);
+	}
 	if (WBP_GameResult)
 	{
 		WBP_GameResult->SetVisibility(ESlateVisibility::Visible);

@@ -443,6 +443,7 @@ void USMEditModeComponent::MulticastRPC_SetBuildCollision_Implementation(const T
 		if (!Building) continue;
 		TArray<UPrimitiveComponent*> Prims;
 		Building->GetComponents<UPrimitiveComponent>(Prims);
+		Building->SetIsBeingMoved(bGrabbing);
 		for (UPrimitiveComponent* Prim : Prims)
 		{
 			Prim->SetCollisionResponseToChannel(
@@ -528,6 +529,7 @@ void USMEditModeComponent::MulticastRPC_FinalizeMove_Implementation(const TArray
 		if (!Actors[i]) continue;
 		
 		Actors[i]->SetActorLocation(FinalLocations[i]);
+		Actors[i]->SetIsBeingMoved(false);
 		
 		//배치 완료 후 Pawn 충돌 복원
 		TArray<UPrimitiveComponent*> Prims;

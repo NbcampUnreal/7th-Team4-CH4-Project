@@ -328,16 +328,6 @@ void USMBuildingModeComponent::UpdateGhostTransform()
 		
 		GhostActors.Add(Ghost);
 		
-		// ASMBaseBuilding* Ghost = GetWorld()->SpawnActor<ASMBaseBuilding>(Data->BuildingClass, FTransform::Identity);
-		// if (!Ghost) continue;
-		// Ghost->SetReplicates(false);
-		// Ghost->SetActorEnableCollision(false);
-		//
-		// if (CornerInfos[i].bIsCorner)
-		// {
-		// 	ConvertGhostToCorner(Ghost, CornerInfos[i].Yaw);
-		// }
-		// GhostActors.Add(Ghost);
 	}
 
 	for (int32 i = 0; i < Path.Num() && i < GhostActors.Num(); ++i)

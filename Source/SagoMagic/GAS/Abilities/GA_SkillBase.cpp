@@ -362,5 +362,5 @@ bool UGA_SkillBase::HasAnyTeamTag(AActor* Actor) const
 
 bool UGA_SkillBase::IsAvailableEnemy(AActor* Actor) const
 {
-	return SMGameplayAbilityUtils::HasTeamTag(Actor);
+	return SMGameplayAbilityUtils::IsAvailableEnemy(Actor);
 }

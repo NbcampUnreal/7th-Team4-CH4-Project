@@ -5,6 +5,7 @@
 #include "GameFramework/Actor.h"
 #include "SMBaseBuilding.generated.h"
 
+class USMInteractionTargetComponent;
 class ASMGridManager;
 class USMBuildingAttributeSet;
 /**
@@ -37,6 +38,11 @@ public:
 	
 	UFUNCTION(BlueprintPure, Category = "Building")
 	bool GetIsDestructible() const { return bIsDestructible; }
+	
+	/** 아이템 습득 처리 요청 */
+	UFUNCTION(BlueprintCallable, Category="Item Drop")
+	void HandleInteract(APawn* InInteractingPawn);
+	
 protected:
 	virtual void BeginPlay() override;
 
@@ -53,6 +59,9 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction")
+	TObjectPtr<USMInteractionTargetComponent> InteractionTargetComponent;
 	
 	UPROPERTY()
 	TObjectPtr<USMBuildingAttributeSet> AttributeSet;

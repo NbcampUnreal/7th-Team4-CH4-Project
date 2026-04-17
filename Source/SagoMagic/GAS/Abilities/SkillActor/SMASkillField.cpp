@@ -237,7 +237,7 @@ void ASMASkillField::ApplyPull()
 		if (InstigatorActor.IsValid() && Actor == InstigatorActor.Get()) continue;
 		if (Actor->IsA<ASMBaseCampActor>() || Actor->IsA<ASMBaseBuilding>()) continue;
 		
-		// TODO 태린: 플레이어에 Team 태그 부여되면 이 부분 제거
+		// TODO 태린: 태그관련 추가되면 이부분제거 / 캐릭터 자체르 받아와서 캐릭터를 무시하게끔 작성됨
 		if (Actor->IsA<ASMPlayerCharacter>()) continue;
 
 		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
@@ -255,7 +255,7 @@ void ASMASkillField::ApplyPull()
 void ASMASkillField::ApplySlow(AActor* Actor)
 {
 	if (!IsValid(Actor)) return;
-	// TODO: 플레이어에 Team 태그 부여되면 이 체크 제거
+	// TODO: 태그관련 추가되면 이부분제거 / 캐릭터 자체르 받아와서 캐릭터를 무시하게끔 작성됨
 	if (Actor->IsA<ASMPlayerCharacter>()) return;
 	
 	if (OriginalMoveSpeeds.Contains(Actor)) return; // 이미 슬로우 중

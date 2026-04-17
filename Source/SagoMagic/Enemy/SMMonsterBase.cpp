@@ -18,6 +18,7 @@
 #include "Inventory/Items/Definitions/SMSkillItemDefinition.h"
 #include "Net/UnrealNetwork.h"
 #include "Building/SMBaseCampActor.h"
+#include "GameplayTags/Enemy/SMEnemyTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -79,6 +80,7 @@ void ASMMonsterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ASMMonsterBase, MonsterAssetId);
+    DOREPLIFETIME(ASMMonsterBase, bIsDead);
 }
 
 void ASMMonsterBase::OnRep_MonsterAssetId()
@@ -226,7 +228,8 @@ void ASMMonsterBase::HandleDeath(AController* KillerController)
     // 이미 죽었거나 유효하지 않으면 무시
     if (!IsValid(this) || !HasAuthority()) return;
 
-
+    bIsDead = true;
+    MonsterAbilitySystemComponent->AddLooseGameplayTag(SMEnemyTag::Enemy_State_Death);
     // AnimInstance에 사망 알리기
     //if (USMMonsterAnimInstance* AnimInst =
     //    Cast<USMMonsterAnimInstance>(GetMesh()->GetAnimInstance()))
@@ -388,4 +391,14 @@ void ASMMonsterBase::SpawnDropItem()
         UE_LOG(LogTemp, Log, TEXT("[DropItem] %s 사망 → %s 드롭"),
             *GetName(), *SelectedItem.ToString());
     }
+}
+
+void ASMMonsterBase::OnRep_IsDead()
+{
+    if (bIsDead) HandleClientDeath();
+}
+
+void ASMMonsterBase::HandleClientDeath()
+{
+    MonsterAbilitySystemComponent->AddLooseGameplayTag(SMEnemyTag::Enemy_State_Death);
 }

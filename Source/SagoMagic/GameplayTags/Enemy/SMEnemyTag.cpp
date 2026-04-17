@@ -9,4 +9,6 @@ namespace SMEnemyTag
      *UE_DEFINE_GAMEPLAY_TAG(Data_Reload_Ammo, "Data.Reload.Ammo");
      */
     UE_DEFINE_GAMEPLAY_TAG(Enemy_Attacking, "Enemy.Attacking");
+    UE_DEFINE_GAMEPLAY_TAG(Enemy_State_Death, "Enemy.State.Death");
+    
 }

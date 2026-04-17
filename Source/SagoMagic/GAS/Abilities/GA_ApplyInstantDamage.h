@@ -41,7 +41,4 @@ private:
 		AActor*& OutEnemy) const;
 
 	void OnTargetDataReady(const FGameplayAbilityTargetDataHandle& TargetDataHandle, FGameplayTag ApplicationTag);
-
-	//아군 태그(Team) 보유 여부 확인
-	bool HasAnyTeamTag(AActor* Actor) const;
 };

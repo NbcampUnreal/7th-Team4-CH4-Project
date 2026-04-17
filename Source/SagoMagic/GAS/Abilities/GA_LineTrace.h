@@ -41,9 +41,6 @@ private:
 	                    const FGameplayAbilityActorInfo* ActorInfo,
 	                    FHitResult& OutHit) const;
 
-	//ASC에서 Team태그 확인
-	bool HasAnyTeamTag(AActor* Actor) const;
-
 	// 반복 데미지 틱 콜백: 매 틱마다 LineTrace → 맞으면 데미지, 아니면 스킵
 	void ApplyDamageTick();
 

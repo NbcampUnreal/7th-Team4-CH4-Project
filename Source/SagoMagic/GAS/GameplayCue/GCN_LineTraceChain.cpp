@@ -127,6 +127,7 @@ void AGCN_LineTraceChain::UpdateChain()
 		AActor* HitActor = Hit.GetActor();
 		if (IsValid(HitActor) == false) continue;
 		if (HasAnyTeamTag(HitActor) == true) continue;
+		if (IsAvailableEnemy(HitActor) == false) continue;
 		FirstEnemy = HitActor;
 		break;
 	}
@@ -203,6 +204,7 @@ bool AGCN_LineTraceChain::FindNearestEnemy(const FVector& Origin, const TArray<A
 	{
 		if (IsValid(Actor) == false) continue;
 		if (HasAnyTeamTag(Actor) == true) continue;
+		if (IsAvailableEnemy(Actor) == false) continue;
 
 		const float DistSq = FVector::DistSquared(Origin, Actor->GetActorLocation());
 		if (DistSq < NearestDistSq)
@@ -223,6 +225,18 @@ bool AGCN_LineTraceChain::HasAnyTeamTag(AActor* Actor) const
 	if (IsValid(ASC) == false) return false;
 
 	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Team);
+}
+
+bool AGCN_LineTraceChain::IsAvailableEnemy(AActor* Actor) const
+{
+	if (IsValid(Actor) == false) return false;
+
+	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
+	if (IsValid(ASC) == false) return false;
+	
+	//TODO: Enemy Death태그 확인
+	
+	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Enemy);
 }
 
 FVector AGCN_LineTraceChain::GetAttachSocketLocation(ACharacter* Character) const

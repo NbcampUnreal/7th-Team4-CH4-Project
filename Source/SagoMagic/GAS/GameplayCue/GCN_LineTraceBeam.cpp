@@ -117,6 +117,7 @@ void AGCN_LineTraceBeam::UpdateBeam()
 			if (IsValid(HitActor) == false) continue;
 
 			if (HasAnyTeamTag(HitActor) == true) continue;
+			if (IsAvailableEnemy(HitActor) == false) continue;
 
 			BeamEndPoint = Hit.ImpactPoint;
 			break;
@@ -134,6 +135,18 @@ bool AGCN_LineTraceBeam::HasAnyTeamTag(AActor* Actor) const
 	if (IsValid(ASC) == false) return false;
 
 	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Team);
+}
+
+bool AGCN_LineTraceBeam::IsAvailableEnemy(AActor* Actor) const
+{
+	if (IsValid(Actor) == false) return false;
+
+	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
+	if (IsValid(ASC) == false) return false;
+	
+	//TODO: Enemy Death태그 확인
+	
+	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Enemy);
 }
 
 FVector AGCN_LineTraceBeam::GetAttachSocketLocation(ACharacter* Character) const

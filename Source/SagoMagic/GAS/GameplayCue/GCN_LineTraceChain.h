@@ -60,5 +60,7 @@ private:
 
 	bool HasAnyTeamTag(AActor* Actor) const;
 	
+	bool IsAvailableEnemy(AActor* Actor) const;
+	
 	FVector GetAttachSocketLocation(ACharacter* Character) const;
 };

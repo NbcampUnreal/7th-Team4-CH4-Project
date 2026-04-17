@@ -47,6 +47,8 @@ private:
 
 	bool HasAnyTeamTag(AActor* Actor) const;
 	
+	bool IsAvailableEnemy(AActor* Actor) const;
+	
 	bool bPenetrate = false;
 	
 	FVector GetAttachSocketLocation(ACharacter* Character) const;

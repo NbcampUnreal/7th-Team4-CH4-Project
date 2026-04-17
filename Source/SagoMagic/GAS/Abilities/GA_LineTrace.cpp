@@ -180,20 +180,11 @@ bool UGA_LineTrace::FindFirstEnemy(UWorld* World, const FGameplayAbilityActorInf
 		AActor* HitActor = HitResult.GetActor();
 		if (IsValid(HitActor) == false) continue;
 		if (HasAnyTeamTag(HitActor) == true) continue;
+		if (IsAvailableEnemy(HitActor) == false) continue;
 		OutHit = HitResult;
 		return true;
 	}
 	return false;
-}
-
-bool UGA_LineTrace::HasAnyTeamTag(AActor* Actor) const
-{
-	if (IsValid(Actor) == false) return false;
-
-	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
-	if (IsValid(ASC) == false) return false;
-
-	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Team);
 }
 
 void UGA_LineTrace::ApplyDamageTick()
@@ -352,6 +343,7 @@ bool UGA_LineTrace::FindAllEnemies(UWorld* World, const FGameplayAbilityActorInf
 		CollisionParams.AddIgnoredActor(HitActor); // 다음 트레이스에서 무시
 
 		if (HasAnyTeamTag(HitActor) == true) continue; // 아군은 스킵
+		if (IsAvailableEnemy(HitActor) == false) continue; //적군 태그 없으면 스킵
 
 		OutEnemies.Add(HitActor);
 	}
@@ -440,6 +432,7 @@ bool UGA_LineTrace::FindNearestEnemy(UWorld* World, const FVector& Origin, float
 	{
 		if (IsValid(Actor) == false) continue;
 		if (HasAnyTeamTag(Actor) == true) continue; // 아군 제외
+		if (IsAvailableEnemy(Actor) == false) continue; //적군 태그 없으면 제외
 
 		const float DistSq = FVector::DistSquared(Origin, Actor->GetActorLocation());
 		if (DistSq < NearestDistSq)

@@ -198,7 +198,8 @@ AActor* ASMMonsterAIController::FindBuildingInRange()
         //파괴 불가능 혹은 이미 불가능한 건물 스킵
         if (!Building->GetIsDestructible()) continue;
         if (Building->GetCurrentHealth() <= 0.f) continue;
-
+        if (Building->GetIsBeingMoved()) continue;
+        
         float Dist = FVector::Dist(MyLocation, Building->GetActorLocation());
         if (Dist <= ClosestDist)
         {

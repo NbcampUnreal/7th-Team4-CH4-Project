@@ -142,7 +142,12 @@ void USMEditModeComponent::OnClick(const FInputActionValue& Value)
 	if (HitBuilding && SelectionSnapshot.Contains(HitBuilding))
 	{
 		CurrentIntent = EClickIntent::Grabbing;
-		GrabAnchorGrid = GridManager->WorldToGrid(Hit.Location);
+		FVector GroundPos;
+		if (GetWorldPosUnderCursor(GroundPos))
+			GrabAnchorGrid = GridManager->WorldToGrid(GroundPos);
+		else
+			GrabAnchorGrid = GridManager->WorldToGrid(Hit.Location);
+		
 		bClickWasGrabTransition = true;
 		
 		TArray<ASMBaseBuilding*> ToGrab;
@@ -202,7 +207,16 @@ void USMEditModeComponent::OnGrabEnd(const FInputActionValue& Value)
 			bDragConfirmed = false;
 			return;
 		}
-		
+		if (!bIsCurrentPosValid)
+		{
+			RestoreToOriginalPositions();
+			for (auto& [Building, _] : SelectionSnapshot)
+				ApplyHighlight(Building, true);
+			CurrentIntent = EClickIntent::None;
+			bDragConfirmed = false;
+			bLastDeltaValid = false;
+			return;
+		}
 		FVector CursorWorld;
 		bool bCanPlace = GetWorldPosUnderCursor(CursorWorld);
 		
@@ -255,6 +269,8 @@ void USMEditModeComponent::OnGrabEnd(const FInputActionValue& Value)
 			{
 				SM_LOG(this, LogSM, Error, TEXT("배치 불가"));
 				RestoreToOriginalPositions();
+				for (auto& [Building, _] : SelectionSnapshot)
+					ApplyHighlight(Building, true);
 			}
 		}
 		else
@@ -397,20 +413,52 @@ void USMEditModeComponent::UpdateGrabbing()
 	
 	FIntPoint Delta = GridManager->WorldToGrid(CursorWorld) - GrabAnchorGrid;
 	
+	TSet<FIntPoint> OldGridSet;
+	for (auto& [B, OrigGrid] : SelectionSnapshot)
+		OldGridSet.Add(OrigGrid);
+	
+	bool bAllValid = true;
 	TArray<ASMBaseBuilding*> Actors;
 	TArray<FVector> Locations;
-
+	
 	for (auto& [Building, OrigGrid] : SelectionSnapshot)
 	{
-		if (!Building) continue;
+		if (!Building)
+		{
+			bAllValid = false;
+			continue;
+		}
+		
 		FIntPoint NewGrid = OrigGrid + Delta;
 		FVector NewWorld = GridManager->GridToWorld(NewGrid.X, NewGrid.Y);
 		NewWorld.Z = CursorWorld.Z + 3.f;
+		
 		Building->SetActorLocation(NewWorld);
 		Actors.Add(Building);
 		Locations.Add(NewWorld);
+		
+		if (!GridManager->IsValidGridPosition(NewGrid.X, NewGrid.Y))
+			bAllValid = false;
+		else if (!GridManager->IsCellEmpty(NewGrid.X, NewGrid.Y) && !OldGridSet.Contains(NewGrid))
+			bAllValid = false;
 	}
-
+	if (bAllValid != bIsCurrentPosValid)
+	{
+		bIsCurrentPosValid = bAllValid;
+		UMaterialInterface* Mat = bAllValid ? ValidMaterial : InValidMaterial;
+		if (Mat)
+		{
+			for (ASMBaseBuilding* Building : Actors)
+			{
+				TArray<UMeshComponent*> Meshes;
+				Building->GetComponents<UMeshComponent>(Meshes);
+				for (UMeshComponent* Mesh : Meshes)
+					for (int32 i = 0; i < Mesh->GetNumMaterials(); ++i)
+						Mesh->SetMaterial(i, Mat);
+			}
+		}
+	}
+	
 	if (!bLastDeltaValid || Delta != LastPreviewDelta)
 	{
 		LastPreviewDelta = Delta;

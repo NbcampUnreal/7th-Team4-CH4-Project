@@ -88,6 +88,12 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
     AActor* SourceActor = GetAvatarActorFromActorInfo();
     UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 
+    if (!IsValid(SourceActor) || !SourceASC)
+    {
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+        return;
+    }
+    
     FHitResult HitResult;
     bool bHit = PerformHitCheck(HitResult);
 
@@ -153,15 +159,7 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
                         BuildingAttr->GetHealth(), BuildingAttr->GetHealth() - HealthBefore);
                 }
                 // ── Building일 때만 적용 후 HP 확인 ──//
-
-                // 디버그 로그 추가
-                UE_LOG(LogTemp, Warning, TEXT("[Attack] GE Apply 결과: %s"),
-                    bApplied ? TEXT("SUCCESS") : TEXT("FAILED"));
-
-                UE_LOG(LogTemp, Log, TEXT("[Attack] %s -> %s | Damage: %.0f"),
-                    *SourceActor->GetName(),
-                    *HitResult.GetActor()->GetName(),
-                    DamageAmount);
+                
             }
         }
     }

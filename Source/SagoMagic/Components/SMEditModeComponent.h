@@ -121,6 +121,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
 	bool bIsEditMode = false;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "Building|Visuals")
+	TObjectPtr<UMaterialInterface> ValidMaterial;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Building|Visuals")
+	TObjectPtr<UMaterialInterface> InValidMaterial;
 private:
 	/** 현재 선택된 건물 목록 - 하이라이트 해제, 삭제 순회에 사용 */
 	UPROPERTY()
@@ -160,4 +165,6 @@ private:
 	/** 마지막으로 서버에 전송한 Preview 델타. 중복 전송 방지 */
 	FIntPoint LastPreviewDelta = FIntPoint(0, 0);
 	bool bLastDeltaValid = false;
+	
+	bool bIsCurrentPosValid = false;
 };

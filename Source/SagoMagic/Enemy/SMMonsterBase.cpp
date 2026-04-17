@@ -116,8 +116,8 @@ void ASMMonsterBase::SelfKill()
                     const float NewHealth = FMath::Clamp(OldHealth - SelfKillDamage, 0.f, CampAttr->GetMaxHealth());
                     CampAttr->SetHealth(NewHealth);
 
-                    UE_LOG(LogTemp, Log, TEXT("[SelfKill] %s → BaseCamp HP: %.1f → %.1f"),
-                        *GetName(), OldHealth, NewHealth);
+                    //UE_LOG(LogTemp, Log, TEXT("[SelfKill] %s → BaseCamp HP: %.1f → %.1f"),
+                    //    *GetName(), OldHealth, NewHealth);
 
                     // HP 0 도달 시 GameMode에 패배 처리 요청
                     // (PostGameplayEffectExecute를 우회했으므로 여기서 명시적으로 호출)
@@ -182,8 +182,8 @@ void ASMMonsterBase::PossessedBy(AController* NewController)
         {
             MonsterAttributeSet = const_cast<USMMonsterAttributeSet*>(
                 MonsterAbilitySystemComponent->GetSet<USMMonsterAttributeSet>());
-            UE_LOG(LogTemp, Warning, TEXT("[Monster] AttributeSet 재취득: %s"),
-                MonsterAttributeSet ? TEXT("성공") : TEXT("실패"));
+            //UE_LOG(LogTemp, Warning, TEXT("[Monster] AttributeSet 재취득: %s"),
+            //    MonsterAttributeSet ? TEXT("성공") : TEXT("실패"));
         }
 
         if (HasAuthority() && MonsterAttributeSet)

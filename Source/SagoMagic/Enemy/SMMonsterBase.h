@@ -21,15 +21,13 @@ class SAGOMAGIC_API ASMMonsterBase : public ACharacter, public IAbilitySystemInt
 public:
 	ASMMonsterBase();
 
-    // IAbilitySystemInterface 구현(외부에서 ASC를 찾을 때 사용)
+    /**  IAbilitySystemInterface 구현(외부에서 ASC를 찾을 때 사용) **/
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     void ResetMonster();
     
     void ApplyVisuals(USMMonsterDataAsset* DataAsset);
-    //UFUNCTION(NetMulticast, Reliable)
-    //void MulticastHandleDeath();
 
     UFUNCTION()
     void OnRep_MonsterAssetId();

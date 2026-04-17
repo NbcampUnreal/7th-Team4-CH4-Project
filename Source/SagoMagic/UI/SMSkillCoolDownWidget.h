@@ -35,13 +35,11 @@ protected:
     TObjectPtr<UTextBlock> TextBlock_Cooldown;
 
 private:
-    // 퀵슬롯 변경 감지 → 감시 태그 갱신
     void RegisterMessageListener();
     void UnregisterMessageListener();
     void HandleQuickSlotUpdated(FGameplayTag Channel,
                                 const FSMQuickSlotUpdatedMessage& Message);
 
-    // ASC 쿨다운 GE 감지
     void BindASCDelegates();
     void UnbindASCDelegates();
     void OnEffectAdded(UAbilitySystemComponent* ASC,
@@ -49,9 +47,9 @@ private:
                        FActiveGameplayEffectHandle Handle);
     void OnEffectRemoved(const FActiveGameplayEffect& Effect);
 
-    // 현재 활성 스킬 태그 기반으로 쿨다운 태그 갱신
+    // 인벤토리 캐시에서 FinalCooldown + CooldownTag 갱신
     void RefreshWatchedTag();
-    // ASC에서 남은 시간 읽어 UI 갱신
+    // ASC에서 남은 시간만 읽음 (Duration은 인벤 캐시 사용)
     void RefreshCooldownState();
     void UpdateVisuals();
 
@@ -66,7 +64,11 @@ private:
     FDelegateHandle EffectRemovedHandle;
     FGameplayMessageListenerHandle QuickSlotListenerHandle;
 
-    float CooldownDuration  = 0.f;
-    float CooldownRemaining = 0.f;
-    bool  bIsOnCooldown     = false;
+    // CooldownDuration은 인벤토리 FinalCooldown 캐시에서만 설정
+    float CachedFinalCooldown = 0.f;
+    float CooldownRemaining   = 0.f;
+    bool  bIsOnCooldown       = false;
+    
+    // Tick 최적화용: 마지막으로 확인한 활성 스킬 태그 캐싱
+    FGameplayTag LastKnownActiveSkillTag;
 };

@@ -1,5 +1,4 @@
-﻿// SMSkillCooldownWidget.cpp
-#include "UI/SMSkillCooldownWidget.h"
+﻿#include "UI/SMSkillCooldownWidget.h"
 
 #include "AbilitySystemComponent.h"
 #include "Components/ProgressBar.h"
@@ -10,6 +9,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameplayTags/Message/SMMessageTag.h"
 #include "Inventory/Components/SMInventoryComponent.h"
+#include "Inventory/Core/SMSkillRuntimeTypes.h"
 
 void USMSkillCooldownWidget::InitializeCooldownWidget(UAbilitySystemComponent* InASC,
                                                        USMInventoryComponent* InInventoryComponent)
@@ -20,11 +20,17 @@ void USMSkillCooldownWidget::InitializeCooldownWidget(UAbilitySystemComponent* I
     BoundASC       = InASC;
     BoundInventory = InInventoryComponent;
 
+    LastKnownActiveSkillTag = FGameplayTag();
+    WatchedCooldownTag      = FGameplayTag();
+    CachedFinalCooldown     = 0.f;
+    CooldownRemaining       = 0.f;
+    bIsOnCooldown           = false;
+
     if (BoundASC && BoundInventory)
     {
         BindASCDelegates();
         RegisterMessageListener();
-        RefreshWatchedTag(); // 현재 슬롯 스킬 태그 즉시 반영
+        RefreshWatchedTag();
     }
 }
 
@@ -39,25 +45,17 @@ void USMSkillCooldownWidget::NativeTick(const FGeometry& MyGeometry, float InDel
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
 
-    // [추가] 클라이언트 복제 지연(Race Condition)을 방어하기 위한 태그 동기화 로직
+    // 활성 스킬 태그가 바뀐 경우에만 갱신
     if (BoundInventory)
     {
-        FGameplayTag CurrentActiveTag = BoundInventory->GetActiveSkillTag();
-        if (CurrentActiveTag.IsValid())
+        const FGameplayTag CurrentActiveTag = BoundInventory->GetActiveSkillTag();
+        if (CurrentActiveTag != LastKnownActiveSkillTag)
         {
-            FString CooldownTagStr = CurrentActiveTag.ToString().Replace(TEXT("Ability."), TEXT("Cooldown."));
-            // ErrorIfNotFound를 임시로 무시하고 태그를 찾음
-            FGameplayTag ExpectedCooldownTag = FGameplayTag::RequestGameplayTag(FName(*CooldownTagStr), false);
-
-            // UI가 감시하는 태그와 실제 활성화된 태그가 다르면 즉시 갱신
-            if (WatchedCooldownTag != ExpectedCooldownTag)
-            {
-                RefreshWatchedTag();
-            }
+            LastKnownActiveSkillTag = CurrentActiveTag;
+            RefreshWatchedTag();
         }
     }
 
-    // 쿨다운 중일 때만 시간 갱신
     if (bIsOnCooldown)
     {
         RefreshCooldownState();
@@ -82,10 +80,9 @@ void USMSkillCooldownWidget::UnregisterMessageListener()
         QuickSlotListenerHandle.Unregister();
 }
 
-void USMSkillCooldownWidget::HandleQuickSlotUpdated(FGameplayTag /*Channel*/,
+void USMSkillCooldownWidget::HandleQuickSlotUpdated(FGameplayTag,
                                                      const FSMQuickSlotUpdatedMessage& Message)
 {
-    // 내 플레이어 상태인지 확인
     if (APlayerController* PC = GetOwningPlayer())
     {
         if (APlayerState* PS = PC->GetPlayerState<APlayerState>())
@@ -93,7 +90,8 @@ void USMSkillCooldownWidget::HandleQuickSlotUpdated(FGameplayTag /*Channel*/,
             if (Message.GetOwningPlayerState() != PS) return;
         }
     }
-
+    LastKnownActiveSkillTag = FGameplayTag();
+    CachedFinalCooldown     = 0.f; // 슬롯 바뀌면 Duration 캐시 초기화
     RefreshWatchedTag();
 }
 
@@ -101,23 +99,62 @@ void USMSkillCooldownWidget::HandleQuickSlotUpdated(FGameplayTag /*Channel*/,
 
 void USMSkillCooldownWidget::RefreshWatchedTag()
 {
-    if (!BoundInventory) return;
-
-    // 현재 활성 슬롯의 스킬 태그 ("Ability.Skill.Projectile" 등)
-    FGameplayTag ActiveSkillTag = BoundInventory->GetActiveSkillTag();
-
-    if (!ActiveSkillTag.IsValid())
+    if (!BoundInventory)
     {
-        WatchedCooldownTag = FGameplayTag();
-        bIsOnCooldown      = false;
+        WatchedCooldownTag  = FGameplayTag();
+        CachedFinalCooldown = 0.f;
+        bIsOnCooldown       = false;
         UpdateVisuals();
         return;
     }
 
-    // "Ability.Skill.Xxx" → "Cooldown.Skill.Xxx"
-    FString CooldownTagStr =
-        ActiveSkillTag.ToString().Replace(TEXT("Ability."), TEXT("Cooldown."));
-    WatchedCooldownTag = FGameplayTag::RequestGameplayTag(FName(*CooldownTagStr), false);
+    const FGameplayTag ActiveSkillTag = BoundInventory->GetActiveSkillTag();
+    if (!ActiveSkillTag.IsValid())
+    {
+        WatchedCooldownTag  = FGameplayTag();
+        CachedFinalCooldown = 0.f;
+        bIsOnCooldown       = false;
+        UpdateVisuals();
+        return;
+    }
+
+    // "Ability.Skill.Xxx" → "Cooldown.Skill.Xxx" 변환
+    const FString ActiveTagStr = ActiveSkillTag.ToString();
+    FString CooldownTagStr;
+
+    if (ActiveTagStr.StartsWith(TEXT("Ability.")))
+    {
+        CooldownTagStr = ActiveTagStr.Replace(TEXT("Ability."), TEXT("Cooldown."));
+    }
+    else
+    {
+        int32 DotIdx = INDEX_NONE;
+        ActiveTagStr.FindChar(TEXT('.'), DotIdx);
+        CooldownTagStr = (DotIdx != INDEX_NONE)
+            ? TEXT("Cooldown") + ActiveTagStr.RightChop(DotIdx)
+            : TEXT("Cooldown.") + ActiveTagStr;
+    }
+
+    const FGameplayTag NewCooldownTag =
+        FGameplayTag::RequestGameplayTag(FName(*CooldownTagStr), false);
+
+    // 태그가 바뀌면 Duration 캐시도 초기화 (이전 스킬 값이 남지 않도록)
+    if (NewCooldownTag != WatchedCooldownTag)
+    {
+        CachedFinalCooldown = 0.f;
+    }
+    WatchedCooldownTag = NewCooldownTag;
+
+    // 인벤토리 캐시에서 FinalCooldown 읽기 시도
+    // 데디케이트 서버 환경 클라이언트에서는 대부분 0으로 반환됨
+    // → 그래도 시도해서 값이 있으면 사용, 없으면 OnEffectAdded에서 GE Duration으로 채움
+    FSMCompiledSkillSummary Summary;
+    if (BoundInventory->GetActiveSkillSummary(Summary) && Summary.GetFinalCooldown() > 0.f)
+    {
+        CachedFinalCooldown = Summary.GetFinalCooldown();
+    }
+    // CachedFinalCooldown = 0 이어도 여기서 UpdateVisuals 호출하지 않음
+    // RefreshCooldownState → GE Duration 폴백에서 채워진 후 UpdateVisuals 호출
 
     RefreshCooldownState();
 }
@@ -130,7 +167,6 @@ void USMSkillCooldownWidget::BindASCDelegates()
 
     EffectAddedHandle = BoundASC->OnActiveGameplayEffectAddedDelegateToSelf.AddUObject(
         this, &ThisClass::OnEffectAdded);
-
     EffectRemovedHandle = BoundASC->OnAnyGameplayEffectRemovedDelegate().AddUObject(
         this, &ThisClass::OnEffectRemoved);
 }
@@ -149,46 +185,46 @@ void USMSkillCooldownWidget::UnbindASCDelegates()
         BoundASC->OnAnyGameplayEffectRemovedDelegate().Remove(EffectRemovedHandle);
         EffectRemovedHandle.Reset();
     }
-
     BoundASC = nullptr;
 }
 
-// ─── ASC 델리게이트 ──────────────────────────────────────────
-
-void USMSkillCooldownWidget::OnEffectAdded(UAbilitySystemComponent* /*ASC*/,
+void USMSkillCooldownWidget::OnEffectAdded(UAbilitySystemComponent*,
                                             const FGameplayEffectSpec& Spec,
-                                            FActiveGameplayEffectHandle /*Handle*/)
+                                            FActiveGameplayEffectHandle)
 {
     if (!WatchedCooldownTag.IsValid()) return;
 
-    // [수정 사항] DynamicGrantedTags뿐만 아니라 GE(블루프린트)에 기본 설정된 
-    // GrantedTags까지 모두 합쳐서 가져옵니다.
     FGameplayTagContainer AllGrantedTags;
     Spec.GetAllGrantedTags(AllGrantedTags);
+    if (!AllGrantedTags.HasTag(WatchedCooldownTag)) return;
 
-    // 이제 이 GE가 우리가 감시하는 쿨타임 태그를 가지고 있는지 정확히 판별할 수 있습니다.
-    if (AllGrantedTags.HasTag(WatchedCooldownTag))
+    // GE가 실제로 추가된 시점에 Duration 확보
+    // 인벤 캐시(서버 계산값)가 없을 때의 주 폴백 경로
+    if (CachedFinalCooldown <= 0.f)
     {
-        RefreshCooldownState();
+        const float GEDuration = Spec.GetDuration();
+        if (GEDuration > 0.f)
+        {
+            CachedFinalCooldown = GEDuration;
+        }
     }
+
+    // GE 추가 직후 남은 시간 읽기
+    RefreshCooldownState();
 }
 
 void USMSkillCooldownWidget::OnEffectRemoved(const FActiveGameplayEffect& Effect)
 {
     if (!WatchedCooldownTag.IsValid()) return;
 
-    // [수정 사항] 제거될 때도 마찬가지로 전체 부여 태그(AllGrantedTags)를 조회하여 검사합니다.
     FGameplayTagContainer AllGrantedTags;
     Effect.Spec.GetAllGrantedTags(AllGrantedTags);
+    if (!AllGrantedTags.HasTag(WatchedCooldownTag)) return;
 
-    // 감시 중인 쿨타임 태그가 제거된 것이 맞다면 UI를 초기화합니다.
-    if (AllGrantedTags.HasTag(WatchedCooldownTag))
-    {
-        bIsOnCooldown      = false;
-        CooldownRemaining  = 0.f;
-        CooldownDuration   = 0.f;
-        UpdateVisuals();
-    }
+    bIsOnCooldown     = false;
+    CooldownRemaining = 0.f;
+    CachedFinalCooldown = 0.f; // 다음 발동을 위해 초기화
+    UpdateVisuals();
 }
 
 // ─── 쿨다운 상태 읽기 ────────────────────────────────────────
@@ -197,31 +233,48 @@ void USMSkillCooldownWidget::RefreshCooldownState()
 {
     if (!BoundASC || !WatchedCooldownTag.IsValid())
     {
-        bIsOnCooldown = false;
+        bIsOnCooldown     = false;
+        CooldownRemaining = 0.f;
         UpdateVisuals();
         return;
     }
 
-    FGameplayEffectQuery Query =
+    const FGameplayEffectQuery Query =
         FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(
             FGameplayTagContainer(WatchedCooldownTag));
 
-    TArray<float> Remaining = BoundASC->GetActiveEffectsTimeRemaining(Query);
-    TArray<float> Durations = BoundASC->GetActiveEffectsDuration(Query);
+    const TArray<float> Remaining = BoundASC->GetActiveEffectsTimeRemaining(Query);
 
     if (Remaining.IsEmpty() || Remaining[0] <= 0.f)
     {
         bIsOnCooldown     = false;
         CooldownRemaining = 0.f;
-        CooldownDuration  = 0.f;
-    }
-    else
-    {
-        bIsOnCooldown     = true;
-        CooldownRemaining = Remaining[0];
-        CooldownDuration  = FMath::Max(KINDA_SMALL_NUMBER, Durations[0]);
+        // CachedFinalCooldown은 유지 (다음 RefreshCooldownState 호출 전까지)
+        UpdateVisuals();
+        return;
     }
 
+    // GE가 살아있음 → 쿨다운 진행 중
+    bIsOnCooldown     = true;
+    CooldownRemaining = Remaining[0];
+
+    // CachedFinalCooldown이 아직 0인 경우 (OnEffectAdded보다 이 함수가 먼저 호출된 경우)
+    // GE Duration을 직접 읽어서 채움
+    if (CachedFinalCooldown <= 0.f)
+    {
+        const TArray<float> Durations = BoundASC->GetActiveEffectsDuration(Query);
+        if (!Durations.IsEmpty() && Durations[0] > 0.f)
+        {
+            CachedFinalCooldown = Durations[0];
+        }
+        else
+        {
+            // Duration도 읽히지 않으면 Remaining을 임시 기준으로
+            CachedFinalCooldown = CooldownRemaining;
+        }
+    }
+
+    CooldownRemaining = FMath::Min(CooldownRemaining, CachedFinalCooldown);
     UpdateVisuals();
 }
 
@@ -229,8 +282,8 @@ void USMSkillCooldownWidget::RefreshCooldownState()
 
 void USMSkillCooldownWidget::UpdateVisuals()
 {
-    const float Percent = bIsOnCooldown
-        ? FMath::Clamp(CooldownRemaining / CooldownDuration, 0.f, 1.f)
+    const float Percent = (bIsOnCooldown && CachedFinalCooldown > 0.f)
+        ? FMath::Clamp(CooldownRemaining / CachedFinalCooldown, 0.f, 1.f)
         : 0.f;
 
     if (ProgressBar_Cooldown)
@@ -250,7 +303,6 @@ void USMSkillCooldownWidget::UpdateVisuals()
         }
     }
 
-    // 쿨다운 없으면 위젯 전체 숨김
     SetVisibility(bIsOnCooldown
         ? ESlateVisibility::HitTestInvisible
         : ESlateVisibility::Collapsed);

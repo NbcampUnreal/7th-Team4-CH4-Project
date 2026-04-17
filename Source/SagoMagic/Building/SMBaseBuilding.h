@@ -74,6 +74,13 @@ protected:
 	
 	UPROPERTY(ReplicatedUsing = OnRep_IsDead)
 	bool bIsDead = false;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Iteraction|Repair")
+	float RepairCost = 15.0f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Iteraction|Repair")
+	float RepairAmount = 5.0f;
+	
 private:
 	ASMGridManager* GetGridManager() const;
 	

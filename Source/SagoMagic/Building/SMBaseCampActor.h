@@ -38,4 +38,10 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction")
 	TObjectPtr<USMInteractionTargetComponent> InteractionTargetComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Iteraction|Repair")
+	float RepairCost = 30.0f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Iteraction|Repair")
+	float RepairAmount = 5.0f;
 };

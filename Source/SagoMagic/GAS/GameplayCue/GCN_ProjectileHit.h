@@ -5,6 +5,7 @@
 #include "GCN_ProjectileHit.generated.h"
 
 class UNiagaraSystem;
+class USoundBase;
 
 UCLASS()
 class SAGOMAGIC_API UGCN_ProjectileHit : public UGameplayCueNotify_Static
@@ -38,4 +39,8 @@ protected:
 	/** 이펙트 스케일 파라미터 */
 	UPROPERTY(EditDefaultsOnly, Category = "Effects|Scale")
 	float Scale_All = 1.f;
+
+	/** 히트 사운드 - BP에서 지정 */
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase> HitSound;
 };

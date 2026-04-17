@@ -6,6 +6,7 @@
 #include "Core/SMGameMode.h"
 #include "GameFramework/PlayerState.h"
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
+#include "GameplayTags/GameFlow/SMGameFlowTag.h"
 
 ASMBaseCampActor::ASMBaseCampActor()
 {
@@ -83,6 +84,8 @@ void ASMBaseCampActor::BeginPlay()
 {
 	Super::BeginPlay();
 	AbilitySystemComponent->InitAbilityActorInfo(this,this);
+	
+	AbilitySystemComponent->AddLooseGameplayTag(SMGameFlowTag::Team_HQ);
 
 	if (HasAuthority())
 	{

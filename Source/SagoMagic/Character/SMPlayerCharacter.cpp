@@ -18,6 +18,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameplayTags/Character/SMCharacterTag.h"
+#include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -348,6 +349,11 @@ void ASMPlayerCharacter::InitializeAbilitySystem()
 	{
 		// Owner는 PlayerState
 		SMAbilitySystemComponent->InitAbilityActorInfo(PS, this);
+		
+		if (!SMAbilitySystemComponent->HasMatchingGameplayTag(SMGameFlowTag::Team_Player))
+		{
+			SMAbilitySystemComponent->AddLooseGameplayTag(SMGameFlowTag::Team_Player);
+		}
 
 		SMAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
 			AttributeSet->GetHealthAttribute()).RemoveAll(this);

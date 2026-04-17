@@ -10,7 +10,9 @@
 #include "Components/SMInteractionTargetComponent.h"
 #include "GameFramework/PlayerState.h"
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
+#include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "NavAreas/NavArea_Default.h"
+#include "NavAreas/NavArea_Obstacle.h" 
 
 
 ASMBaseBuilding::ASMBaseBuilding()
@@ -86,6 +88,8 @@ void ASMBaseBuilding::BeginPlay()
 	Super::BeginPlay();
 	
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	
+	AbilitySystemComponent->AddLooseGameplayTag(SMGameFlowTag::Team_Building);
 }
 
 UAbilitySystemComponent* ASMBaseBuilding::GetAbilitySystemComponent() const

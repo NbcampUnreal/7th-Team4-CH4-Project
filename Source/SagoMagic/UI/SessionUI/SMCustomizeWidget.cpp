@@ -43,12 +43,19 @@ void USMCustomizeWidget::CustomizeSetup()
 	if (IsValid(Character) == false) return;
 
 	Character->SetCustomizeMode(true);
+	
+	// 위젯이 열릴 때 기존에 선택되어 있던 인덱스를 기반으로 초기 하이라이트 적용
+	UpdateWeaponButtonHighlight();
+	UpdateSkillButtonHighlight();
 }
 
 bool USMCustomizeWidget::Initialize()
 {
 	if (Super::Initialize() == false) return false;
-
+	
+	WeaponButtons = { WeaponButton0, WeaponButton1, WeaponButton2 };
+	SkillButtons = { SkillButton0, SkillButton1, SkillButton2, SkillButton3 };
+	
 	if (IsValid(WeaponButton0) == true)
 	{
 		WeaponButton0->OnClicked.AddDynamic(this, &USMCustomizeWidget::OnWeaponButton0Clicked);
@@ -106,6 +113,32 @@ void USMCustomizeWidget::NativeDestruct()
 }
 
 //================================
+// 시각적 피드백
+//================================
+
+void USMCustomizeWidget::UpdateWeaponButtonHighlight()
+{
+	for (int32 i = 0; i < WeaponButtons.Num(); ++i)
+	{
+		if (IsValid(WeaponButtons[i]))
+		{
+			WeaponButtons[i]->SetBackgroundColor(i == CurrentWeaponIdx ? SelectedButtonColor : DefaultButtonColor);
+		}
+	}
+}
+
+void USMCustomizeWidget::UpdateSkillButtonHighlight()
+{
+	for (int32 i = 0; i < SkillButtons.Num(); ++i)
+	{
+		if (IsValid(SkillButtons[i]))
+		{
+			SkillButtons[i]->SetBackgroundColor(i == CurrentSkillIndex ? SelectedButtonColor : DefaultButtonColor);
+		}
+	}
+}
+
+//================================
 // 무기 선택
 //================================
 
@@ -119,6 +152,9 @@ void USMCustomizeWidget::SelectWeapon(int32 WeaponIndex)
 {
 	CurrentWeaponIdx = WeaponIndex;
 
+	// 무기가 선택될 때마다 UI 하이라이트 상태 갱신
+	UpdateWeaponButtonHighlight();
+	
 	ASMPlayerCharacter* Character = GetSMPlayerCharacter();
 	if (IsValid(Character) == false) return;
 
@@ -141,6 +177,9 @@ void USMCustomizeWidget::SelectSkill(int32 Index)
 {
 	if (Index < 0 || Index > 3) return;
 	CurrentSkillIndex = Index;
+	
+	UpdateSkillButtonHighlight();
+	
 	UE_LOG(LogTemp,Warning,TEXT("Selected Skill Index: %d"), CurrentSkillIndex);
 }
 

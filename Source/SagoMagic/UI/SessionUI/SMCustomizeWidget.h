@@ -28,6 +28,27 @@ protected:
 	virtual void NativeDestruct() override;
 	
 	//================================
+	// 시각적 피드백
+	//================================
+    
+	/** 선택된 버튼의 배경 색상 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Customize|Appearance")
+	FLinearColor SelectedButtonColor = FLinearColor(1.0f, 0.8f, 0.1f, 1.0f); // 기본값: 주황/금색 계열
+	/** 선택되지 않은 기본 버튼의 배경 색상 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Customize|Appearance")
+	FLinearColor DefaultButtonColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f); // 기본값: 흰색 (원래 색상)
+
+	/** 무기 버튼 하이라이트 상태를 갱신하는 함수 */
+	void UpdateWeaponButtonHighlight();
+	/** 스킬 버튼 하이라이트 상태를 갱신하는 함수 */
+	void UpdateSkillButtonHighlight();
+	
+	UPROPERTY()
+	TArray<TObjectPtr<UButton>> WeaponButtons;
+	UPROPERTY()
+	TArray<TObjectPtr<UButton>> SkillButtons;
+	
+	//================================
 	// 무기 선택
 	//================================
 private:

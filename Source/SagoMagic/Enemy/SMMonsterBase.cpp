@@ -18,6 +18,7 @@
 #include "Inventory/Items/Definitions/SMSkillItemDefinition.h"
 #include "Net/UnrealNetwork.h"
 #include "Building/SMBaseCampActor.h"
+#include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "Kismet/GameplayStatics.h"
 
 
@@ -161,6 +162,8 @@ void ASMMonsterBase::BeginPlay()
     {
         // 클라이언트 측 ASC 액터 정보 초기화
         MonsterAbilitySystemComponent->InitAbilityActorInfo(this, this);
+        
+        MonsterAbilitySystemComponent->AddLooseGameplayTag(SMGameFlowTag::Enemy);
     }
 }
 void ASMMonsterBase::PossessedBy(AController* NewController)
@@ -170,7 +173,8 @@ void ASMMonsterBase::PossessedBy(AController* NewController)
     if (MonsterAbilitySystemComponent)
     {
         MonsterAbilitySystemComponent->InitAbilityActorInfo(this, this);
-
+        
+        MonsterAbilitySystemComponent->AddLooseGameplayTag(SMGameFlowTag::Enemy);
 
         if (!MonsterAttributeSet)
         {

@@ -2,7 +2,7 @@
 #include "UI/SMPlayerStatusWidget.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
-#include "SMSkillCoolDownWidget.h"
+#include "SMSkillCooldownWidget.h"
 #include "TimerManager.h"
 #include "UI/SMGameResultWidget.h"
 #include "UI/SMPlayerDeathWidget.h"
@@ -11,6 +11,8 @@
 #include "GameFramework/Pawn.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "UI/SMNotificationWidget.h"
+#include "UI/SMSkillCooldownWidget.h"
+#include "GameplayTags/Character/SMSkillTag.h"
 
 void USMHUDManager::NativeConstruct()
 {
@@ -61,24 +63,16 @@ void USMHUDManager::TryInitASC()
 void USMHUDManager::InitializeHUD(UAbilitySystemComponent* InPlayerASC)
 {
 	if (!InPlayerASC) return;
-
-	if (WBP_PlayerStatus) // 자식 위젯으로 데이터를 넘겨줌
+	
+	if (WBP_PlayerStatus) 
 	{
 		WBP_PlayerStatus->InitializeStatus(InPlayerASC);
 	}
-	
-	// 쿨다운 위젯 초기화
+    
+	// 스킬 쿨다운 위젯 초기화
 	if (WBP_SkillCooldown)
 	{
-		// InPlayerASC의 OwnerActor(PlayerState)에서 인벤토리 찾기
-		if (AActor* OwnerActor = InPlayerASC->GetOwnerActor())
-		{
-			if (USMInventoryComponent* Inv =
-					OwnerActor->FindComponentByClass<USMInventoryComponent>())
-			{
-				WBP_SkillCooldown->InitializeCooldownWidget(InPlayerASC, Inv);
-			}
-		}
+		WBP_SkillCooldown->InitializeWithASC(InPlayerASC, SMSkillTag::Cooldown_Skill_Projectile); 
 	}
 }
 
@@ -102,7 +96,10 @@ void USMHUDManager::ShowGameResult(bool bIsVictory, float InReturnDelay)
 	{
 		WBP_Notification->SetVisibility(ESlateVisibility::Collapsed);
 	}
-	
+	if (WBP_SkillCooldown)
+	{
+		WBP_SkillCooldown->SetVisibility(ESlateVisibility::Collapsed);
+	}
 	if (WBP_GameResult)
 	{
 		WBP_GameResult->SetVisibility(ESlateVisibility::Visible);

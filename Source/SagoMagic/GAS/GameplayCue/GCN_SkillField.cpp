@@ -1,6 +1,8 @@
 #include "GAS/GameplayCue/GCN_SkillField.h"
 #include "NiagaraComponent.h"
+#include "Components/AudioComponent.h"
 #include "GAS/Abilities/SkillActor/SMASkillField.h"
+#include "Kismet/GameplayStatics.h"
 
 
 AGCN_SkillField::AGCN_SkillField()
@@ -44,6 +46,14 @@ bool AGCN_SkillField::OnActive_Implementation(AActor* MyTarget, const FGameplayC
 
 	FieldNiagaraComponent->Activate(true);
 
+	// 루프 사운드 재생
+	if (LoopSound)
+	{
+		LoopAudioComponent = UGameplayStatics::SpawnSoundAtLocation(
+			this, LoopSound, FieldLocation, FRotator::ZeroRotator,
+			1.0f, 1.0f, 0.0f, nullptr, nullptr, true);
+	}
+
 	// 지속시간 후 파티클 신규 스폰 중단 → 기존 파티클은 자연 소멸
 	GetWorldTimerManager().SetTimer(
 		FadeoutTimerHandle,
@@ -68,6 +78,12 @@ bool AGCN_SkillField::OnRemove_Implementation(AActor* MyTarget, const FGameplayC
 	// 타이머가 아직 안 됐으면 즉시 페이드아웃 시작
 	GetWorldTimerManager().ClearTimer(FadeoutTimerHandle);
 	StartFadeout();
+
+	// 루프 사운드 페이드아웃
+	if (IsValid(LoopAudioComponent))
+	{
+		LoopAudioComponent->FadeOut(SoundFadeOutDuration, 0.0f);
+	}
 
 	return Super::OnRemove_Implementation(MyTarget, Parameters);
 }

@@ -9,6 +9,7 @@ class APawn;
 class USMInteractionTargetComponent;
 class ASMGridManager;
 class USMBuildingAttributeSet;
+
 /**
  * 모든 건물의 베이스 클래스
  */
@@ -40,8 +41,8 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Building")
 	bool GetIsDestructible() const { return bIsDestructible; }
 	
-	/** 아이템 습득 처리 요청 */
-	UFUNCTION(BlueprintCallable, Category="Item Drop")
+	/** 아이템 수리 요청 */
+	UFUNCTION(BlueprintCallable, Category="Interaction|Repair")
 	void HandleInteract(APawn* InInteractingPawn);
 	
 protected:
@@ -76,10 +77,10 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_IsDead)
 	bool bIsDead = false;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Iteraction|Repair")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interaction|Repair")
 	float RepairCost = 15.0f;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Iteraction|Repair")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interaction|Repair")
 	float RepairAmount = 5.0f;
 	
 private:

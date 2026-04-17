@@ -27,6 +27,7 @@ USMInventoryGridWidget::USMInventoryGridWidget(const FObjectInitializer& ObjectI
 	  , GridHeight(0)
 	  , HoveredGridX(-1)
 	  , HoveredGridY(-1)
+	  , bHasHoveredGridPosition(false)
 	  , ActiveDragDropOperation(nullptr)
 	  , CachedStructureWidth(0)
 	  , CachedStructureHeight(0)
@@ -320,7 +321,7 @@ void USMInventoryGridWidget::RequestRotateDraggedItem()
 		PreviewWidget->UpdatePreviewRotation(NextRotation);
 	}
 
-	if (HoveredGridX < 0 || HoveredGridY < 0 || InventoryComponent == nullptr)
+	if (bHasHoveredGridPosition == false || InventoryComponent == nullptr)
 	{
 		return;
 	}
@@ -341,6 +342,7 @@ void USMInventoryGridWidget::ClearHoveredCellState()
 	HoveredItemInstanceId.Invalidate();
 	HoveredGridX = -1;
 	HoveredGridY = -1;
+	bHasHoveredGridPosition = false;
 	UpdateCellStates();
 }
 
@@ -496,8 +498,29 @@ bool USMInventoryGridWidget::CalculateDropGridPosition(
 		return false;
 	}
 
-	const FVector2D LocalPosition = InGeometry.AbsoluteToLocal(InDragDropEvent.GetScreenSpacePosition());
-	const FVector2D LocalSize = InGeometry.GetLocalSize();
+	FVector2D LocalPosition = InGeometry.AbsoluteToLocal(InDragDropEvent.GetScreenSpacePosition());
+	FVector2D LocalSize = InGeometry.GetLocalSize();
+
+	if (CellLayerPanel != nullptr)
+	{
+		const FGeometry& CellLayerGeometry = CellLayerPanel->GetCachedGeometry();
+		const FVector2D CellLayerSize = CellLayerGeometry.GetLocalSize();
+		if (CellLayerSize.X > 0.0f && CellLayerSize.Y > 0.0f)
+		{
+			LocalPosition = CellLayerGeometry.AbsoluteToLocal(InDragDropEvent.GetScreenSpacePosition());
+			LocalSize = CellLayerSize;
+		}
+	}
+	else if (ItemLayerPanel != nullptr)
+	{
+		const FGeometry& ItemLayerGeometry = ItemLayerPanel->GetCachedGeometry();
+		const FVector2D ItemLayerSize = ItemLayerGeometry.GetLocalSize();
+		if (ItemLayerSize.X > 0.0f && ItemLayerSize.Y > 0.0f)
+		{
+			LocalPosition = ItemLayerGeometry.AbsoluteToLocal(InDragDropEvent.GetScreenSpacePosition());
+			LocalSize = ItemLayerSize;
+		}
+	}
 
 	if (LocalSize.X <= 0.0f || LocalSize.Y <= 0.0f)
 	{
@@ -797,8 +820,7 @@ void USMInventoryGridWidget::UpdateCellStates()
 	if (InventoryComponent != nullptr &&
 		ActiveDragDropOperation != nullptr &&
 		ActiveDragDropOperation->HasValidItemInstanceId() &&
-		HoveredGridX >= 0 &&
-		HoveredGridY >= 0)
+		bHasHoveredGridPosition)
 	{
 		bCanPlace = InventoryComponent->CanPlaceItem(
 			ActiveDragDropOperation->GetItemInstanceId(),
@@ -909,6 +931,7 @@ void USMInventoryGridWidget::SetHoveredCell(int32 InGridX, int32 InGridY)
 {
 	HoveredGridX = InGridX;
 	HoveredGridY = InGridY;
+	bHasHoveredGridPosition = true;
 	UpdateCellStates();
 }
 

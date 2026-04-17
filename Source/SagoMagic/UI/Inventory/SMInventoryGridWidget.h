@@ -272,6 +272,10 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Grid Widget")
 	int32 HoveredGridY;
 
+	/** 현재 드래그 포인터가 그리드 위에 있는지 여부 */
+	UPROPERTY(Transient)
+	bool bHasHoveredGridPosition;
+
 	/** 현재 호버 중인 아이템 인스턴스 ID */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Grid Widget")
 	FGuid HoveredItemInstanceId;

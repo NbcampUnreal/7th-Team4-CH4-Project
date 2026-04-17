@@ -60,7 +60,6 @@ void USMQuickSlotBarWidget::NativeTick(const FGeometry& InGeometry, float InDelt
 	const ESlateVisibility WidgetVisibility = GetVisibility();
 	if (WidgetVisibility == ESlateVisibility::Collapsed || WidgetVisibility == ESlateVisibility::Hidden)
 	{
-		bPendingPreviewRebuild = false;
 		return;
 	}
 
@@ -493,14 +492,6 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 		return;
 	}
 
-	auto IsRenderableVisibility = [](const ESlateVisibility InVisibility)
-	{
-		return InVisibility == ESlateVisibility::Visible ||
-			InVisibility == ESlateVisibility::HitTestInvisible ||
-			InVisibility == ESlateVisibility::SelfHitTestInvisible;
-	};
-
-	const bool bWidgetVisibleForDeferredRebuild = IsRenderableVisibility(GetVisibility());
 	bool bNeedsDeferredRebuild = false;
 
 	for (const FSMQuickSlotEntry& SlotEntry : Slots)
@@ -510,16 +501,12 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 		if (SlotEntry.GetSlotIndex() == 0)
 		{
 			TargetPreviewCanvas = Slot1_PreviewCanvas;
-			TargetPreviewBoundsWidget = Slot1_BaseBackground != nullptr
-				                           ? static_cast<UWidget*>(Slot1_BaseBackground)
-				                           : static_cast<UWidget*>(Slot1_PreviewCanvas);
+			TargetPreviewBoundsWidget = static_cast<UWidget*>(Slot1_PreviewCanvas);
 		}
 		else if (SlotEntry.GetSlotIndex() == 1)
 		{
 			TargetPreviewCanvas = Slot2_PreviewCanvas;
-			TargetPreviewBoundsWidget = Slot2_BaseBackground != nullptr
-				                           ? static_cast<UWidget*>(Slot2_BaseBackground)
-				                           : static_cast<UWidget*>(Slot2_PreviewCanvas);
+			TargetPreviewBoundsWidget = static_cast<UWidget*>(Slot2_PreviewCanvas);
 		}
 
 		if (TargetPreviewCanvas == nullptr || TargetPreviewBoundsWidget == nullptr ||
@@ -612,14 +599,7 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 		const int32 PreviewHeight = FMath::Max(1, MaxY - MinY + 1);
 		bool bHasCachedGeometry = false;
 		const FVector2D EffectivePreviewAreaSize = ResolvePreviewAreaSize(TargetPreviewBoundsWidget, bHasCachedGeometry);
-		const FVector2D DesiredPreviewAreaSize = TargetPreviewBoundsWidget->GetDesiredSize();
-		const bool bHasDesiredPreviewSize = DesiredPreviewAreaSize.X > 0.0f && DesiredPreviewAreaSize.Y > 0.0f;
-		const bool bTargetWidgetVisibleForDeferredRebuild = IsRenderableVisibility(TargetPreviewBoundsWidget->GetVisibility());
-		bNeedsDeferredRebuild |=
-			(bHasCachedGeometry == false &&
-			 bHasDesiredPreviewSize == false &&
-			 bWidgetVisibleForDeferredRebuild &&
-			 bTargetWidgetVisibleForDeferredRebuild);
+		bNeedsDeferredRebuild |= (bHasCachedGeometry == false);
 
 		const float PreviewCellSpacing = PreviewCellPadding * 2.0f;
 		const float PreviewOuterPadding = PreviewCellPadding * 2.0f;

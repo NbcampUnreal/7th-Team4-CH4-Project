@@ -17,9 +17,13 @@ class SAGOMAGIC_API ASMASkillField : public AActor
 public:
 	ASMASkillField();
 
-	void InitField(FGameplayEffectSpecHandle InSpecHandle, AActor* InInstigatorActor,
-		float InDuration, float InRangeCm, bool bEnablePull = false, bool bEnableSlow = false);
-	
+	void InitField(FGameplayEffectSpecHandle InSpecHandle,
+	               AActor* InInstigatorActor,
+	               float InDuration,
+	               float InRangeCm,
+	               bool bEnablePull = false,
+	               bool bEnableSlow = false);
+
 public:
 	float GetFieldDuration() const { return Duration; }
 	float GetFieldRangeCm() const { return FieldRadius; }
@@ -38,28 +42,34 @@ protected:
 	/** 스폰 직후 즉시 데미지 방지용 딜레이 - BP에서 조정 가능 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field")
 	float StartDelay = 0.5f;
-	
+
 	/** 당기는 힘 cm/s */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Pull")
 	float PullStrength = 500.f;
 
 	/** 당기기 적용 주기 초 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Pull")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Pull", meta = (ClampMin = "0.01", UIMin = "0.01"))
 	float PullInterval = 0.1f;
-	
+
 	/** 이동속도 감소 배율 0.5 = 50%로 감소 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Slow")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Field|Slow",
+		meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
 	float SlowMultiplier = 0.5f;
 
 private:
 	UFUNCTION()
-	void OnFieldBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex,
-		bool bFromSweep, const FHitResult& SweepResult);
+	void OnFieldBeginOverlap(UPrimitiveComponent* OverlappedComponent,
+	                         AActor* OtherActor,
+	                         UPrimitiveComponent* OtherComponent,
+	                         int32 OtherBodyIndex,
+	                         bool bFromSweep,
+	                         const FHitResult& SweepResult);
 
 	UFUNCTION()
-	void OnFieldEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComponent, int32 OtherBodyIndex);
+	void OnFieldEndOverlap(UPrimitiveComponent* OverlappedComponent,
+	                       AActor* OtherActor,
+	                       UPrimitiveComponent* OtherComponent,
+	                       int32 OtherBodyIndex);
 
 	FGameplayEffectSpecHandle DamageSpecHandle;
 
@@ -78,20 +88,20 @@ private:
 
 	// 딜레이 후 스폰 시점 오버랩 액터 처리
 	void CheckInitialOverlaps();
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = "FieldEffects")
 	TSubclassOf<UGameplayEffect> CueEffectClass;
-	
+
 	FActiveGameplayEffectHandle CueEffectHandle;
-	
+
 	//지속시간
 	float Duration = 5.f;
-	
+
 	UPROPERTY()
 	TObjectPtr<UAbilitySystemComponent> OwnerASC;
-	
+
 	FGameplayTag ActiveCueTag;
-	
+
 	FTimerHandle PullTimerHandle;
 
 	bool bSlowEnabled = false;

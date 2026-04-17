@@ -6,6 +6,7 @@
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Enemy/SMMonsterBase.h"
 #include "Enemy/SMMonsterProjectile.h"
+#include "GameplayTags/Character/SMSkillTag.h"
 #include "GAS/AttributeSets/SMMonsterAttributeSet.h"
 
 UGA_MonsterRangedAttack::UGA_MonsterRangedAttack()

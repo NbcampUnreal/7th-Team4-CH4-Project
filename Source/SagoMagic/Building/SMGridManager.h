@@ -196,6 +196,8 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	void ClearCellsByActor(AActor* Actor);
+	
+	bool HasHeightCache(int32 X, int32 Y) const;
 public:
 	// 그리드 설정
 	

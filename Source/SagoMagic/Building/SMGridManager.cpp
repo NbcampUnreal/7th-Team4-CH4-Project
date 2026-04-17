@@ -351,6 +351,11 @@ void ASMGridManager::ClearCellsByActor(AActor* Actor)
 	}
 }
 
+bool ASMGridManager::HasHeightCache(int32 X, int32 Y) const
+{
+	return GridHeightCache.Contains(FIntPoint(X, Y));
+}
+
 //-------------내부 헬퍼-------------
 
 int32 ASMGridManager::GetCellIndex(int32 GridX, int32 GridY) const

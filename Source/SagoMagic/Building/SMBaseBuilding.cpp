@@ -31,7 +31,7 @@ ASMBaseBuilding::ASMBaseBuilding()
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(
 		EGameplayEffectReplicationMode::Minimal);
-
+	SetReplicatingMovement(true);	
 	AttributeSet = CreateDefaultSubobject<USMBuildingAttributeSet>(TEXT("AttributeSet"));
 }
 
@@ -79,7 +79,8 @@ void ASMBaseBuilding::HandleDestruction_Implementation()
 		GM->ClearCellsByActor(this);
 		SM_LOG(this, LogSM, Log, TEXT("[BaseBuilding] 파괴 - GridPos(%d, %d)"), GridPos.X, GridPos.Y);
 	}
-	SetLifeSpan(2.f);
+	Destroy();
+	//SetLifeSpan(2.f);
 }
 
 float ASMBaseBuilding::GetMaxHealth()

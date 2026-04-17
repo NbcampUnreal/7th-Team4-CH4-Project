@@ -118,6 +118,5 @@ private:
 	FString BuildingDataTablePath = 
 		TEXT("/Game/SagoMagic/Data/DataTables/BuildingData/DT_Building.DT_Building");
 	
-private:
 	bool bInputBound = false;
 };

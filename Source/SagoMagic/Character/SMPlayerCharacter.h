@@ -7,6 +7,7 @@
 #include "GameFramework/Character.h"
 #include "SMPlayerCharacter.generated.h"
 
+class USMEditModeComponent;
 struct FOnAttributeChangeData;
 struct FInputActionValue;
 class USMBuildingModeComponent;
@@ -39,14 +40,13 @@ class SAGOMAGIC_API ASMPlayerCharacter : public ACharacter, public IAbilitySyste
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BuildingMode", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USMBuildingModeComponent> BuildingModeComp;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "EditingMode", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USMEditModeComponent> EditModeComp;
 protected:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> DefaultIMC;
 	
-	// TODO: 건설관련 논의 끝난 후 에디터에서 IMC 설정 필요
-	UPROPERTY(EditAnywhere, Category = "Input|Build|Edit")
-	TObjectPtr<UInputMappingContext> BuildEditIMC;
-
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
 	

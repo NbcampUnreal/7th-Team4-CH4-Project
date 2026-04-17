@@ -1,5 +1,6 @@
 #include "GAS/Abilities/GA_SkillBase.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "Inventory/Components/SMInventoryComponent.h"
@@ -9,6 +10,7 @@
 #include "Abilities/GameplayAbilityTargetTypes.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "GameplayTags/GameFlow/SMGameFlowTag.h"
 
 UGA_SkillBase::UGA_SkillBase()
 {
@@ -350,4 +352,26 @@ bool UGA_SkillBase::TryGetMouseGroundLocation(APawn* Pawn, FVector& OutLocation)
 		return true;
 	}
 	return false;
+}
+
+bool UGA_SkillBase::HasAnyTeamTag(AActor* Actor) const
+{
+	if (IsValid(Actor) == false) return false;
+
+	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
+	if (IsValid(ASC) == false) return false;
+
+	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Team);
+}
+
+bool UGA_SkillBase::IsAvailableEnemy(AActor* Actor) const
+{
+	if (IsValid(Actor) == false) return false;
+
+	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
+	if (IsValid(ASC) == false) return false;
+	
+	//TODO: Enemy Death태그 확인
+	
+	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Enemy);
 }

@@ -86,9 +86,6 @@ protected:
 	float TickInterval = 0.f;  // 틱 간격
 	FGameplayTagContainer SkillUpgradeTags; // 스킬 업그레이드 태그
 	
-	TArray<FGuid> EmbeddedGemIds;           // 장착된 젬 ID 목록
-	TArray<FGuid> EmbeddedSkillIds;         // 장착된 동일 스킬 ID 목록
-	
 	//인벤토리에서 받아온 최종 요약 캐시
 	FSMCompiledSkillSummary CachedSummary;
 

@@ -11,7 +11,7 @@
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "GameplayTags/Enemy/SMEnemyTag.h"
-#include "GameplayTags/GameFlow/SMGameFlowTag.h"
+#include "GAS/SMGameplayAbilityUtils.h"
 
 UGA_SkillBase::UGA_SkillBase()
 {
@@ -357,22 +357,10 @@ bool UGA_SkillBase::TryGetMouseGroundLocation(APawn* Pawn, FVector& OutLocation)
 
 bool UGA_SkillBase::HasAnyTeamTag(AActor* Actor) const
 {
-	if (IsValid(Actor) == false) return false;
-
-	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
-	if (IsValid(ASC) == false) return false;
-
-	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Team);
+	return SMGameplayAbilityUtils::HasTeamTag(Actor);
 }
 
 bool UGA_SkillBase::IsAvailableEnemy(AActor* Actor) const
 {
-	if (IsValid(Actor) == false) return false;
-
-	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
-	if (IsValid(ASC) == false) return false;
-	
-	if (ASC->HasMatchingGameplayTag(SMEnemyTag::Enemy_State_Death) == true) return false;
-	
-	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Enemy);
+	return SMGameplayAbilityUtils::HasTeamTag(Actor);
 }

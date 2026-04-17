@@ -14,6 +14,7 @@
 #include "Building/SMBaseCampActor.h"
 #include "Building/SMBaseBuilding.h"
 #include "GameplayTags/Enemy/SMEnemyTag.h"
+#include "GAS/SMGameplayAbilityUtils.h"
 
 ASMASkillProjectile::ASMASkillProjectile()
 {
@@ -101,9 +102,9 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
 	if (OtherActor->IsA<ASMBaseCampActor>()) return;
 	if (OtherActor->IsA<ASMBaseBuilding>()) return;
 
-    // 팀 태그 보유 액터 통과
-    UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor);
-    if (TargetASC && TargetASC->HasMatchingGameplayTag(SMGameFlowTag::Team)) return;
+	// 팀 태그 보유 액터 통과
+	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor);
+	if (TargetASC && TargetASC->HasMatchingGameplayTag(SMGameFlowTag::Team)) return;
 
 	// ASC 없는 액터 무시하고 통과
 	if (!TargetASC || !DamageSpecHandle.IsValid()) return;
@@ -148,8 +149,8 @@ void ASMASkillProjectile::OnRep_HomingTarget()
 void ASMASkillProjectile::FindAndSetHomingTarget()
 {
 	if (!ProjectileMovement) return;
-	
-	UE_LOG(LogTemp,Warning,TEXT("Start FindAndSetHomingTarget"));
+
+	UE_LOG(LogTemp, Warning, TEXT("Start FindAndSetHomingTarget"));
 
 	FVector CurrentDir = ProjectileMovement->Velocity.GetSafeNormal();
 
@@ -170,7 +171,7 @@ void ASMASkillProjectile::FindAndSetHomingTarget()
 	for (AActor* Actor : OverlappedActors)
 	{
 		if (!IsValid(Actor)) continue;
-		if (!IsAvailableEnemy(Actor)) continue;
+		if (!SMGameplayAbilityUtils::IsAvailableEnemy(Actor)) continue;
 		FVector ToTarget = (Actor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 		float Dot = FVector::DotProduct(CurrentDir, ToTarget);
 		if (Dot > BestDot)
@@ -188,16 +189,4 @@ void ASMASkillProjectile::FindAndSetHomingTarget()
 		ProjectileMovement->HomingTargetComponent = BestTarget->GetRootComponent();
 		ProjectileMovement->HomingAccelerationMagnitude = HomingAccelerationMagnitude;
 	}
-}
-
-bool ASMASkillProjectile::IsAvailableEnemy(AActor* Actor) const
-{
-	if (IsValid(Actor) == false) return false;
-
-	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
-	if (IsValid(ASC) == false) return false;
-	
-	if (ASC->HasMatchingGameplayTag(SMEnemyTag::Enemy_State_Death) == true) return false;
-	
-	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Enemy);
 }

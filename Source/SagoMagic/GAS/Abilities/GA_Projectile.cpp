@@ -3,6 +3,7 @@
 #include "AbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "GameplayTags/Character/SMSkillTag.h"
+#include "Kismet/GameplayStatics.h"
 #include "SkillActor/SMASkillProjectile.h"
 
 
@@ -19,6 +20,12 @@ void UGA_Projectile::OnSkillEffect(
 	APawn* Avatar = ActorInfo && ActorInfo->AvatarActor.IsValid()
 		                ? Cast<APawn>(ActorInfo->AvatarActor.Get())
 		                : nullptr;
+
+	// 발사 사운드는 로컬 클라이언트에서만 재생
+	if (Avatar && Avatar->IsLocallyControlled() && FireSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(Avatar, FireSound, Avatar->GetActorLocation());
+	}
 
 	if (!Avatar || !Avatar->HasAuthority()) return;
 

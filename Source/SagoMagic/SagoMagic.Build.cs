@@ -39,13 +39,6 @@ public class SagoMagic : ModuleRules
 		PublicIncludePaths.AddRange(new string[]
         {
 			"SagoMagic",
-			"SagoMagic/SampleProject",
-			"SagoMagic/SampleProject/Variant_Strategy",
-			"SagoMagic/SampleProject/Variant_Strategy/UI",
-			"SagoMagic/SampleProject/Variant_TwinStick",
-			"SagoMagic/SampleProject/Variant_TwinStick/AI",
-			"SagoMagic/SampleProject/Variant_TwinStick/Gameplay",
-			"SagoMagic/SampleProject/Variant_TwinStick/UI"
 		});
 
 		// Uncomment if you are using Slate UI

@@ -45,6 +45,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Interaction|Repair")
 	void HandleInteract(APawn* InInteractingPawn);
 	
+	UFUNCTION(BlueprintPure, Category = "Building")
+	bool GetIsBeingMoved() const { return bIsBeingMoved; }
+	
+	UFUNCTION(BlueprintCallable, Category = "Building")
+	void SetIsBeingMoved(bool bInIsBeingMoved) { bIsBeingMoved = bInIsBeingMoved; }
+	
 protected:
 	virtual void BeginPlay() override;
 
@@ -82,6 +88,9 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interaction|Repair")
 	float RepairAmount = 5.0f;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Building")
+	bool bIsBeingMoved = false;
 	
 private:
 	ASMGridManager* GetGridManager() const;

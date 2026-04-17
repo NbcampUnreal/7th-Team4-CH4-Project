@@ -113,6 +113,7 @@ private:
 	
 	bool bIsPlacementValid = false;
 	
+	UPROPERTY()
 	TArray<FSMBuildingData> CachedBuildingData;
 	
 	FString BuildingDataTablePath = 

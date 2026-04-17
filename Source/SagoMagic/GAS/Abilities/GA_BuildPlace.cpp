@@ -34,24 +34,20 @@ void UGA_BuildPlace::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-	SM_LOG(this,LogSM,Error,TEXT("1111"));
 	if (!TriggerEventData)
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-	SM_LOG(this,LogSM,Error,TEXT("1112"));
 	const FSMBuildPlaceTargetData* PlaceData = 
 		static_cast<const FSMBuildPlaceTargetData*>(
 			TriggerEventData->TargetData.Get(0));
-	SM_LOG(this,LogSM,Error,TEXT("1113"));
 	if (!PlaceData || PlaceData->CellInfos.IsEmpty())
 	{
 		SM_LOG(this,LogSM,Error,TEXT("[GA_BuildPlace] TargetData 없음"));
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-	SM_LOG(this,LogSM,Error,TEXT("1114"));
 	ASMGridManager* GridManager = GetGridManager();
 	if (!GridManager)
 	{
@@ -59,13 +55,11 @@ void UGA_BuildPlace::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		return;
 	}
 	USMSyncDataManager* DM = GetWorld()->GetSubsystem<USMSyncDataManager>();
-	SM_LOG(this,LogSM,Error,TEXT("1115"));
 	if (!GridManager || !DM)
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-	SM_LOG(this,LogSM,Error,TEXT("1116"));
 	const FSMBuildingData* BuildingData = DM->GetBuildData(PlaceData->BuildingType);
 	if (!BuildingData || !BuildingData->BuildingClass)
 	{
@@ -73,14 +67,12 @@ void UGA_BuildPlace::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-	SM_LOG(this,LogSM,Error,TEXT("1117"));
 	if (!ServerValidateCells(GridManager, PlaceData->CellInfos))
 	{
 		SM_LOG(this, LogSM, Error, TEXT("[GA_BuildPlace] 이미 점유된 셀 존재"));
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-	SM_LOG(this,LogSM,Error,TEXT("1118"));
 	if (!ApplyBuildCost(Handle, ActorInfo, ActivationInfo, PlaceData->BuildingType, BuildingData->Cost * PlaceData->CellInfos.Num()))
 	{
 		SM_LOG(this, LogSM, Error, TEXT("[GA_BuildPlace] 골드 부족"));
@@ -92,13 +84,11 @@ void UGA_BuildPlace::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	{
 		OwnerId = PS->GetPlayerId();
 	}
-	SM_LOG(this,LogSM,Error,TEXT("1118"));
-	if (!SpawnAndRegister(GridManager, PlaceData->CellInfos, BuildingData->BuildingClass, PlaceData->BuildingType, OwnerId))
+	if (!SpawnAndRegister(GridManager, PlaceData->CellInfos, BuildingData->BuildingClass, PlaceData->BuildingType, OwnerId, BuildingData))
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-	SM_LOG(this,LogSM,Error,TEXT("1119"));
 	EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }
 
@@ -106,6 +96,10 @@ bool UGA_BuildPlace::ServerValidateCells(ASMGridManager* GridManager, const TArr
 {
 	for (const FSMCellPlaceInfo& Info : CellInfos)
 	{
+		if (!GridManager->IsValidGridPosition(Info.Grid.X, Info.Grid.Y))
+		{
+			return false;
+		}
 		if (!GridManager->IsCellEmpty(Info.Grid.X, Info.Grid.Y))
 			return false;
 	}
@@ -135,10 +129,10 @@ bool UGA_BuildPlace::ApplyBuildCost(const FGameplayAbilitySpecHandle& Handle,
 }
 
 bool UGA_BuildPlace::SpawnAndRegister(ASMGridManager* GridManager, const TArray<FSMCellPlaceInfo>& CellInfos,
-	TSubclassOf<AActor> BuildingClass,EGridBuildingType BuildingType, int32 OwnerId)
+	TSubclassOf<AActor> BuildingClass,EGridBuildingType BuildingType, int32 OwnerId, const FSMBuildingData* BuildingData)
 {
 	TArray<ASMBaseBuilding*> SpawnedActors;
-
+	
 	for (const FSMCellPlaceInfo& Info : CellInfos)
 	{
 		FVector SpawnPos = GridManager->GridToWorldWithHeight(Info.Grid.X, Info.Grid.Y);
@@ -181,7 +175,7 @@ bool UGA_BuildPlace::SpawnAndRegister(ASMGridManager* GridManager, const TArray<
 				Fence->ConvertToCorner(Info.Yaw);
 			}
 		}
-		
+		Building->InitBuilding(Info.Grid, BuildingData->bIsDestructible, BuildingData->MaxHealth);
 		SpawnedActors.Add(Building);
 	}	
 	return true;

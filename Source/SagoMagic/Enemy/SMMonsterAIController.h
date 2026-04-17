@@ -7,7 +7,6 @@
 #include "Perception/AIPerceptionTypes.h"
 #include "SMMonsterAIController.generated.h"
 
-
 //공격 대상 타입
 UENUM(BlueprintType)
 enum class EMonsterAttackTargetType : uint8
@@ -38,6 +37,9 @@ public:
 
     /** MonsterBase의 GiveDefaultAbilities() 완료 후 호출 **/
     void StartAttackTimer();
+
+    /** MonsterBase가 DataAsset 로드 후 호출 — BT/BB를 세팅하고 실행 */
+    void InitFromDataAsset(UBehaviorTree* InBT, UBlackboardData* InBB);
 
     /** 현재 공격 대상 타입 (GA_MonsterAttackBase에서 읽음) **/
     EMonsterAttackTargetType CurrentTargetType = EMonsterAttackTargetType::BaseCamp;

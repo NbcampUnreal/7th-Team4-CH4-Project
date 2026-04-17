@@ -9,7 +9,7 @@
 #include "GameFramework/Pawn.h"
 #include "Building/SMBaseCampActor.h"
 #include "Building/SMBaseBuilding.h"
-
+#include "BehaviorTree/BehaviorTree.h"
 
 ASMMonsterAIController::ASMMonsterAIController()
 {
@@ -42,9 +42,9 @@ void ASMMonsterAIController::OnPossess(APawn* InPawn)
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("[AI] OnPossess - BBAsset: %s / BTAsset: %s"),
-            BBAsset ? TEXT("Valid") : TEXT("NULL"),
-            BTAsset ? TEXT("Valid") : TEXT("NULL"));
+        //UE_LOG(LogTemp, Warning, TEXT("[AI] OnPossess - BBAsset: %s / BTAsset: %s"),
+        //    BBAsset ? TEXT("Valid") : TEXT("NULL"),
+        //    BTAsset ? TEXT("Valid") : TEXT("NULL"));
     }
 }
 
@@ -70,6 +70,34 @@ void ASMMonsterAIController::StartAttackTimer()
         true
     );
     //UE_LOG(LogTemp, Warning, TEXT("[AI] 공격 타이머 시작. 쿨다운: %.1f초"), AttackCooldown);
+}
+
+void ASMMonsterAIController::InitFromDataAsset(UBehaviorTree* InBT, UBlackboardData* InBB)
+{
+    if (!InBT) return;
+
+    // BB가 따로 안 넘어왔으면 BT에 내장된 BB 사용
+    UBlackboardData* ResolvedBB = InBB ? InBB : InBT->GetBlackboardAsset();
+    if (!ResolvedBB) return;
+
+    BTAsset = InBT;
+    BBAsset = ResolvedBB;
+
+    UBlackboardComponent* BBCompPtr = BlackboardComp.Get();
+    if (UseBlackboard(BBAsset, BBCompPtr))
+    {
+        BlackboardComp = BBCompPtr;
+
+        AActor* BaseCamp = FindBaseCamp();
+        if (BaseCamp)
+        {
+            Blackboard->SetValueAsObject(FName("TargetActor"), BaseCamp);
+        }
+        CurrentTargetType = EMonsterAttackTargetType::BaseCamp;
+
+        RunBehaviorTree(BTAsset);
+        //UE_LOG(LogTemp, Log, TEXT("[AI] InitFromDataAsset - BT 실행: %s"), *InBT->GetName());
+    }
 }
 
 void ASMMonsterAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
@@ -139,7 +167,7 @@ void ASMMonsterAIController::UpdateTargetAndTryAttack()
 
     const FGameplayAbilitySpec& Spec = AllSpecs[0];
     bool bActivated = ASC->TryActivateAbility(Spec.Handle);
-    UE_LOG(LogTemp, Warning, TEXT("[AI] TryActivateAbility 결과: %s"), bActivated ? TEXT("성공") : TEXT("실패"));
+    //UE_LOG(LogTemp, Warning, TEXT("[AI] TryActivateAbility 결과: %s"), bActivated ? TEXT("성공") : TEXT("실패"));
 }
 
 AActor* ASMMonsterAIController::FindAttackableTarget()

@@ -1,5 +1,7 @@
 #include "Components/SMInteractionTargetComponent.h"
 
+#include "Building/SMBaseBuilding.h"
+#include "Building/SMBaseCampActor.h"
 #include "Components/MeshComponent.h"
 #include "Materials/MaterialInterface.h"
 #include "GameFramework/Pawn.h"
@@ -102,6 +104,14 @@ void USMInteractionTargetComponent::HandleOwnerInteract(APawn* InInteractingPawn
 	if (ASMBaseItemDropActor* DropActor = Cast<ASMBaseItemDropActor>(OwnerActor))
 	{
 		DropActor->HandleInteract(InInteractingPawn);
+	}
+	else if (ASMBaseCampActor* BaseCampActor = Cast<ASMBaseCampActor>(OwnerActor))
+	{
+		BaseCampActor->HandleInteract(InInteractingPawn);
+	}
+	else if (ASMBaseBuilding* BuildingActor = Cast<ASMBaseBuilding>(OwnerActor))
+	{
+		BuildingActor->HandleInteract(InInteractingPawn);
 	}
 	
 	/**

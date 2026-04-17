@@ -119,29 +119,24 @@ void USMEditModeComponent::OnClick(const FInputActionValue& Value)
 	APawn* Pawn = Cast<APawn>(GetOwner());
 	APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
 	if (!PC || !GridManager) return;
-	SM_LOG(this, LogSM, Error, TEXT("11"));
 	// 스크린 좌표 기록
-	float MX, MY;
-	PC->GetMousePosition(MX, MY);
-	SM_LOG(this, LogSM, Warning, TEXT("E : %.3f,%.3f"),MX, MY);
+	float MX = 0.f, MY = 0.f;
+	if (!PC->GetMousePosition(MX, MY))
+	{
+		SM_LOG(this, LogSM, Warning, TEXT("GetMousePosition 실패"));
+		return;
+	}
 	PressScreenPos = FVector2D(MX, MY);
 	bDragConfirmed = false;
-	SM_LOG(this, LogSM, Error, TEXT("12"));
 	// 월드 좌표 기록
 	FHitResult Hit;
-	PC->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
-	PressWorldPos = Hit.Location;
-	SM_LOG(this, LogSM, Error, TEXT("13"));
-	SM_LOG(this, LogSM, Error, TEXT("Hit Actor: %s"), 
-	Hit.GetActor() ? *Hit.GetActor()->GetName() : TEXT("None"));
-	SM_LOG(this, LogSM, Error, TEXT("SelectionSnapshot 크기: %d"), 
-		SelectionSnapshot.Num());
-
-	for (auto& [Building, Grid] : SelectionSnapshot)
+	if (!PC->GetHitResultUnderCursor(ECC_Visibility, false, Hit))
 	{
-		SM_LOG(this, LogSM, Error, TEXT("Snapshot 항목: %s"), 
-			Building ? *Building->GetName() : TEXT("None"));
+		SM_LOG(this, LogSM, Warning, TEXT("GetHitResultUnderCursor 실패"));
+		return;
 	}
+	PressWorldPos = Hit.Location;
+
 	// 누른 위치가 이미 선택된 펜스?
 	ASMBaseBuilding* HitBuilding = Cast<ASMBaseBuilding>(Hit.GetActor());
 	if (HitBuilding && SelectionSnapshot.Contains(HitBuilding))
@@ -176,8 +171,10 @@ void USMEditModeComponent::OnGrab(const FInputActionValue& Value)
 	if (!PC || !GridManager) return;
 	
 	float MX, MY;
-	PC->GetMousePosition(MX, MY);
-	SM_LOG(this, LogSM, Warning, TEXT("T : %.3f,%.3f"),MX, MY);
+	if (!PC->GetMousePosition(MX, MY))
+	{
+		return;
+	}
 	FVector2D CurrentScreen(MX, MY);
 	
 	if (!bDragConfirmed &&
@@ -186,7 +183,6 @@ void USMEditModeComponent::OnGrab(const FInputActionValue& Value)
 		bDragConfirmed = true;
 	}
 	if (!bDragConfirmed) return;
-	SM_LOG(this, LogSM, Error, TEXT("18"));
 	
 	for (ASMBaseBuilding* B : SelectedActors)
 		ApplyHighlight(B, false);
@@ -300,7 +296,6 @@ void USMEditModeComponent::SelectActorsInScreenBox(const FVector2D& ScreenA, con
 	APawn* Pawn = Cast<APawn>(GetOwner());
 	APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
 	if (!PC || !GridManager) return;
-	SM_LOG(this, LogSM, Error, TEXT("26"));
 	FVector2D BoxMin(FMath::Min(ScreenA.X, ScreenB.X), FMath::Min(ScreenA.Y, ScreenB.Y));
 	FVector2D BoxMax(FMath::Max(ScreenA.X, ScreenB.X), FMath::Max(ScreenA.Y, ScreenB.Y));
 	
@@ -363,7 +358,6 @@ void USMEditModeComponent::ClearSelection()
 {
 	for (ASMBaseBuilding* B : SelectedActors)
 		ApplyHighlight(B, false);
-	SM_LOG(this, LogSM, Error, TEXT("29"));
 	SelectedActors.Empty();
 	SelectionSnapshot.Empty();
 	OriginalMaterials.Empty();
@@ -433,8 +427,7 @@ void USMEditModeComponent::RestoreToOriginalPositions()
 	for (auto& [Building, OrigGrid] : SelectionSnapshot)
 	{
 		if (!Building) continue;
-		FVector RestorePos = GridManager->GridToWorld(OrigGrid.X, OrigGrid.Y);
-		RestorePos.Z = GridManager->GridOrigin.Z;
+		FVector RestorePos = GridManager->GridToWorldWithHeight(OrigGrid.X, OrigGrid.Y);
 		Building->SetActorLocation(RestorePos);
 		Actors.Add(Building);
 	}
@@ -561,8 +554,9 @@ void USMEditModeComponent::MulticastRPC_PreviewMove_Implementation(const TArray<
 	
 	for (int32 i = 0; i < Actors.Num(); i++)
 	{
-		if (Actors[i])
-			Actors[i]->SetActorLocation(Locations[i]);
+		if (!Actors[i])
+			continue;
+		Actors[i]->SetActorLocation(Locations[i]);
 	}
 }
 

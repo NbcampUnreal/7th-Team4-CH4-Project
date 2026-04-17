@@ -41,7 +41,7 @@ class SAGOMAGIC_API ASMPlayerCharacter : public ACharacter, public IAbilitySyste
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BuildingMode", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USMBuildingModeComponent> BuildingModeComp;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BuildingMode", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "EditingMode", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USMEditModeComponent> EditModeComp;
 protected:
 	UPROPERTY(EditAnywhere, Category = "Input")

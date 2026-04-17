@@ -60,7 +60,7 @@ private:
 	void RestoreToOriginalPositions();
 	
 	//RPC
-	/** 배치 학정 : 서버에서 원자적으로 전체 이동 or 전체 원위치 처리 */
+	/** 배치 확정 : 서버에서 원자적으로 전체 이동 or 전체 원위치 처리 */
 	UFUNCTION(Server, Reliable)
 	void ServerRPC_MoveBuildings(
 		const TArray<ASMBaseBuilding*>& Actors,
@@ -113,7 +113,7 @@ public:
 	TObjectPtr<UInputAction> DeleteAction;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
-	int32 MaxBuildDistance = 1500.0f;
+	float MaxBuildDistance = 1500.0f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Visual|Highlight")
 	TObjectPtr<UMaterialInterface> HighLightMaterial;

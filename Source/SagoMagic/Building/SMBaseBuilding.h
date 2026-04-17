@@ -5,8 +5,11 @@
 #include "GameFramework/Actor.h"
 #include "SMBaseBuilding.generated.h"
 
+class APawn;
+class USMInteractionTargetComponent;
 class ASMGridManager;
 class USMBuildingAttributeSet;
+
 /**
  * 모든 건물의 베이스 클래스
  */
@@ -37,6 +40,11 @@ public:
 	
 	UFUNCTION(BlueprintPure, Category = "Building")
 	bool GetIsDestructible() const { return bIsDestructible; }
+	
+	/** 아이템 수리 요청 */
+	UFUNCTION(BlueprintCallable, Category="Interaction|Repair")
+	void HandleInteract(APawn* InInteractingPawn);
+	
 protected:
 	virtual void BeginPlay() override;
 
@@ -54,6 +62,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction")
+	TObjectPtr<USMInteractionTargetComponent> InteractionTargetComponent;
+	
 	UPROPERTY()
 	TObjectPtr<USMBuildingAttributeSet> AttributeSet;
 	
@@ -65,6 +76,13 @@ protected:
 	
 	UPROPERTY(ReplicatedUsing = OnRep_IsDead)
 	bool bIsDead = false;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interaction|Repair")
+	float RepairCost = 15.0f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Interaction|Repair")
+	float RepairAmount = 5.0f;
+	
 private:
 	ASMGridManager* GetGridManager() const;
 	

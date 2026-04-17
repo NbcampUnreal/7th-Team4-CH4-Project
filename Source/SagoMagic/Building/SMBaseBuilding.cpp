@@ -9,10 +9,8 @@
 #include "NavModifierComponent.h"
 #include "Components/SMInteractionTargetComponent.h"
 #include "GameFramework/PlayerState.h"
-#include "GAS/AttributeSets/SMBaseCampAttributeSet.h"
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "NavAreas/NavArea_Default.h"
-#include "NavAreas/NavArea_Obstacle.h" 
 
 
 ASMBaseBuilding::ASMBaseBuilding()

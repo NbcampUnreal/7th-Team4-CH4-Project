@@ -17,4 +17,8 @@ namespace SMUITag
     
     /** 알림 로그 이벤트 태그 선언 */
     UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Notification);
+    
+    /** 건축, 편집 모드 메세지 태그 선언 */
+    UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_BuildMode);
+    UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_EditMode);
 }

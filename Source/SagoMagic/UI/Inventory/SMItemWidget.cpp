@@ -3,8 +3,11 @@
 #include "Blueprint/WidgetBlueprintLibrary.h"
 
 #include "Inventory/Components/SMInventoryComponent.h"
+#include "Inventory/Items/Definitions/SMItemDefinition.h"
+#include "Inventory/Items/Fragments/SMGridShapeFragment.h"
 #include "UI/Inventory/SMInventoryDragDropOperation.h"
 #include "UI/Inventory/SMDragItemPreviewWidget.h"
+#include "UI/Inventory/SMInventoryGridWidget.h"
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
 USMItemWidget::USMItemWidget(const FObjectInitializer& ObjectInitializer)
@@ -98,7 +101,7 @@ void USMItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPoi
 		OwningPanel->CloseContextMenu();
 	}
 
-	OutOperation = CreateDragDropOperation();
+	OutOperation = CreateDragDropOperation(InGeometry, InMouseEvent);
 
 	if (USMInventoryDragDropOperation* InventoryOperation = Cast<USMInventoryDragDropOperation>(OutOperation))
 	{
@@ -138,8 +141,78 @@ bool USMItemWidget::CanStartDrag() const
 	return bDraggable && ItemInstanceId.IsValid() && InventoryComponent != nullptr;
 }
 
-USMInventoryDragDropOperation* USMItemWidget::CreateDragDropOperation()
+USMInventoryDragDropOperation* USMItemWidget::CreateDragDropOperation(
+	const FGeometry& InGeometry,
+	const FPointerEvent& InMouseEvent)
 {
+	if (USMInventoryGridWidget* OwningGrid = GetTypedOuter<USMInventoryGridWidget>())
+	{
+		int32 ShapeWidth = 1;
+		int32 ShapeHeight = 1;
+
+		FSMItemInstanceData BaseItemData;
+		if (InventoryComponent != nullptr)
+		{
+			FSMItemInstanceData ItemData;
+			if (InventoryComponent->GetItemData(ItemInstanceId, ItemData))
+			{
+				BaseItemData = ItemData;
+			}
+			else
+			{
+				FSMSkillItemInstanceData SkillData;
+				if (InventoryComponent->GetSkillData(ItemInstanceId, SkillData))
+				{
+					BaseItemData = SkillData.BaseItem;
+				}
+			}
+
+			if (BaseItemData.InstanceId.IsValid())
+			{
+				if (const USMItemDefinition* ItemDefinition = InventoryComponent->ResolveItemDefinition(BaseItemData))
+				{
+					if (const USMGridShapeFragment* GridShapeFragment = ItemDefinition->FindFragmentByClass<USMGridShapeFragment>())
+					{
+						const FSMGridMaskData& ShapeMask = GridShapeFragment->GetShapeMask();
+						if (ShapeMask.IsValidMaskData())
+						{
+							ShapeWidth = FMath::Max(1, ShapeMask.Width);
+							ShapeHeight = FMath::Max(1, ShapeMask.Height);
+						}
+					}
+				}
+			}
+		}
+
+		const bool bSwapDimensions = DisplayRotation == ESMGridRotation::Rot90 || DisplayRotation == ESMGridRotation::Rot270;
+		const int32 CurrentWidth = bSwapDimensions ? ShapeHeight : ShapeWidth;
+		const int32 CurrentHeight = bSwapDimensions ? ShapeWidth : ShapeHeight;
+
+		int32 PivotGridX = GridX;
+		int32 PivotGridY = GridY;
+		FVector2D PivotCellFraction(0.5f, 0.5f);
+
+		const FVector2D LocalMousePosition = InGeometry.AbsoluteToLocal(InMouseEvent.GetScreenSpacePosition());
+		const FVector2D LocalSize = InGeometry.GetLocalSize();
+		if (CurrentWidth > 0 && CurrentHeight > 0 && LocalSize.X > 0.0f && LocalSize.Y > 0.0f)
+		{
+			const float NormalizedX = FMath::Clamp(LocalMousePosition.X / LocalSize.X, 0.0f, 0.9999f);
+			const float NormalizedY = FMath::Clamp(LocalMousePosition.Y / LocalSize.Y, 0.0f, 0.9999f);
+			const float ShapeSpaceX = NormalizedX * static_cast<float>(CurrentWidth);
+			const float ShapeSpaceY = NormalizedY * static_cast<float>(CurrentHeight);
+
+			const int32 PivotRotatedLocalX = FMath::Clamp(FMath::FloorToInt(ShapeSpaceX), 0, FMath::Max(0, CurrentWidth - 1));
+			const int32 PivotRotatedLocalY = FMath::Clamp(FMath::FloorToInt(ShapeSpaceY), 0, FMath::Max(0, CurrentHeight - 1));
+
+			PivotGridX = GridX + PivotRotatedLocalX;
+			PivotGridY = GridY + PivotRotatedLocalY;
+			PivotCellFraction.X = FMath::Clamp(ShapeSpaceX - static_cast<float>(PivotRotatedLocalX), 0.0f, 1.0f);
+			PivotCellFraction.Y = FMath::Clamp(ShapeSpaceY - static_cast<float>(PivotRotatedLocalY), 0.0f, 1.0f);
+		}
+
+		return OwningGrid->CreateDragDropOperationForItem(ItemInstanceId, PivotGridX, PivotGridY, PivotCellFraction);
+	}
+
 	USMInventoryDragDropOperation* NewOperation = NewObject<USMInventoryDragDropOperation>(this);
 	if (NewOperation == nullptr)
 	{

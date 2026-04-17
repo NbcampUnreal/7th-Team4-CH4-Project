@@ -164,7 +164,9 @@ public:
 
 protected:
 	/** 드래그 드롭 오퍼레이션 생성 */
-	USMInventoryDragDropOperation* CreateDragDropOperation();
+	USMInventoryDragDropOperation* CreateDragDropOperation(
+		const FGeometry& InGeometry,
+		const FPointerEvent& InMouseEvent);
 
 	/** 드래그 미리보기 위젯 생성 */
 	USMDragItemPreviewWidget* CreateDragPreviewWidget();

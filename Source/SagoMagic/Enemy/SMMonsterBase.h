@@ -79,5 +79,16 @@ public:
     /** 자폭 시 1마리당 BaseCamp에 적용할 데미지 양 */
     UPROPERTY(EditDefaultsOnly, Category = "SelfKill")
     float SelfKillDamage = 5.0f;
+    
+    //몬스터 사망 탸그 추가 로직
+    
+    UPROPERTY(ReplicatedUsing=OnRep_IsDead)
+    bool bIsDead = false;
+    
+    UFUNCTION()
+    void OnRep_IsDead();
+    
+    //클라이언트에서만 실행되는 Death로직, 클라 전용 애니메이션 등 추가 가능
+    void HandleClientDeath();
+    
 };
-

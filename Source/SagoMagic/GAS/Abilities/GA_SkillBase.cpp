@@ -1,5 +1,6 @@
 #include "GAS/Abilities/GA_SkillBase.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "Inventory/Components/SMInventoryComponent.h"
@@ -9,6 +10,8 @@
 #include "Abilities/GameplayAbilityTargetTypes.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "GameplayTags/Enemy/SMEnemyTag.h"
+#include "GAS/SMGameplayAbilityUtils.h"
 
 UGA_SkillBase::UGA_SkillBase()
 {
@@ -350,4 +353,14 @@ bool UGA_SkillBase::TryGetMouseGroundLocation(APawn* Pawn, FVector& OutLocation)
 		return true;
 	}
 	return false;
+}
+
+bool UGA_SkillBase::HasAnyTeamTag(AActor* Actor) const
+{
+	return SMGameplayAbilityUtils::HasTeamTag(Actor);
+}
+
+bool UGA_SkillBase::IsAvailableEnemy(AActor* Actor) const
+{
+	return SMGameplayAbilityUtils::IsAvailableEnemy(Actor);
 }

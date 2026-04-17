@@ -57,8 +57,6 @@ private:
 	// 반경 내 가장 가까운 적 탐색 (SphereOverlapActors 사용)
 	bool FindNearestEnemy(const FVector& Origin, const TArray<AActor*>& ExcludeActors,
 						  AActor*& OutEnemy) const;
-
-	bool HasAnyTeamTag(AActor* Actor) const;
 	
 	FVector GetAttachSocketLocation(ACharacter* Character) const;
 };

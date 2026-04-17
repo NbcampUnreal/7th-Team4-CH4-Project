@@ -109,4 +109,10 @@ protected:
 	
 	// 로컬에서 마우스가 가리키는 바닥 좌표 구하는 함수
 	bool TryGetMouseGroundLocation(APawn* Pawn, FVector& OutLocation) const;
+	
+	//ASC에서 Team태그 확인
+	bool HasAnyTeamTag(AActor* Actor) const;
+	
+	//ASC에서 Enemy태그 확인
+	bool IsAvailableEnemy(AActor* Actor) const;
 };

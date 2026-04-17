@@ -19,11 +19,11 @@ void UGA_ApplyInstantDamage::OnSkillEffect(
 {
 	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
 	if (!Avatar) return;
-	
+
 	// 부모가 넘겨준 TargetLocation 기준으로 가까운 적 찾기
 	AActor* FoundEnemy = nullptr;
 	bool bFound = FindClosestEnemy(GetWorld(), TargetLocation, DetectionRadius, Avatar, FoundEnemy);
-	
+
 	// 적중 이펙트 예측
 	if (Avatar->IsLocallyControlled() && !Avatar->HasAuthority())
 	{
@@ -40,7 +40,7 @@ void UGA_ApplyInstantDamage::OnSkillEffect(
 		}
 		return;
 	}
-	
+
 	// 서버에서는 실제 데미지 적용 및 이펙트 복제
 	if (Avatar->HasAuthority())
 	{
@@ -57,7 +57,7 @@ void UGA_ApplyInstantDamage::OnSkillEffect(
 						ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
 				}
 			}
-			
+
 			UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 			if (SourceASC)
 			{
@@ -101,8 +101,8 @@ bool UGA_ApplyInstantDamage::FindClosestEnemy(UWorld* World, const FVector& Cent
 	for (AActor* Actor : OverlapActors)
 	{
 		if (IsValid(Actor) == false) continue;
-		//아군 확인
-		if (HasAnyTeamTag(Actor) == true) continue;
+		if (HasAnyTeamTag(Actor) == true) continue; //아군 확인
+		if (IsAvailableEnemy(Actor) == false) continue;// 적 태그 없으면 스킵
 
 		//ASC없는 액터 확인
 		UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
@@ -193,14 +193,4 @@ void UGA_ApplyInstantDamage::OnTargetDataReady(const FGameplayAbilityTargetDataH
 		SMSkillTag::GameplayCue_Skill_ApplyInstantDamage_Hit, CueParams);
 
 	EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, false);
-}
-
-bool UGA_ApplyInstantDamage::HasAnyTeamTag(AActor* Actor) const
-{
-	if (IsValid(Actor) == false) return false;
-
-	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
-	if (IsValid(ASC) == false) return false;
-
-	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Team);
 }

@@ -7,7 +7,9 @@
 #include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
 #include "GameFramework/Character.h"
+#include "GameplayTags/Enemy/SMEnemyTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
+#include "GAS/SMGameplayAbilityUtils.h"
 
 
 AGCN_LineTraceBeam::AGCN_LineTraceBeam()
@@ -67,7 +69,7 @@ void AGCN_LineTraceBeam::InitializeBeam(AActor* MyTarget, const FGameplayCuePara
 
 	if (IsValid(BeamNiagaraSystem) == false) return;
 	BeamNiagaraComponent->SetAsset(BeamNiagaraSystem);
-	
+
 	ACharacter* Character = Cast<ACharacter>(MyTarget);
 	if (IsValid(Character) == false || IsValid(Character->GetMesh()) == false) return;
 	BeamNiagaraComponent->AttachToComponent(
@@ -89,7 +91,7 @@ void AGCN_LineTraceBeam::UpdateBeam()
 	//Staff_Tip소켓 위치를 LineTrace시작점으로 사용
 	FVector Origin = GetAttachSocketLocation(Character);
 	BeamNiagaraComponent->SetWorldLocation(Origin);
-	
+
 	FVector AimDirection = Character->GetBaseAimRotation().Vector();
 
 	AController* Controller = Character->GetController();
@@ -116,7 +118,8 @@ void AGCN_LineTraceBeam::UpdateBeam()
 			AActor* HitActor = Hit.GetActor();
 			if (IsValid(HitActor) == false) continue;
 
-			if (HasAnyTeamTag(HitActor) == true) continue;
+			if (SMGameplayAbilityUtils::HasTeamTag(HitActor) == true) continue;
+			if (SMGameplayAbilityUtils::IsAvailableEnemy(HitActor) == false) continue;
 
 			BeamEndPoint = Hit.ImpactPoint;
 			break;
@@ -124,16 +127,6 @@ void AGCN_LineTraceBeam::UpdateBeam()
 	}
 	//Niagara USER파라미터 "BeamEnd" 갱신
 	BeamNiagaraComponent->SetVariableVec3(TEXT("BeamEnd"), BeamEndPoint);
-}
-
-bool AGCN_LineTraceBeam::HasAnyTeamTag(AActor* Actor) const
-{
-	if (IsValid(Actor) == false) return false;
-
-	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
-	if (IsValid(ASC) == false) return false;
-
-	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Team);
 }
 
 FVector AGCN_LineTraceBeam::GetAttachSocketLocation(ACharacter* Character) const

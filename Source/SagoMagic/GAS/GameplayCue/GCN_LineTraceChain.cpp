@@ -8,7 +8,9 @@
 #include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
 #include "GameFramework/Character.h"
+#include "GameplayTags/Enemy/SMEnemyTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
+#include "GAS/SMGameplayAbilityUtils.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 
@@ -126,7 +128,8 @@ void AGCN_LineTraceChain::UpdateChain()
 	{
 		AActor* HitActor = Hit.GetActor();
 		if (IsValid(HitActor) == false) continue;
-		if (HasAnyTeamTag(HitActor) == true) continue;
+		if (SMGameplayAbilityUtils::HasTeamTag(HitActor) == true) continue;
+		if (SMGameplayAbilityUtils::IsAvailableEnemy(HitActor) == false) continue;
 		FirstEnemy = HitActor;
 		break;
 	}
@@ -202,7 +205,8 @@ bool AGCN_LineTraceChain::FindNearestEnemy(const FVector& Origin, const TArray<A
 	for (AActor* Actor : OverlapActors)
 	{
 		if (IsValid(Actor) == false) continue;
-		if (HasAnyTeamTag(Actor) == true) continue;
+		if (SMGameplayAbilityUtils::HasTeamTag(Actor) == true) continue;
+		if (SMGameplayAbilityUtils::IsAvailableEnemy(Actor) == false) continue;
 
 		const float DistSq = FVector::DistSquared(Origin, Actor->GetActorLocation());
 		if (DistSq < NearestDistSq)
@@ -212,17 +216,6 @@ bool AGCN_LineTraceChain::FindNearestEnemy(const FVector& Origin, const TArray<A
 		}
 	}
 	return IsValid(OutEnemy);
-}
-
-bool AGCN_LineTraceChain::HasAnyTeamTag(AActor* Actor) const
-{
-	if (IsValid(Actor) == false) return false;
-
-	UAbilitySystemComponent* ASC =
-		UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
-	if (IsValid(ASC) == false) return false;
-
-	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Team);
 }
 
 FVector AGCN_LineTraceChain::GetAttachSocketLocation(ACharacter* Character) const

@@ -4,12 +4,14 @@
 #include "GAS/GameplayCue/GCN_LineTraceBeam.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "Components/AudioComponent.h"
 #include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
 #include "GameFramework/Character.h"
 #include "GameplayTags/Enemy/SMEnemyTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "GAS/SMGameplayAbilityUtils.h"
+#include "Kismet/GameplayStatics.h"
 
 
 AGCN_LineTraceBeam::AGCN_LineTraceBeam()
@@ -47,6 +49,12 @@ bool AGCN_LineTraceBeam::OnRemove_Implementation(AActor* MyTarget, const FGamepl
 		BeamNiagaraComponent->Deactivate();
 	}
 
+	// 루프 사운드 페이드아웃
+	if (IsValid(BeamAudioComponent))
+	{
+		BeamAudioComponent->FadeOut(SoundFadeOutDuration, 0.0f);
+	}
+
 	return Super::OnRemove_Implementation(MyTarget, Parameters);
 }
 
@@ -79,6 +87,14 @@ void AGCN_LineTraceBeam::InitializeBeam(AActor* MyTarget, const FGameplayCuePara
 
 	BeamNiagaraComponent->Activate(true);
 	SetActorTickEnabled(true);
+
+	// 루프 사운드 - 아직 재생 중이 아닐 때만 시작
+	if (BeamSound && !IsValid(BeamAudioComponent))
+	{
+		BeamAudioComponent = UGameplayStatics::SpawnSoundAtLocation(
+			this, BeamSound, GetActorLocation(),
+			FRotator::ZeroRotator, 1.0f, 1.0f, 0.0f, nullptr, nullptr, true);
+	}
 }
 
 void AGCN_LineTraceBeam::UpdateBeam()

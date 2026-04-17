@@ -1360,6 +1360,8 @@ bool USMInventoryComponent::EquipSkillToQuickSlot(const FGuid& InSkillInstanceId
 		PublishQuickSlotUpdatedMessage(PreviousSlot->GetSlotIndex());
 	}
 
+	RebuildSkillSummary(InSkillInstanceId); // ← 추가
+
 	PublishQuickSlotUpdatedMessage(InSlotIndex);
 	return true;
 }

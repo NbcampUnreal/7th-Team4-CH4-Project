@@ -5,9 +5,7 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
 #include "Character/SMPlayerCharacter.h"
-#include "Enemy/SMMonsterBase.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "Kismet/GameplayStatics.h"
@@ -161,22 +159,23 @@ void ASMASkillProjectile::FindAndSetHomingTarget()
 		GetActorLocation(),
 		HomingSearchRadius,
 		{UEngineTypes::ConvertToObjectType(ECC_Pawn)},
-		ASMMonsterBase::StaticClass(),
+		APawn::StaticClass(),
 		{this},
 		OverlappedActors);
 
-	ASMMonsterBase* BestTarget = nullptr;
+	AActor* BestTarget = nullptr;
 	float BestDot = -1.f;
 
 	for (AActor* Actor : OverlappedActors)
 	{
 		if (!IsValid(Actor)) continue;
+		if (!IsAvailableEnemy(Actor)) continue;
 		FVector ToTarget = (Actor->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 		float Dot = FVector::DotProduct(CurrentDir, ToTarget);
 		if (Dot > BestDot)
 		{
 			BestDot = Dot;
-			BestTarget = Cast<ASMMonsterBase>(Actor);
+			BestTarget = Actor;
 		}
 	}
 
@@ -188,4 +187,16 @@ void ASMASkillProjectile::FindAndSetHomingTarget()
 		ProjectileMovement->HomingTargetComponent = BestTarget->GetRootComponent();
 		ProjectileMovement->HomingAccelerationMagnitude = HomingAccelerationMagnitude;
 	}
+}
+
+bool ASMASkillProjectile::IsAvailableEnemy(AActor* Actor) const
+{
+	if (IsValid(Actor) == false) return false;
+
+	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
+	if (IsValid(ASC) == false) return false;
+	
+	//TODO: Enemy Death태그 확인
+	
+	return ASC->HasMatchingGameplayTag(SMGameFlowTag::Enemy);
 }

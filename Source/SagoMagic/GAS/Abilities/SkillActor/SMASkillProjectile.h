@@ -76,4 +76,5 @@ private:
     
     void FindAndSetHomingTarget();
     
+    bool IsAvailableEnemy(AActor* Actor) const;
 };

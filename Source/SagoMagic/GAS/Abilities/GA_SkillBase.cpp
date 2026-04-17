@@ -175,7 +175,7 @@ bool UGA_SkillBase::LoadActiveSkillSummary(const FGameplayAbilityActorInfo* Acto
 	CooldownSeconds = CachedSummary.GetFinalCooldown();
 	FieldDuration = CachedSummary.GetFinalDuration();
 	TickInterval = CachedSummary.GetFinalTickInterval();
-	SkillUpgradeTags = CachedSummary.GetBehaviorTags();
+	SkillUpgradeTags  = CachedSummary.GetBehaviorTags();
 	return true;
 }
 

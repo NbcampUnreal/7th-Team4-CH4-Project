@@ -2,10 +2,13 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "Components/SphereComponent.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "Building/SMBaseCampActor.h"
 #include "Building/SMBaseBuilding.h"
 #include "GameplayTags/Character/SMSkillTag.h"
+#include "Character/SMPlayerCharacter.h"
 
 ASMASkillField::ASMASkillField()
 {
@@ -32,11 +35,14 @@ void ASMASkillField::InitField(
 	FGameplayEffectSpecHandle InSpecHandle,
 	AActor* InInstigatorActor,
 	float InDuration,
-	float InRangeCm)
+	float InRangeCm,
+	bool bEnablePull,
+	bool bEnableSlow)
 {
 	DamageSpecHandle = InSpecHandle;
 	InstigatorActor = InInstigatorActor;
 	Duration = InDuration;
+	bSlowEnabled = bEnableSlow;
 
 	if (InRangeCm > 0.f && CollisionComponent)
 	{
@@ -66,27 +72,36 @@ void ASMASkillField::InitField(
 		}
 	}
 
+	UWorld* World = GetWorld();
+	if (!World) return;
+
 	// 장판 지속 시간 종료 타이머
-	if (UWorld* World = GetWorld())
-	{
-		World->GetTimerManager().SetTimer(
-			DurationEndHandle,
-			this,
-			&ASMASkillField::OnDurationExpired,
-			Duration,
-			false
-		);
-	}
+	World->GetTimerManager().SetTimer(
+		DurationEndHandle,
+		this,
+		&ASMASkillField::OnDurationExpired,
+		Duration,
+		false
+	);
 
 	// 스폰 직후 즉시 데미지 방지 딜레이 후 그 시점 오버랩 액터만 처리
-	if (UWorld* World = GetWorld())
+	World->GetTimerManager().SetTimer(
+		InitialOverlapHandle,
+		this,
+		&ASMASkillField::CheckInitialOverlaps,
+		StartDelay,
+		false
+	);
+
+	// 당기기 타이머
+	if (bEnablePull)
 	{
 		World->GetTimerManager().SetTimer(
-			InitialOverlapHandle,
+			PullTimerHandle,
 			this,
-			&ASMASkillField::CheckInitialOverlaps,
-			StartDelay,
-			false
+			&ASMASkillField::ApplyPull,
+			PullInterval,
+			true
 		);
 	}
 }
@@ -140,6 +155,12 @@ void ASMASkillField::OnFieldBeginOverlap(UPrimitiveComponent* OverlappedComponen
 	{
 		ActiveEffectHandles.Add(OtherActor, EffectHandle);
 	}
+
+	// 슬로우 적용
+	if (bSlowEnabled)
+	{
+		ApplySlow(OtherActor);
+	}
 }
 
 //콜리전에서 몬스터가 밖으로 나갔을때 GE제거
@@ -160,6 +181,9 @@ void ASMASkillField::OnFieldEndOverlap(UPrimitiveComponent* OverlappedComponent,
 		}
 		ActiveEffectHandles.Remove(OtherActor);
 	}
+
+	// 슬로우 해제
+	RestoreSpeed(OtherActor);
 }
 
 void ASMASkillField::OnDurationExpired()
@@ -184,10 +208,82 @@ void ASMASkillField::OnDurationExpired()
 	}
 	ActiveEffectHandles.Empty();
 
+	// 슬로우 전체 해제
+	TArray<AActor*> OriginalMoveSpeedKeys;
+	OriginalMoveSpeeds.GetKeys(OriginalMoveSpeedKeys);
+	for (AActor* TargetActor : OriginalMoveSpeedKeys)
+	{
+		RestoreSpeed(TargetActor);
+	}
+	OriginalMoveSpeeds.Empty();
+
 	if (IsValid(OwnerASC))
 	{
 		OwnerASC->RemoveActiveGameplayEffect(CueEffectHandle);
 	}
 
 	Destroy();
+}
+
+
+void ASMASkillField::ApplyPull()
+{
+	if (!HasAuthority()) return;
+
+	TArray<AActor*> OverlappingActors;
+	CollisionComponent->GetOverlappingActors(OverlappingActors);
+	
+	for (AActor* Actor : OverlappingActors)
+	{
+		if (!IsValid(Actor)) continue;
+		if (InstigatorActor.IsValid() && Actor == InstigatorActor.Get()) continue;
+		if (Actor->IsA<ASMBaseCampActor>() || Actor->IsA<ASMBaseBuilding>()) continue;
+		
+		// TODO 태린: 캐릭터 자체를 받아와서 캐릭터를 무시하게끔 작성됨 - 추후 태그 완성되면 제거
+		if (Actor->IsA<ASMPlayerCharacter>()) continue;
+
+		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
+		
+		if (!TargetASC || TargetASC->HasMatchingGameplayTag(SMGameFlowTag::Team)) continue;
+
+		ACharacter* Character = Cast<ACharacter>(Actor);
+		if (!Character) continue;
+
+		FVector PullDir = (GetActorLocation() - Actor->GetActorLocation()).GetSafeNormal2D();
+		Character->LaunchCharacter(PullDir * PullStrength, true, false);
+	}
+}
+
+void ASMASkillField::ApplySlow(AActor* Actor)
+{
+	if (!IsValid(Actor)) return;
+	// TODO 태린: 캐릭터 자체를 받아와서 캐릭터를 무시하게끔 작성됨 - 추후 태그 완성되면 제거
+	if (Actor->IsA<ASMPlayerCharacter>()) return;
+	
+	if (OriginalMoveSpeeds.Contains(Actor)) return; // 이미 슬로우 중
+
+	ACharacter* Character = Cast<ACharacter>(Actor);
+	if (!Character) return;
+
+	UCharacterMovementComponent* Movement = Character->GetCharacterMovement();
+	if (!Movement) return;
+
+	// 원래 속도 저장 후 감소
+	OriginalMoveSpeeds.Add(Actor, Movement->MaxWalkSpeed);
+	Movement->MaxWalkSpeed *= SlowMultiplier;
+}
+
+void ASMASkillField::RestoreSpeed(AActor* Actor)
+{
+	if (!IsValid(Actor)) return;
+
+	float* OriginalSpeed = OriginalMoveSpeeds.Find(Actor);
+	if (!OriginalSpeed) return;
+
+	ACharacter* Character = Cast<ACharacter>(Actor);
+	if (Character && Character->GetCharacterMovement())
+	{
+		Character->GetCharacterMovement()->MaxWalkSpeed = *OriginalSpeed;
+	}
+	OriginalMoveSpeeds.Remove(Actor);
 }

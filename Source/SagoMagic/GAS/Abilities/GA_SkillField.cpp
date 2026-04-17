@@ -3,6 +3,7 @@
 #include "SkillActor/SMASkillField.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "GameplayTags/Character/SMSkillTag.h"
 
 UGA_SkillField::UGA_SkillField()
 {
@@ -37,6 +38,8 @@ void UGA_SkillField::OnSkillEffect(
 
 	if (IsValid(Field))
 	{
-		Field->InitField(SpecHandle, Avatar, FieldDuration, RangeCm);
+		const bool bEnablePull = SkillUpgradeTags.HasTag(SMSkillTag::Upgrade_Field_Pull);
+		const bool bEnableSlow = SkillUpgradeTags.HasTag(SMSkillTag::Upgrade_Field_Slow);
+		Field->InitField(SpecHandle, Avatar, FieldDuration, RangeCm, bEnablePull, bEnableSlow);
 	}
 }

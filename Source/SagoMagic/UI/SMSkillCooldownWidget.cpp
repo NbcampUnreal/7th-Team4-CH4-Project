@@ -5,20 +5,29 @@
 
 void USMSkillCooldownWidget::InitializeWithASC(UAbilitySystemComponent* InASC, FGameplayTag InCooldownTag)
 {
-    if (!InASC || !InCooldownTag.IsValid()) return;
-
     UnbindASC();
+    BoundASC = nullptr;
+    CooldownTag = FGameplayTag();
+    bOnCooldown = false;
+    TotalCooldown = 0.f;
+
+    if (ProgressBar_Cooldown)
+    {
+        ProgressBar_Cooldown->SetPercent(0.f);
+    }
+    SetVisibility(ESlateVisibility::Collapsed);
+    
+    if (!InASC || !InCooldownTag.IsValid()) return;
+    
     BoundASC = InASC;
     CooldownTag = InCooldownTag;
-
-    // 쿨타임 태그 추가, 제거 감지 바인딩
+    
     BoundASC->RegisterGameplayTagEvent(CooldownTag, EGameplayTagEventType::NewOrRemoved)
         .AddUObject(this, &USMSkillCooldownWidget::OnCooldownTagChanged);
-
-    // 초기 상태 반영 - 현재 쿨다운 태그가 있는지 확인
+    
     OnCooldownTagChanged(CooldownTag, BoundASC->GetTagCount(CooldownTag));
     
-    if (!bOnCooldown)
+    if (!bOnCooldown) // 쿨다운 태그 적용 확인
     {
         SetVisibility(ESlateVisibility::Collapsed);
     }
@@ -33,15 +42,15 @@ void USMSkillCooldownWidget::NativeDestruct()
 void USMSkillCooldownWidget::NativeTick(const FGeometry& Geometry, float DeltaTime)
 {
     Super::NativeTick(Geometry, DeltaTime);
-
+    
     if (!bOnCooldown || !BoundASC || TotalCooldown <= 0.f) return;
 
     FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(
         FGameplayTagContainer(CooldownTag));
-
+    
+    // 시간 가져오기
     TArray<float> Remaining = BoundASC->GetActiveEffectsTimeRemaining(Query);
-
-    // 쿨다운이 아직 남아있는 경우
+    
     if (Remaining.Num() > 0 && Remaining[0] > 0.f)
     {
         const float Percent = FMath::Clamp(Remaining[0] / TotalCooldown, 0.f, 1.f);
@@ -72,6 +81,8 @@ void USMSkillCooldownWidget::NativeTick(const FGeometry& Geometry, float DeltaTi
 
 void USMSkillCooldownWidget::OnCooldownTagChanged(const FGameplayTag Tag, int32 NewCount)
 {
+    (void)Tag; 
+
     if (NewCount > 0 && BoundASC)
     {
         FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(
@@ -84,7 +95,6 @@ void USMSkillCooldownWidget::OnCooldownTagChanged(const FGameplayTag Tag, int32 
             BoundASC->GetGameplayEffectStartTimeAndDuration(Handles[0], StartTime, Duration);
 
             TotalCooldown = Duration;
-            RemainingCooldown = Duration;
             bOnCooldown = true;
             
             SetVisibility(ESlateVisibility::HitTestInvisible); 
@@ -93,7 +103,6 @@ void USMSkillCooldownWidget::OnCooldownTagChanged(const FGameplayTag Tag, int32 
     else
     {
         bOnCooldown = false;
-        RemainingCooldown = 0.f;
         
         if (ProgressBar_Cooldown)
         {

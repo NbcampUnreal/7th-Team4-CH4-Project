@@ -39,9 +39,5 @@ private:
     FGameplayTag CooldownTag;
 
     float TotalCooldown = 0.f;
-    float RemainingCooldown = 0.f;
     bool bOnCooldown = false;
-
-    FDelegateHandle OnTagAddedHandle;
-    FDelegateHandle OnTagRemovedHandle;
 };

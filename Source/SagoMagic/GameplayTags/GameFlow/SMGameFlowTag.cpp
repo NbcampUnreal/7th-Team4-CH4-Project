@@ -14,5 +14,7 @@ namespace SMGameFlowTag
 	UE_DEFINE_GAMEPLAY_TAG(Team_Player, TEXT("Team.Player"))
 	UE_DEFINE_GAMEPLAY_TAG(Team_HQ, TEXT("Team.HQ"))
 	UE_DEFINE_GAMEPLAY_TAG(Team_Building, TEXT("Team.Building"))
+	
+	UE_DEFINE_GAMEPLAY_TAG(Enemy, TEXT("Enemy"))
 
 }

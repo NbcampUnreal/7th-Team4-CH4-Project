@@ -21,6 +21,8 @@
 #include "GameplayTags/Enemy/SMEnemyTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameplayEffect.h"
+#include "Animation/AnimMontage.h"
 
 
 ASMMonsterBase::ASMMonsterBase()
@@ -36,6 +38,7 @@ ASMMonsterBase::ASMMonsterBase()
     bReplicates = true;
     // ASC 생성
     MonsterAbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+
     // 서버-클라이언트 복제 설정
     MonsterAbilitySystemComponent->SetIsReplicated(true);
     // 몬스터는 보통 혼합(Mixed) 모드나 미니멀(Minimal) 복제 모드를 사용합니다.
@@ -65,7 +68,6 @@ void ASMMonsterBase::ResetMonster()
 void ASMMonsterBase::ApplyVisuals(USMMonsterDataAsset* DataAsset)
 {
     if (!DataAsset) return;
-    UE_LOG(LogTemp, Log, TEXT("[ApplyVisuals] DataAsset: %s"), *DataAsset->GetName());
     //TODO 은서 / 영택 : 추가적으로 넣어야 할 변수 넣어줘야함 material 추가
     if (USkeletalMeshComponent* MeshComp = GetMesh())
     {
@@ -74,6 +76,12 @@ void ASMMonsterBase::ApplyVisuals(USMMonsterDataAsset* DataAsset)
         if (!DataAsset->AnimClass.IsNull())
             MeshComp->SetAnimInstanceClass(DataAsset->AnimClass.LoadSynchronous());
     }
+
+    // AttackMontage 캐싱 (클라이언트에서 애니메이션 재생에 필요)
+    if (!DataAsset->AttackMontage.IsNull())
+    {
+        CachedAttackMontage = DataAsset->AttackMontage.LoadSynchronous();
+    }
 }
 
 void ASMMonsterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -81,6 +89,34 @@ void ASMMonsterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ASMMonsterBase, MonsterAssetId);
     DOREPLIFETIME(ASMMonsterBase, bIsDead);
+}
+
+void ASMMonsterBase::ApplyLogicData(USMMonsterDataAsset* DataAsset)
+{
+    if (!DataAsset || !HasAuthority()) return;
+
+    // 1) DefaultAbilities 세팅 (GiveDefaultAbilities 호출 전에)
+    DefaultAbilities = DataAsset->DefaultAbilities;
+
+    // 2) DamageEffect 캐싱
+    if (!DataAsset->DamageEffect.IsNull())
+    {
+        CachedDamageEffect = DataAsset->DamageEffect.LoadSynchronous();
+    }
+
+    // 3) BehaviorTree → AIController에 전달
+    if (!DataAsset->BehaviorTree.IsNull())
+    {
+        UBehaviorTree* BT = DataAsset->BehaviorTree.LoadSynchronous();
+        if (BT)
+        {
+            if (ASMMonsterAIController* AICtl = Cast<ASMMonsterAIController>(GetController()))
+            {
+                // BT 내장 BlackboardAsset 사용
+                AICtl->InitFromDataAsset(BT, BT->BlackboardAsset);
+            }
+        }
+    }
 }
 
 void ASMMonsterBase::OnRep_MonsterAssetId()
@@ -116,8 +152,8 @@ void ASMMonsterBase::SelfKill()
                     const float NewHealth = FMath::Clamp(OldHealth - SelfKillDamage, 0.f, CampAttr->GetMaxHealth());
                     CampAttr->SetHealth(NewHealth);
 
-                    UE_LOG(LogTemp, Log, TEXT("[SelfKill] %s → BaseCamp HP: %.1f → %.1f"),
-                        *GetName(), OldHealth, NewHealth);
+                    //UE_LOG(LogTemp, Log, TEXT("[SelfKill] %s → BaseCamp HP: %.1f → %.1f"),
+                    //    *GetName(), OldHealth, NewHealth);
 
                     // HP 0 도달 시 GameMode에 패배 처리 요청
                     // (PostGameplayEffectExecute를 우회했으므로 여기서 명시적으로 호출)
@@ -131,7 +167,7 @@ void ASMMonsterBase::SelfKill()
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("[SelfKill] %s - BaseCamp 없음/파괴됨"), *GetName());
+        //UE_LOG(LogTemp, Warning, TEXT("[SelfKill] %s - BaseCamp 없음/파괴됨"), *GetName());
     }
 
     // ── 3) AI / 이동 정리 ──
@@ -158,13 +194,16 @@ void ASMMonsterBase::SelfKill()
 void ASMMonsterBase::BeginPlay()
 {
 	Super::BeginPlay();
-    
+    if (!MonsterAbilitySystemComponent)
+    {
+        MonsterAbilitySystemComponent = FindComponentByClass<UAbilitySystemComponent>();
+    }
+
     // TODO 현 : 클라이언트 전용 초기화 로직
     if (!HasAuthority() && MonsterAbilitySystemComponent)
     {
         // 클라이언트 측 ASC 액터 정보 초기화
         MonsterAbilitySystemComponent->InitAbilityActorInfo(this, this);
-        
         MonsterAbilitySystemComponent->AddLooseGameplayTag(SMGameFlowTag::Enemy);
     }
 }
@@ -172,37 +211,63 @@ void ASMMonsterBase::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
 
-    if (MonsterAbilitySystemComponent)
+    // TObjectPtr 레졸브 실패 대비 — 컴포넌트 직접 검색으로 복구
+    if (!MonsterAbilitySystemComponent)
     {
-        MonsterAbilitySystemComponent->InitAbilityActorInfo(this, this);
-        
-        MonsterAbilitySystemComponent->AddLooseGameplayTag(SMGameFlowTag::Enemy);
+        MonsterAbilitySystemComponent = FindComponentByClass<UAbilitySystemComponent>();
+    }
+    if (!MonsterAbilitySystemComponent) return;
 
-        if (!MonsterAttributeSet)
-        {
-            MonsterAttributeSet = const_cast<USMMonsterAttributeSet*>(
-                MonsterAbilitySystemComponent->GetSet<USMMonsterAttributeSet>());
-            UE_LOG(LogTemp, Warning, TEXT("[Monster] AttributeSet 재취득: %s"),
-                MonsterAttributeSet ? TEXT("성공") : TEXT("실패"));
-        }
+    MonsterAbilitySystemComponent->InitAbilityActorInfo(this, this);
+    MonsterAbilitySystemComponent->AddLooseGameplayTag(SMGameFlowTag::Enemy);
 
-        if (HasAuthority() && MonsterAttributeSet)
-        {
-            MonsterAttributeSet->OnMonsterDied.RemoveAll(this);
-            MonsterAttributeSet->OnMonsterDied.AddUObject(this, &ASMMonsterBase::HandleDeath);
-        }
-        GiveDefaultAbilities();
+    if (!MonsterAttributeSet)
+    {
+        MonsterAttributeSet = const_cast<USMMonsterAttributeSet*>(
+            MonsterAbilitySystemComponent->GetSet<USMMonsterAttributeSet>());
+        //UE_LOG(LogTemp, Warning, TEXT("[Monster] AttributeSet 재취득: %s"),
+        //    MonsterAttributeSet ? TEXT("성공") : TEXT("실패"));
+    }
 
-        if (ASMMonsterAIController* MonsterAI = Cast<ASMMonsterAIController>(NewController))
-        {
-            MonsterAI->StartAttackTimer();
-        }
+    if (HasAuthority() && MonsterAttributeSet)
+    {
+        MonsterAttributeSet->OnMonsterDied.RemoveAll(this);
+        MonsterAttributeSet->OnMonsterDied.AddUObject(this, &ASMMonsterBase::HandleDeath);
+    }
 
-        if (GetCharacterMovement())
+    // ── DataAsset에서 로직 데이터 적용 ──
+    if (HasAuthority())
+    {
+        USMAsyncDataManager* AM = USMAsyncDataManager::Get(this);
+        //UE_LOG(LogTemp, Warning, TEXT("[PossessedBy] AM: %s, AssetId: %s"),
+        //    AM ? TEXT("Valid") : TEXT("NULL"),
+        //    *MonsterAssetId.ToString());
+        if (AM && MonsterAssetId.IsValid())
         {
-            GetCharacterMovement()->MaxWalkSpeed = MonsterAttributeSet->GetMoveSpeed();
+            USMMonsterDataAsset* DataAsset = Cast<USMMonsterDataAsset>(
+                AM->GetLoadAsset(MonsterAssetId));
+            //UE_LOG(LogTemp, Warning, TEXT("[PossessedBy] DataAsset: %s"),
+            //    DataAsset ? *DataAsset->GetName() : TEXT("NULL"));
+            if (DataAsset)
+            {
+                ApplyLogicData(DataAsset);
+            }
         }
     }
+
+    GiveDefaultAbilities();
+    //UE_LOG(LogTemp, Warning, TEXT("[PossessedBy] Abilities 부여 완료: %d개"), DefaultAbilities.Num());
+
+    if (ASMMonsterAIController* MonsterAI = Cast<ASMMonsterAIController>(NewController))
+    {
+        MonsterAI->StartAttackTimer();
+    }
+
+    if (GetCharacterMovement())
+    {
+        GetCharacterMovement()->MaxWalkSpeed = MonsterAttributeSet->GetMoveSpeed();
+    }
+    
 }
 
 void ASMMonsterBase::GiveDefaultAbilities()
@@ -357,7 +422,7 @@ void ASMMonsterBase::SpawnDropItem()
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("[DropItem] Unsupported item definition type: %s"), *SelectedItemDefinition->GetClass()->GetName());
+        //UE_LOG(LogTemp, Warning, TEXT("[DropItem] Unsupported item definition type: %s"), *SelectedItemDefinition->GetClass()->GetName());
         return;
     }
 
@@ -388,8 +453,8 @@ void ASMMonsterBase::SpawnDropItem()
     if (DroppedActor)
     {
         DroppedActor->InitializeFromPayload(Payload);
-        UE_LOG(LogTemp, Log, TEXT("[DropItem] %s 사망 → %s 드롭"),
-            *GetName(), *SelectedItem.ToString());
+        //UE_LOG(LogTemp, Log, TEXT("[DropItem] %s 사망 → %s 드롭"),
+        //    *GetName(), *SelectedItem.ToString());
     }
 }
 

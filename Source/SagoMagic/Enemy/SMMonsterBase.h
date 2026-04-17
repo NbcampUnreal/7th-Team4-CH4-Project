@@ -11,6 +11,8 @@
 class USMMonsterDataAsset;
 class USMMonsterAttributeSet;
 class ASMBaseItemDropActor;
+class UGameplayEffect;
+class UAnimMontage;
 enum class EMonsterType : uint8;
 
 UCLASS()
@@ -21,15 +23,16 @@ class SAGOMAGIC_API ASMMonsterBase : public ACharacter, public IAbilitySystemInt
 public:
 	ASMMonsterBase();
 
-    // IAbilitySystemInterface 구현(외부에서 ASC를 찾을 때 사용)
+    /**  IAbilitySystemInterface 구현(외부에서 ASC를 찾을 때 사용) **/
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     void ResetMonster();
     
     void ApplyVisuals(USMMonsterDataAsset* DataAsset);
-    //UFUNCTION(NetMulticast, Reliable)
-    //void MulticastHandleDeath();
+
+    /** 서버 전용: DataAsset에서 AI·GAS 관련 데이터를 로드하여 적용 */
+    void ApplyLogicData(USMMonsterDataAsset* DataAsset);
 
     UFUNCTION()
     void OnRep_MonsterAssetId();
@@ -80,6 +83,14 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "SelfKill")
     float SelfKillDamage = 5.0f;
     
+    /** DamageEffect를 저장해둘 멤버(런타임에 DataAsset에서 가져옴) */
+    UPROPERTY()
+    TSubclassOf<UGameplayEffect> CachedDamageEffect;
+
+    /** AttackMontage도 캐싱(어빌리티에서 꺼내 쓸 수 있도록) */
+    UPROPERTY()
+    TObjectPtr<UAnimMontage> CachedAttackMontage;
+
     //몬스터 사망 탸그 추가 로직
     
     UPROPERTY(ReplicatedUsing=OnRep_IsDead)

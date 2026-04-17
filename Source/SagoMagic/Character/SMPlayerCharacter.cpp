@@ -375,13 +375,15 @@ void ASMPlayerCharacter::GiveDefaultAbilities()
 
 	for (TSubclassOf<UGameplayAbility>& AbilityClass : DefaultAbilities)
 	{
-		if (AbilityClass)
-		{
-			// Ability Spec 생성
-			// - InputID 없음 (나중에 Input Binding에서 설정)
-			FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, INDEX_NONE, this);
-			SMAbilitySystemComponent->GiveAbility(AbilitySpec);
-		}
+		if (!AbilityClass) continue;
+		
+		// 이미 부여된 Spec이 있으면 스킵
+		if (SMAbilitySystemComponent->FindAbilitySpecFromClass(AbilityClass)) continue;
+		
+		// Ability Spec 생성
+		// - InputID 없음 (나중에 Input Binding에서 설정)
+		FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, INDEX_NONE, this);
+		SMAbilitySystemComponent->GiveAbility(AbilitySpec);
 	}
 }
 

@@ -27,6 +27,12 @@ void UGA_SkillField::OnSkillEffect(
 	FGameplayEffectSpecHandle SpecHandle = MakeDamageSpec(ActorInfo);
 	if (!SpecHandle.IsValid()) return;
 
+	// 인벤토리에서 받아온 최종 틱 간격을 GE Period에 반영
+	if (TickInterval > 0.f)
+	{
+		SpecHandle.Data->Period = TickInterval;
+	}
+
 	FActorSpawnParameters Params;
 	Params.Owner = Avatar;
 	Params.Instigator = Avatar;

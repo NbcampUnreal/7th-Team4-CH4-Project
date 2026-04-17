@@ -5,6 +5,7 @@
 #include "GameFramework/Actor.h"
 #include "SMBaseBuilding.generated.h"
 
+class APawn;
 class USMInteractionTargetComponent;
 class ASMGridManager;
 class USMBuildingAttributeSet;

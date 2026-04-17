@@ -6,6 +6,7 @@
 #include "GAS/AttributeSets/SMBaseCampAttributeSet.h"
 #include "SMBaseCampActor.generated.h"
 
+class APawn;
 class USMInteractionTargetComponent;
 
 UCLASS()

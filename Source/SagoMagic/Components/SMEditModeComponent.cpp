@@ -116,6 +116,7 @@ void USMEditModeComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 void USMEditModeComponent::OnClick(const FInputActionValue& Value)
 {
+	if (CurrentIntent == EClickIntent::Grabbing) return;
 	APawn* Pawn = Cast<APawn>(GetOwner());
 	APlayerController* PC = Pawn ? Cast<APlayerController>(Pawn->GetController()) : nullptr;
 	if (!PC || !GridManager) return;

@@ -41,7 +41,8 @@ private:
 		const TArray<FSMCellPlaceInfo>& CellInfos,
 		TSubclassOf<AActor> BuildingClass,
 		EGridBuildingType BuildingType,
-		int32 OwnerId);
+		int32 OwnerId,
+		const FSMBuildingData* BuildingData);
 	
 	void Rollback(ASMGridManager* GridManager,
 		TArray<ASMBaseBuilding*>& SpawnedActors);

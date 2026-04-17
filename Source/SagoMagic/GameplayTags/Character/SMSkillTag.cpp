@@ -33,6 +33,8 @@ namespace SMSkillTag
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Field_Slow, TEXT("Upgrade.Field.Slow"))
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_ApplyInstantDamage_InstantMulti, TEXT("Upgrade.ApplyInstantDamage.InstantMulti"))
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_ApplyInstantDamage_SeparateMulti, TEXT("Upgrade.ApplyInstantDamage.SeparateMulti"))
+	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Turret_Splash, TEXT("Upgrade.Turret.Splash"))
+	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Turret_Barrage, TEXT("Upgrade.Turret.Barrage"))
 	
 	//GE Spec 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Data_Damage_Amount, TEXT("Data.Damage.Amount"))

@@ -7,10 +7,16 @@ bool UGCN_SkillField_Tick::OnExecute_Implementation(AActor* MyTarget, const FGam
 
 	if (!TickSound) return false;
 
-	const FVector Location = Parameters.Location.IsNearlyZero()
-		? (MyTarget ? MyTarget->GetActorLocation() : FVector::ZeroVector)
-		: Parameters.Location;
+	// IsValid=false 여도 포인터가 살아있으면 위치 접근 가능
+	const FVector Location = !Parameters.Location.IsNearlyZero()
+		? Parameters.Location
+		: (MyTarget ? MyTarget->GetActorLocation() : FVector::ZeroVector);
 
-	UGameplayStatics::PlaySoundAtLocation(MyTarget, TickSound, Location);
+	if (Location.IsNearlyZero()) return false;
+
+	UWorld* World = MyTarget ? MyTarget->GetWorld() : nullptr;
+	if (!World) return false;
+
+	UGameplayStatics::PlaySoundAtLocation(World, TickSound, Location);
 	return true;
 }

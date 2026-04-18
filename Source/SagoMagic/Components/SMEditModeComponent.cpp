@@ -152,6 +152,7 @@ void USMEditModeComponent::OnClick(const FInputActionValue& Value)
 	if (HitBuilding && SelectionSnapshot.Contains(HitBuilding))
 	{
 		CurrentIntent = EClickIntent::Grabbing;
+		bIsCurrentPosValid = false;
 		FVector GroundPos;
 		if (GetWorldPosUnderCursor(GroundPos))
 			GrabAnchorGrid = GridManager->WorldToGrid(GroundPos);

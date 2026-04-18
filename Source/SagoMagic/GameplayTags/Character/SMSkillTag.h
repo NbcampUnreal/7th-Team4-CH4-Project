@@ -23,12 +23,15 @@ namespace SMSkillTag
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Skill_LineTrace)
 	//레이
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Skill_ApplyInstantDamage)
+	//폭발
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Skill_Explosion)
 
 	//쿨다운 태그들
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Skill_Projectile)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Skill_SpawnField)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Skill_LineTrace)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Skill_ApplyInstantDamage)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Skill_Explosion)
 
 	//스킬 업그레이드 태그들
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_Projectile_Multishot)
@@ -43,6 +46,9 @@ namespace SMSkillTag
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Damage_Amount)
 	//UGE_SkillCooldown - Duration
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Cooldown)
+
+	//입력 이벤트 태그
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Input_AttackReleased)
 
 	//코스메틱 태그
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Skill_Projectile_Hit)

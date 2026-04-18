@@ -3,6 +3,7 @@
 
 #include "SMPlayerCharacter.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -19,6 +20,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameplayTags/Character/SMCharacterTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
+#include "GameplayTags/Character/SMSkillTag.h"
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -149,6 +151,21 @@ void ASMPlayerCharacter::Attack()
 	}
 }
 
+void ASMPlayerCharacter::AttackReleased()
+{
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+
+	BroadcastAttackReleasedEvent();
+
+	if (!HasAuthority())
+	{
+		ServerRPC_NotifyAttackReleased();
+	}
+}
+
 void ASMPlayerCharacter::Interact()
 {
 	if (!SMAbilitySystemComponent) return;
@@ -272,6 +289,11 @@ void ASMPlayerCharacter::ServerRPC_SetEditModeTag_Implementation(bool bEnable)
 	}
 }
 
+void ASMPlayerCharacter::ServerRPC_NotifyAttackReleased_Implementation()
+{
+	BroadcastAttackReleasedEvent();
+}
+
 void ASMPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -293,6 +315,11 @@ void ASMPlayerCharacter::Tick(float DeltaTime)
 	{
 		if (ASMPlayerController* PC = Cast<ASMPlayerController>(Controller))
 		{
+			if (PC->IsMoveInputIgnored())
+			{
+				return;
+			}
+
 			FHitResult Hit;
 
 			// Ground 채널만 처리
@@ -473,6 +500,8 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		if (AttackAction)
 		{
 			EIC->BindAction(AttackAction, ETriggerEvent::Started, this, &ThisClass::Attack);
+			EIC->BindAction(AttackAction, ETriggerEvent::Completed, this, &ThisClass::AttackReleased);
+			EIC->BindAction(AttackAction, ETriggerEvent::Canceled, this, &ThisClass::AttackReleased);
 		}
 
 		if (InteractAction)
@@ -616,4 +645,23 @@ void ASMPlayerCharacter::ApplyCustomization()
 	if (IsValid(PS) == false) return;
 
 	ApplyCustomizationLocal(PS->GetSelectedWeaponIndex(), PS->GetSelectedMaterialIndex());
+}
+
+void ASMPlayerCharacter::BroadcastAttackReleasedEvent()
+{
+	AActor* EventTarget = this;
+
+	if (ASMPlayerState* CurrentPlayerState = GetPlayerState<ASMPlayerState>())
+	{
+		EventTarget = CurrentPlayerState;
+	}
+
+	FGameplayEventData EventData;
+	EventData.Instigator = this;
+	EventData.Target = EventTarget;
+
+	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(
+		EventTarget,
+		SMSkillTag::Event_Input_AttackReleased,
+		EventData);
 }

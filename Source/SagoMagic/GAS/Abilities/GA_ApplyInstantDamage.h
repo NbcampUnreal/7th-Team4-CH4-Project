@@ -26,6 +26,12 @@ protected:
 		const FVector& TargetLocation,
 		const FVector& AimDirection) override;
 
+	//일반 공격
+	void NormalAttack(const FGameplayAbilityActorInfo* ActorInfo, const FVector& Center);
+
+	//단일 타겟에 데미지 + Cue 적용
+	void ApplyDamageAndCue(const FGameplayAbilityActorInfo* ActorInfo, APawn* Avatar, AActor* Target);
+
 	/** 커서 위치 기준 적 탐색 반경 */
 	UPROPERTY(EditDefaultsOnly, Category = "Skill|DetectionRadius")
 	float DetectionRadius = 300.f;
@@ -42,13 +48,24 @@ protected:
 	bool bShowDebugSphere = true;
 
 private:
-	//지정 위치 기준 반경 내 가장 가까운 적을 찾음 성공 시 true, OutEnemy에 결과 저장
-	bool FindClosestEnemy(
+	// 공격할 적 숫자
+	int32 TargetCount = 1;
+
+	//지정 위치 기준 반경 내 가까운 적들을 MaxCount만큼 찿음 찾음. 성공 시 true, OutEnemy에 결과 저장
+	bool FindClosestEnemies(
 		UWorld* World,
 		const FVector& Center,
 		float Radius,
 		const AActor* IgnoreActor,
-		AActor*& OutEnemy) const;
+		int32 MaxCount,
+		TArray<AActor*>& OutEnemies) const;
 
-	void OnTargetDataReady(const FGameplayAbilityTargetDataHandle& TargetDataHandle, FGameplayTag ApplicationTag);
+	//다중 적 공격
+	bool bIsInstantMulti = false;
+
+	/** InstantMulti 업그레이드 적용시 동시에 공격할 적 숫자 */
+	UPROPERTY(EditDefaultsOnly, Category = "Skill|Upgrade")
+	int32 InstantMultiTargetCount = 3;
+
+	void InstantMultiAttack(const FGameplayAbilityActorInfo* ActorInfo, const FVector& Center);
 };

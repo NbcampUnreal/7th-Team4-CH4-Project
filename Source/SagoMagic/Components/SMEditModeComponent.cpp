@@ -6,6 +6,7 @@
 #include "SagoMagic.h"
 #include "Building/SMBaseBuilding.h"
 #include "Building/SMGridManager.h"
+#include "Core/DataManager/SMSyncDataManager.h"
 #include "Kismet/GameplayStatics.h"
 
 USMEditModeComponent::USMEditModeComponent()
@@ -548,6 +549,19 @@ void USMEditModeComponent::ServerRPC_MoveBuildings_Implementation(const TArray<A
 		}
 	}
 	
+	USMSyncDataManager* DataManager = USMSyncDataManager::Get(this);
+	TArray<FIntPoint> GridSizes;
+	for (int32 i = 0; i < OldCellData.Num(); ++i)
+	{
+		FIntPoint Size(1, 1);
+		if (DataManager)
+		{
+			if (const FSMBuildingData* BuildData = DataManager->GetBuildData(OldCellData[i].BuildingType))
+				Size = BuildData->GridSize;
+		}
+		GridSizes.Add(Size);
+	}
+	
 	//2단계 : 전부 유효 -> 새 위치 배치 / 하나라도 실패 -> 전부 원위치
 	TArray<FVector> FinalLocations;
 	if (bAllServerValid)
@@ -557,9 +571,7 @@ void USMEditModeComponent::ServerRPC_MoveBuildings_Implementation(const TArray<A
 			if (!Actors[i]) continue;
 			FVector NewWorld = GridManager->GridToWorldWithHeight(NewGrids[i].X, NewGrids[i].Y);
 			FinalLocations.Add(NewWorld);
-			//TODO 은서
-			//Building->GetGridSize(), GetRotation()적용 필요
-			GridManager->PlaceBuilding(NewGrids[i].X, NewGrids[i].Y, FIntPoint(1, 1), 0,
+			GridManager->PlaceBuilding(NewGrids[i].X, NewGrids[i].Y, GridSizes[i], 0,
 				OldCellData[i].BuildingType, Actors[i], OldCellData[i].OwnerId);
 		}
 	}
@@ -570,7 +582,7 @@ void USMEditModeComponent::ServerRPC_MoveBuildings_Implementation(const TArray<A
 			if (!Actors[i]) continue;
 			FVector OldWorld = GridManager->GridToWorldWithHeight(OldGrids[i].X, OldGrids[i].Y);
 			FinalLocations.Add(OldWorld);
-			GridManager->PlaceBuilding(OldGrids[i].X, OldGrids[i].Y, FIntPoint(1, 1), 0,
+			GridManager->PlaceBuilding(OldGrids[i].X, OldGrids[i].Y, GridSizes[i], 0,
 				OldCellData[i].BuildingType, Actors[i], OldCellData[i].OwnerId);
 		}
 	}

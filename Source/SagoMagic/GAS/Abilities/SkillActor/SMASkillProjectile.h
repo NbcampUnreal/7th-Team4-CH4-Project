@@ -5,6 +5,7 @@
 #include "GameplayEffectTypes.h"
 #include "SMASkillProjectile.generated.h"
 
+class UNiagaraSystem;
 class USphereComponent;
 class UProjectileMovementComponent;
 class UNiagaraComponent;
@@ -73,4 +74,22 @@ protected:
 
 private:
 	void FindAndSetHomingTarget();
+	
+	// GA_SkillTurret용
+public:
+	/** 폭발 이펙트와 스플래쉬 설정(스폰 후 별도 호출) */
+	void SetExplosionEffect(UNiagaraSystem* InExplosionSystem);
+	void SetSplashConfig(FGameplayEffectSpecHandle InSplashSpecHandle, float InSplashRadiusCm);
+	
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	TObjectPtr<UNiagaraSystem> ExplosionSystem;
+	
+private:
+	FGameplayEffectSpecHandle SplashSpecHandle;
+	
+	float SplashRadiusCm = 0.0f;
+	
+	// 스플래쉬 적용시 자기 자신은 제외하기 위한 변수
+	TWeakObjectPtr<AActor> InstigatorActorForSplash;
 };

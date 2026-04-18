@@ -147,6 +147,8 @@ protected:
 	void Move(const FInputActionValue& Value);
 	
 	void Attack();
+
+	void AttackReleased();
 	
 	void Interact();
 	
@@ -161,10 +163,16 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void ServerRPC_SetEditModeTag(bool bEnable);
+
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_NotifyAttackReleased();
 	
 	//================================
 	// 로비 전용 Input 세팅
 	//================================
+
+private:
+	void BroadcastAttackReleasedEvent() const;
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category="Input")

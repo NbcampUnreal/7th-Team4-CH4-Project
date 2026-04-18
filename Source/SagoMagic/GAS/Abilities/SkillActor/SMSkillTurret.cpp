@@ -97,6 +97,9 @@ void ASMSkillTurret::FireAtNearestEnemy()
 	const FVector BaseDirection =
 		(NearestEnemy->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	
+	SpawnProjectile(BaseDirection);
+	
+	
 	if (SkillLevel >= 3)
 	{
 		SpawnProjectile(BaseDirection);

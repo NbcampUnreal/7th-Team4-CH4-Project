@@ -158,7 +158,7 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
 		
 		for (AActor* SplashTarget : SplashActors)
 		{
-			if (IsValid(SplashTarget)) continue;
+			if (!IsValid(SplashTarget)) continue;
 			
 			UAbilitySystemComponent* SplashASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(SplashTarget);
 			

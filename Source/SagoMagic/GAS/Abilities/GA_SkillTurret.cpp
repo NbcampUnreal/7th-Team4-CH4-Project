@@ -23,13 +23,13 @@ void UGA_SkillTurret::OnSkillEffect(
 	// 업그레이드는 태그로 레벨 판단
 	// SkillUpgradeTags는 GA_SkillBase에서 인벤 로드시 추가
 	int32 SkillLevel = 1;
-	if (SkillUpgradeTags.HasTagExact(SMSkillTag::Upgrade_Turret_Splash))
-	{
-		SkillLevel = 2;
-	}
-	else if (SkillUpgradeTags.HasTagExact(SMSkillTag::Upgrade_Turret_Barrage))
+	if (SkillUpgradeTags.HasTagExact(SMSkillTag::Upgrade_Turret_Barrage))
 	{
 		SkillLevel = 3;
+	}
+	else if (SkillUpgradeTags.HasTagExact(SMSkillTag::Upgrade_Turret_Splash))
+	{
+		SkillLevel = 2;
 	}
 
 	// 2렙 이상이면 스플래쉬 Spec생성

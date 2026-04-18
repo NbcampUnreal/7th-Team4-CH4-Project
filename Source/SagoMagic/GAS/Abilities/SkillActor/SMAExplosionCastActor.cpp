@@ -16,6 +16,7 @@
 ASMAExplosionCastActor::ASMAExplosionCastActor()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 	bReplicates = true;
 
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
@@ -71,7 +72,7 @@ void ASMAExplosionCastActor::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (bIsCasting == false)
+	if (GetNetMode() == NM_DedicatedServer || bIsCasting == false)
 	{
 		return;
 	}
@@ -158,7 +159,7 @@ void ASMAExplosionCastActor::ApplyCastStartVisuals()
 	bHasExploded = false;
 
 	SetActorHiddenInGame(false);
-	SetActorTickEnabled(true);
+	SetActorTickEnabled(GetNetMode() != NM_DedicatedServer);
 	PillarMeshComponent->SetVisibility(true);
 	PillarMeshComponent->SetRelativeScale3D(PillarScale);
 

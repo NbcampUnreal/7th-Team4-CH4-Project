@@ -172,7 +172,7 @@ protected:
 	//================================
 
 private:
-	void BroadcastAttackReleasedEvent() const;
+	void BroadcastAttackReleasedEvent();
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category="Input")

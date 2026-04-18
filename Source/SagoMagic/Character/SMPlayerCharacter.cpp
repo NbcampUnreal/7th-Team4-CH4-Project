@@ -647,17 +647,17 @@ void ASMPlayerCharacter::ApplyCustomization()
 	ApplyCustomizationLocal(PS->GetSelectedWeaponIndex(), PS->GetSelectedMaterialIndex());
 }
 
-void ASMPlayerCharacter::BroadcastAttackReleasedEvent() const
+void ASMPlayerCharacter::BroadcastAttackReleasedEvent()
 {
-	AActor* EventTarget = const_cast<ASMPlayerCharacter*>(this);
+	AActor* EventTarget = this;
 
-	if (const ASMPlayerState* CurrentPlayerState = GetPlayerState<ASMPlayerState>())
+	if (ASMPlayerState* CurrentPlayerState = GetPlayerState<ASMPlayerState>())
 	{
-		EventTarget = const_cast<ASMPlayerState*>(CurrentPlayerState);
+		EventTarget = CurrentPlayerState;
 	}
 
 	FGameplayEventData EventData;
-	EventData.Instigator = const_cast<ASMPlayerCharacter*>(this);
+	EventData.Instigator = this;
 	EventData.Target = EventTarget;
 
 	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(

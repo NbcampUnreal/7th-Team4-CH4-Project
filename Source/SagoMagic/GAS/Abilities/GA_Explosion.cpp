@@ -46,12 +46,15 @@ void UGA_Explosion::ActivateAbility(
 
 	SetCasterMovementLocked(ActorInfo, true);
 
-	if (UAbilitySystemComponent* AbilitySystemComponent = ActorInfo->AbilitySystemComponent.Get())
+	UAbilitySystemComponent* AbilitySystemComponent = ActorInfo->AbilitySystemComponent.Get();
+	if (AbilitySystemComponent == nullptr)
 	{
-		if (AttackMontage != nullptr)
-		{
-			AbilitySystemComponent->PlayMontage(this, ActivationInfo, AttackMontage, 1.0f);
-		}
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
+	if (AttackMontage != nullptr)
+	{
+		AbilitySystemComponent->PlayMontage(this, ActivationInfo, AttackMontage, 1.0f);
 	}
 
 	UAbilityTask_WaitGameplayEvent* ReleaseEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
@@ -61,8 +64,7 @@ void UGA_Explosion::ActivateAbility(
 	ReleaseEventTask->ReadyForActivation();
 
 	APawn* AvatarPawn = Cast<APawn>(AvatarActor);
-	UAbilitySystemComponent* AbilitySystemComponent = ActorInfo->AbilitySystemComponent.Get();
-	if (AvatarPawn == nullptr || AbilitySystemComponent == nullptr)
+	if (AvatarPawn == nullptr)
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
@@ -113,8 +115,8 @@ void UGA_Explosion::ActivateAbility(
 		AbilitySystemComponent->AbilityTargetDataSetDelegate(
 			GetCurrentAbilitySpecHandle(),
 			GetCurrentActivationInfo().GetActivationPredictionKey()).AddUObject(
-				this,
-				&ThisClass::OnExplosionTargetDataReady);
+			this,
+			&ThisClass::OnExplosionTargetDataReady);
 
 		AbilitySystemComponent->CallReplicatedTargetDataDelegatesIfSet(
 			GetCurrentAbilitySpecHandle(),

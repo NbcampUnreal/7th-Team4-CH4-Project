@@ -21,72 +21,131 @@ void UGA_ApplyInstantDamage::OnSkillEffect(
 	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
 	if (!Avatar) return;
 
-	// 부모가 넘겨준 TargetLocation 기준으로 가까운 적 찾기
-	AActor* FoundEnemy = nullptr;
-	bool bFound = FindClosestEnemy(GetWorld(), TargetLocation, DetectionRadius, Avatar, FoundEnemy);
+	DetectionRadius = RangeCm;
+	bIsInstantMulti = SkillUpgradeTags.HasTag(SMSkillTag::Upgrade_ApplyInstantDamage_InstantMulti);
+	bIsSeparateMulti = SkillUpgradeTags.HasTag(SMSkillTag::Upgrade_ApplyInstantDamage_SeparateMulti);
 
-	// 시전 사운드 - 로컬에서 항상 재생
-	if (Avatar->IsLocallyControlled() && CastSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(Avatar, CastSound, Avatar->GetActorLocation());
-	}
+	if (bIsSeparateMulti) TargetCount = SeparateMultiTargetCount;
+	else if (bIsInstantMulti) TargetCount = InstantMultiTargetCount;
+	else TargetCount = 1;
 
-	// 어택 사운드 - 로컬에서 적 발견 시 재생
-	if (Avatar->IsLocallyControlled() && bFound && FoundEnemy && AttackSound)
+	// ── 클라이언트 예측: 반경 내 타겟에게 Cue 즉시 발동 ──
+	if (Avatar->IsLocallyControlled() && Avatar->HasAuthority() == false)
 	{
-		UGameplayStatics::PlaySoundAtLocation(Avatar, AttackSound, Avatar->GetActorLocation());
-	}
+		UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+		if (IsValid(ASC) == false) return;
 
-	// 적중 이펙트 예측
-	if (Avatar->IsLocallyControlled() && !Avatar->HasAuthority())
-	{
-		if (bFound && FoundEnemy)
+		if (bIsSeparateMulti)
 		{
-			UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
-			if (ASC)
+			if (CastSound)
 			{
-				FGameplayCueParameters CueParmas;
-				CueParmas.Location = FoundEnemy->GetActorLocation();
-				CueParmas.EffectContext = ASC->MakeEffectContext();
-				ASC->ExecuteGameplayCue(SMSkillTag::GameplayCue_Skill_ApplyInstantDamage_Hit, CueParmas);
+				UGameplayStatics::PlaySoundAtLocation(Avatar, CastSound, Avatar->GetActorLocation());
 			}
+			return;
+		}
+
+		TArray<AActor*> Enemies;
+		bool bFound = FindClosestEnemies(GetWorld(), TargetLocation, DetectionRadius, Avatar, TargetCount, Enemies);
+
+		if (bFound == false) return;
+
+		// 시전 사운드 - 로컬에서 항상 재생
+		if (CastSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(Avatar, CastSound, Avatar->GetActorLocation());
+		}
+
+		for (AActor* Enemy : Enemies)
+		{
+			FGameplayCueParameters CueParams;
+			CueParams.Location = Enemy->GetActorLocation();
+			CueParams.EffectContext = ASC->MakeEffectContext();
+			ASC->ExecuteGameplayCue(SMSkillTag::GameplayCue_Skill_ApplyInstantDamage_Hit, CueParams);
 		}
 		return;
 	}
 
 	// 서버에서는 실제 데미지 적용 및 이펙트 복제
-	if (Avatar->HasAuthority())
+	if (Avatar->HasAuthority() == false) return;
+	
+	if (bIsSeparateMulti)
 	{
-		if (bFound && FoundEnemy)
-		{
-			UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(FoundEnemy);
-			if (TargetASC)
-			{
-				// 데미지 적용
-				FGameplayEffectSpecHandle SpecHandle = MakeDamageSpec(ActorInfo);
-				if (SpecHandle.IsValid())
-				{
-					GetAbilitySystemComponentFromActorInfo()->
-						ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
-				}
-			}
-
-			UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
-			if (SourceASC)
-			{
-				FGameplayCueParameters CueParmas;
-				CueParmas.Location = FoundEnemy->GetActorLocation();
-				CueParmas.EffectContext = SourceASC->MakeEffectContext();
-				SourceASC->ExecuteGameplayCue(SMSkillTag::GameplayCue_Skill_ApplyInstantDamage_Hit, CueParmas);
-			}
-		}
+		SeparateMultiAttack(ActorInfo, TargetLocation);
+	}
+	else if (bIsInstantMulti)
+	{
+		InstantMultiAttack(ActorInfo, TargetLocation);
+	}
+	else
+	{
+		NormalAttack(ActorInfo, TargetLocation);
 	}
 }
 
-bool UGA_ApplyInstantDamage::FindClosestEnemy(UWorld* World, const FVector& Center, float Radius,
-                                              const AActor* IgnoreActor, AActor*& OutEnemy) const
+void UGA_ApplyInstantDamage::EndAbility(const FGameplayAbilitySpecHandle Handle,
+                                        const FGameplayAbilityActorInfo* ActorInfo,
+                                        const FGameplayAbilityActivationInfo ActivationInfo,
+                                        bool bReplicateEndAbility, bool bWasCancelled)
 {
-	OutEnemy = nullptr;
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(LightningTimerHandle);
+	}
+
+	EnemyCandidates.Reset();
+	bLightningPending = false;
+
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
+
+void UGA_ApplyInstantDamage::OnMontageFinished()
+{
+	if (bLightningPending == true) return;
+	Super::OnMontageFinished();
+}
+
+
+void UGA_ApplyInstantDamage::NormalAttack(const FGameplayAbilityActorInfo* ActorInfo, const FVector& Center)
+{
+	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
+
+	TArray<AActor*> Enemies;
+	if (FindClosestEnemies(GetWorld(), Center, DetectionRadius, Avatar, TargetCount, Enemies) == false) return;
+
+	ApplyDamageAndCue(ActorInfo, Avatar, Enemies[0]);
+}
+
+void UGA_ApplyInstantDamage::ApplyDamageAndCue(const FGameplayAbilityActorInfo* ActorInfo, APawn* Avatar,
+                                               AActor* Target)
+{
+	if (!ActorInfo || IsValid(Target) == false) return;
+
+	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
+	if (IsValid(SourceASC) == false) return;
+
+	UAbilitySystemComponent* TargetASC =
+		UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Target);
+
+	if (IsValid(TargetASC))
+	{
+		FGameplayEffectSpecHandle SpecHandle = MakeDamageSpec(ActorInfo);
+		if (SpecHandle.IsValid())
+		{
+			SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+		}
+	}
+
+	FGameplayCueParameters CueParams;
+	CueParams.Location = Target->GetActorLocation();
+	CueParams.EffectContext = SourceASC->MakeEffectContext();
+	SourceASC->ExecuteGameplayCue(SMSkillTag::GameplayCue_Skill_ApplyInstantDamage_Hit, CueParams);
+}
+
+bool UGA_ApplyInstantDamage::FindClosestEnemies(UWorld* World, const FVector& Center, float Radius,
+                                                const AActor* IgnoreActor, int32 MaxCount,
+                                                TArray<AActor*>& OutEnemies) const
+{
+	OutEnemies.Reset();
 
 	if (IsValid(World) == false) return false;
 
@@ -102,108 +161,131 @@ bool UGA_ApplyInstantDamage::FindClosestEnemy(UWorld* World, const FVector& Cent
 
 	UKismetSystemLibrary::SphereOverlapActors(
 		World, Center, Radius, ObjectTypes, nullptr, ActorsToIgnore, OverlapActors);
+
 	if (bShowDebugSphere == true && World->GetNetMode() != NM_DedicatedServer)
 	{
 		DrawDebugSphere(World, Center, Radius, 16, FColor::Cyan,
 		                false, 2.0f, 0, 1.0f);
 	}
 
-	//아군, ASC 없는 액터 제외 가장 가까운 적 선택
-	float ClosestDistSq = FLT_MAX;
-
+	//유효한 적만 (거리, Actor) 쌍으로 수집
+	TArray<TPair<float, AActor*>> Candidates;
 	for (AActor* Actor : OverlapActors)
 	{
 		if (IsValid(Actor) == false) continue;
-		if (HasAnyTeamTag(Actor) == true) continue; //아군 확인
-		if (IsAvailableEnemy(Actor) == false) continue;// 적 태그 없으면 스킵
+		if (HasAnyTeamTag(Actor) == true) continue;
+		if (IsAvailableEnemy(Actor) == false) continue;
 
-		//ASC없는 액터 확인
 		UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Actor);
 		if (IsValid(ASC) == false) continue;
 
 		const float DistSq = FVector::DistSquared(Center, Actor->GetActorLocation());
-		if (DistSq < ClosestDistSq)
+		Candidates.Add(TPair<float, AActor*>(DistSq, Actor));
+	}
+	//거리 오름차순 정렬
+	Candidates.Sort(
+		[](const TPair<float, AActor*>& a, const TPair<float, AActor*>& b)
 		{
-			ClosestDistSq = DistSq;
-			OutEnemy = Actor;
+			return a.Key < b.Key;
+		});
+
+	//상위 MaxCount명 추출
+	const int32 Count = FMath::Min(MaxCount, Candidates.Num());
+	for (int32 i = 0; i < Count; i++)
+	{
+		OutEnemies.Add(Candidates[i].Value);
+
+		if (bShowDebugSphere == true && World->GetNetMode() != NM_DedicatedServer)
+		{
+			DrawDebugLine(World, Center, Candidates[i].Value->GetActorLocation(), FColor::Red,
+			              false, 2.0f, 0, 2.0f);
 		}
 	}
 
-	if (OutEnemy && bShowDebugSphere == true && World->GetNetMode() != NM_DedicatedServer)
-	{
-		DrawDebugLine(World, Center, OutEnemy->GetActorLocation(), FColor::Red,
-		              false, 2.0f, 0, 2.0f);
-	}
-
-	return OutEnemy != nullptr;
+	return OutEnemies.Num() > 0;
 }
 
-void UGA_ApplyInstantDamage::OnTargetDataReady(const FGameplayAbilityTargetDataHandle& TargetDataHandle,
-                                               FGameplayTag ApplicationTag)
+//다중 적 공격
+void UGA_ApplyInstantDamage::InstantMultiAttack(const FGameplayAbilityActorInfo* ActorInfo, const FVector& Center)
 {
-	const FGameplayAbilityActorInfo* ActorInfo = GetCurrentActorInfo();
-	if (!ActorInfo || ActorInfo->AvatarActor.IsValid() == false)
-	{
-		EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
-		return;
-	}
-
-	//빈 TargetData = 클라이언트가 적을 못찾음 -> 쿨다운 없이 종료
-	if (TargetDataHandle.Num() == 0)
-	{
-		EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
-		return;
-	}
-
 	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
-	if (IsValid(Avatar) == false)
+
+	TArray<AActor*> Enemies;
+	if (FindClosestEnemies(GetWorld(), Center, DetectionRadius, Avatar, TargetCount, Enemies) == false) return;
+
+	for (AActor* Enemy : Enemies)
 	{
-		EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
+		ApplyDamageAndCue(ActorInfo, Avatar, Enemy);
+	}
+}
+
+//다중 적 다중 공격
+
+void UGA_ApplyInstantDamage::SeparateMultiAttack(const FGameplayAbilityActorInfo* ActorInfo, const FVector& Center)
+{
+	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
+
+	TArray<AActor*> Enemies;
+	if (FindClosestEnemies(GetWorld(), Center, DetectionRadius, Avatar, TargetCount, Enemies) == false) return;
+
+
+	EnemyCandidates = Enemies;
+	RemainingLightnings = SeparateMultiLightningCount;
+	LastHitTarget = nullptr;
+	bLightningPending = true;
+
+	//첫 낙뢰 즉시 발동, 이후 LightningDelay 간격 반복
+	GetWorld()->GetTimerManager().SetTimer(
+		LightningTimerHandle,
+		this,
+		&UGA_ApplyInstantDamage::FireNextLightningBolt,
+		LightningDelay,
+		true,
+		0.f);
+}
+
+void UGA_ApplyInstantDamage::FireNextLightningBolt()
+{
+	//유효하지 않은 적들 후보에서 제거
+	EnemyCandidates.RemoveAll([this](AActor* Actor)
+	{
+		return IsValid(Actor) == false || IsAvailableEnemy(Actor) == false;
+	});
+
+	//살아있는 적이 없으면 남은 발수와 관게 없이 종료
+	if (EnemyCandidates.IsEmpty() == true)
+	{
+		EndAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(),
+		           GetCurrentActivationInfo(), true, false);
 		return;
 	}
 
-	//1. TargetData에서 클라이언트가 보낸 커서 위치 추출
-	FVector CursorLocation = Avatar->GetActorLocation();
-	if (const FGameplayAbilityTargetData* TargetData = TargetDataHandle.Get(0))
+	// LastHitTarget 제외 후보 수집 (연속 동일 타겟 방지)
+	TArray<AActor*> HitCandidates;
+	for (AActor* Enemy : EnemyCandidates)
 	{
-		CursorLocation = TargetData->GetEndPoint();
-	}
-
-	//2. 서버가 직접 적 탐색 (서버 검증)
-	AActor* FoundEnemy = nullptr;
-	if (FindClosestEnemy(GetWorld(), CursorLocation, DetectionRadius, Avatar, FoundEnemy) == false)
-	{
-		// 서버에서 적 못 찾음 -> 쿨다운 없이 종료 (클라이언트 예측 쿨다운 롤백됨)
-		EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
-		return;
-	}
-
-	//3. 서버 CommitAbility - 적을 검증한 후에만 실행해서 쿨다운 적용
-	if (CommitAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo()) == false)
-	{
-		EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, true);
-		return;
-	}
-
-	//4.데미지 적용
-	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(FoundEnemy);
-	if (TargetASC)
-	{
-		FGameplayEffectSpecHandle SpecHandle = MakeDamageSpec(ActorInfo);
-		if (SpecHandle.IsValid() == true)
+		if (Enemy != LastHitTarget.Get())
 		{
-			GetAbilitySystemComponentFromActorInfo()->ApplyGameplayEffectSpecToTarget(
-				*SpecHandle.Data.Get(), TargetASC);
+			HitCandidates.Add(Enemy);
 		}
 	}
+	//후보 없으면 (남은적이 1명이다) 제한해제
+	if (HitCandidates.IsEmpty() == true)
+	{
+		HitCandidates = EnemyCandidates;
+	}
 
-	//5.GameplayCue(낙뢰) 실행 (서버 ASC를 통해 모든 클라이언트에 복제)
-	FGameplayCueParameters CueParams;
-	CueParams.Location = FoundEnemy->GetActorLocation();
-	CueParams.EffectContext = GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
+	AActor* Target = HitCandidates[FMath::RandRange(0, HitCandidates.Num() - 1)];
+	LastHitTarget = Target;
 
-	GetAbilitySystemComponentFromActorInfo()->ExecuteGameplayCue(
-		SMSkillTag::GameplayCue_Skill_ApplyInstantDamage_Hit, CueParams);
+	APawn* Avatar = Cast<APawn>(GetCurrentActorInfo()->AvatarActor.Get());
+	ApplyDamageAndCue(GetCurrentActorInfo(), Avatar, Target);
 
-	EndAbility(GetCurrentAbilitySpecHandle(), ActorInfo, GetCurrentActivationInfo(), true, false);
+	// 발수 차감 후 소진 시 종료
+	RemainingLightnings--;
+	if (RemainingLightnings <= 0)
+	{
+		EndAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(),
+		           GetCurrentActivationInfo(), true, false);
+	}
 }

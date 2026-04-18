@@ -40,6 +40,8 @@ namespace SMSkillTag
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_LineTrace_Chain)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_Field_Pull)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_Field_Slow)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_ApplyInstantDamage_InstantMulti)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_ApplyInstantDamage_SeparateMulti)
 
 	//Set By Caller 데이터 태그
 	//UGE_SkillDamage 에서 피해량

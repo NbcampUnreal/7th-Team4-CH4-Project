@@ -26,12 +26,18 @@ void USMBuildingHPBarComponent::BeginPlay()
     
     TryInitASC();
     
-    GetWorld()->GetTimerManager().SetTimer(
-        DistanceCheckTimerHandle, 
-        this, 
-        &USMBuildingHPBarComponent::CheckDistanceToPlayer, 
-        DistanceCheckInterval, 
-        true);
+    if (GetNetMode() != NM_DedicatedServer)
+    {
+        if (UWorld* World = GetWorld())
+        {
+            World->GetTimerManager().SetTimer(
+                DistanceCheckTimerHandle, 
+                this, 
+                &USMBuildingHPBarComponent::CheckDistanceToPlayer, 
+                DistanceCheckInterval, 
+                true);
+        }
+    }
 }
 
 void USMBuildingHPBarComponent::TryInitASC()
@@ -50,12 +56,18 @@ void USMBuildingHPBarComponent::TryInitASC()
     {
         InitializeHPBar(FoundASC);
         
-        GetWorld()->GetTimerManager().ClearTimer(ASC_InitTimerHandle);
+        if (UWorld* World = GetWorld())
+        {
+            World->GetTimerManager().ClearTimer(ASC_InitTimerHandle);
+        }
         return;
     }
     
-    GetWorld()->GetTimerManager().SetTimer(
-        ASC_InitTimerHandle, this, &USMBuildingHPBarComponent::TryInitASC, 0.1f, false);
+    if (UWorld* World = GetWorld())
+    {
+        World->GetTimerManager().SetTimer(
+            ASC_InitTimerHandle, this, &USMBuildingHPBarComponent::TryInitASC, 0.1f, false);
+    }
 }
 
 void USMBuildingHPBarComponent::InitializeHPBar(UAbilitySystemComponent* InASC)
@@ -100,8 +112,11 @@ void USMBuildingHPBarComponent::OnHPChanged(const FOnAttributeChangeData& Data)
     bIsVisibleFromDamage = true;
     UpdateVisibility();
     
-    GetWorld()->GetTimerManager().SetTimer(
-        HideTimerHandle, this, &USMBuildingHPBarComponent::HideHPBar, DisplayDuration, false);
+    if (UWorld* World = GetWorld())
+    {
+        World->GetTimerManager().SetTimer(
+            HideTimerHandle, this, &USMBuildingHPBarComponent::HideHPBar, DisplayDuration, false);
+    }
 
     float MaxHP = 1.f;
     
@@ -131,8 +146,9 @@ void USMBuildingHPBarComponent::CheckDistanceToPlayer()
     APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
     if (!PlayerPawn) return;
     
-    const float DistanceToPlayer = FVector::Dist(GetComponentLocation(), PlayerPawn->GetActorLocation());
-    const bool bIsCloseEnough = (DistanceToPlayer <= VisibleDistance);
+    const float DistanceToPlayerSquared = FVector::DistSquared(GetComponentLocation(), PlayerPawn->GetActorLocation());
+    const float VisibleDistanceSquared = FMath::Square(VisibleDistance);
+    const bool bIsCloseEnough = (DistanceToPlayerSquared <= VisibleDistanceSquared);
     
     if (bIsVisibleFromProximity != bIsCloseEnough)
     {
@@ -164,12 +180,11 @@ void USMBuildingHPBarComponent::EndPlay(const EEndPlayReason::Type EndPlayReason
                 .RemoveAll(this);
         }
     }
-    
-    if (GetWorld())
+    if (UWorld* World = GetWorld())
     {
-        GetWorld()->GetTimerManager().ClearTimer(HideTimerHandle);
-        GetWorld()->GetTimerManager().ClearTimer(ASC_InitTimerHandle);
-        GetWorld()->GetTimerManager().ClearTimer(DistanceCheckTimerHandle);
+        World->GetTimerManager().ClearTimer(HideTimerHandle);
+        World->GetTimerManager().ClearTimer(ASC_InitTimerHandle);
+        World->GetTimerManager().ClearTimer(DistanceCheckTimerHandle);
     }
 
     Super::EndPlay(EndPlayReason);

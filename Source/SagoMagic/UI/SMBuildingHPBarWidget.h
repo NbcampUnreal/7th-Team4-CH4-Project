@@ -5,7 +5,6 @@
 #include "SMBuildingHPBarWidget.generated.h"
 
 class UProgressBar;
-class UTextBlock;
 
 /**
  * 건물 위에 떠있는 HP 바 위젯

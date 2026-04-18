@@ -14,6 +14,7 @@ class USMNotificationWidget;
 class USMSkillCooldownWidget;
 class USMBuildModeWidget;
 class USMEditModeWidget;
+class UButton;
 /**
  * 인게임 HUD 루트 위젯 - 뷰포트에 올라가며 자식 위젯들 소유
  * 플레이어 캐릭터 찾아 ASC 확보 -> 자식 위젯에 넘겨줌
@@ -58,10 +59,16 @@ protected:
 	TObjectPtr<USMBuildModeWidget> WBP_BuildMode;
 	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="HUD")
 	TObjectPtr<USMEditModeWidget> WBP_EditMode;
+	UPROPERTY(meta = (BindWidgetOptional), BlueprintReadOnly, Category = "HUD")
+	TObjectPtr<UButton> Button_Quit;
 	
 private:
 	/** ASC를 안전하게 가져오기 위해 재시도 */
 	void TryInitASC();
+	
+	/** 버튼 클릭 시 게임 종료 */
+	UFUNCTION()
+	void OnQuitButtonClicked();
 	
 	/** 재시도 타이머를 관리할 타이머 핸들 */
 	FTimerHandle ASC_InitTimerHandle;

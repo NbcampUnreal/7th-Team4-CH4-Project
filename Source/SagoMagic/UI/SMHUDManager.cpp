@@ -11,10 +11,18 @@
 #include "UI/SMNotificationWidget.h"
 #include "UI/SMSkillCooldownWidget.h"
 #include "GameplayTags/Character/SMSkillTag.h"
+#include "Components/Button.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 void USMHUDManager::NativeConstruct()
 {
 	Super::NativeConstruct();
+	
+	if (Button_Quit)
+	{
+		Button_Quit->OnClicked.AddDynamic(this, &USMHUDManager::OnQuitButtonClicked);
+	}
+
 	TryInitASC();
 }
 
@@ -98,6 +106,11 @@ void USMHUDManager::ShowGameResult(bool bIsVictory, float InReturnDelay)
 	{
 		WBP_SkillCooldown->SetVisibility(ESlateVisibility::Collapsed);
 	}
+	if (Button_Quit)
+	{
+		Button_Quit->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	
 	if (WBP_GameResult)
 	{
 		WBP_GameResult->SetVisibility(ESlateVisibility::Visible);
@@ -118,5 +131,13 @@ void USMHUDManager::HidePlayerDeath()
 	if (WBP_PlayerDeath)
 	{
 		WBP_PlayerDeath->HideDeathWidget();
+	}
+}
+
+void USMHUDManager::OnQuitButtonClicked()
+{
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		UKismetSystemLibrary::QuitGame(this, PC, EQuitPreference::Quit, false);
 	}
 }

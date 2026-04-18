@@ -16,6 +16,7 @@ namespace SMSkillTag
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Skill_LineTrace, TEXT("Ability.Skill.LineTrace"))
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Skill_ApplyInstantDamage, TEXT("Ability.Skill.ApplyInstantDamage"))
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Skill_Explosion, TEXT("Ability.Skill.Explosion"))
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Skill_SummonTurret, TEXT("Ability.Skill.SummonTurret"))
 
 	//쿨다운 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_Projectile, TEXT("Cooldown.Skill.Projectile"))
@@ -23,6 +24,7 @@ namespace SMSkillTag
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_LineTrace, TEXT("Cooldown.Skill.LineTrace"))
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_ApplyInstantDamage, TEXT("Cooldown.Skill.ApplyInstantDamage"))
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_Explosion, TEXT("Cooldown.Skill.Explosion"))
+	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_SummonTurret, TEXT("Cooldown.Skill.SummonTurret"))
 
 	//스킬 업그레이드 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Projectile_Multishot, TEXT("Upgrade.Projectile.Multishot"))

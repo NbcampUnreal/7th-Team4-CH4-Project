@@ -31,6 +31,8 @@ namespace SMSkillTag
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_LineTrace_Chain, TEXT("Upgrade.LineTrace.Chain"))
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Field_Pull, TEXT("Upgrade.Field.Pull"))
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Field_Slow, TEXT("Upgrade.Field.Slow"))
+	UE_DEFINE_GAMEPLAY_TAG(Upgrade_ApplyInstantDamage_InstantMulti, TEXT("Upgrade.ApplyInstantDamage.InstantMulti"))
+	UE_DEFINE_GAMEPLAY_TAG(Upgrade_ApplyInstantDamage_SeparateMulti, TEXT("Upgrade.ApplyInstantDamage.SeparateMulti"))
 	
 	//GE Spec 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Data_Damage_Amount, TEXT("Data.Damage.Amount"))

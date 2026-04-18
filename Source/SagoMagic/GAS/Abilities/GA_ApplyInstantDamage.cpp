@@ -23,6 +23,11 @@ void UGA_ApplyInstantDamage::OnSkillEffect(
 
 	DetectionRadius = RangeCm;
 	bIsInstantMulti = SkillUpgradeTags.HasTag(SMSkillTag::Upgrade_ApplyInstantDamage_InstantMulti);
+	bIsSeparateMulti = SkillUpgradeTags.HasTag(SMSkillTag::Upgrade_ApplyInstantDamage_SeparateMulti);
+
+	if (bIsSeparateMulti) TargetCount = SeparateMultiTargetCount;
+	else if (bIsInstantMulti) TargetCount = InstantMultiTargetCount;
+	else TargetCount = 1;
 
 	// ── 클라이언트 예측: 반경 내 타겟에게 Cue 즉시 발동 ──
 	if (Avatar->IsLocallyControlled() && Avatar->HasAuthority() == false)
@@ -30,10 +35,17 @@ void UGA_ApplyInstantDamage::OnSkillEffect(
 		UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 		if (IsValid(ASC) == false) return;
 
-		const int32 PredictCount = (bIsInstantMulti) ? InstantMultiTargetCount : 1;
+		if (bIsSeparateMulti)
+		{
+			if (CastSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(Avatar, CastSound, Avatar->GetActorLocation());
+			}
+			return;
+		}
 
 		TArray<AActor*> Enemies;
-		bool bFound = FindClosestEnemies(GetWorld(), TargetLocation, DetectionRadius, Avatar, PredictCount, Enemies);
+		bool bFound = FindClosestEnemies(GetWorld(), TargetLocation, DetectionRadius, Avatar, TargetCount, Enemies);
 
 		if (bFound == false) return;
 
@@ -45,12 +57,6 @@ void UGA_ApplyInstantDamage::OnSkillEffect(
 
 		for (AActor* Enemy : Enemies)
 		{
-			// 어택 사운드 - 로컬에서 적 발견 시 재생
-			if (AttackSound)
-			{
-				UGameplayStatics::PlaySoundAtLocation(Avatar, AttackSound, Enemy->GetActorLocation());
-			}
-
 			FGameplayCueParameters CueParams;
 			CueParams.Location = Enemy->GetActorLocation();
 			CueParams.EffectContext = ASC->MakeEffectContext();
@@ -61,8 +67,12 @@ void UGA_ApplyInstantDamage::OnSkillEffect(
 
 	// 서버에서는 실제 데미지 적용 및 이펙트 복제
 	if (Avatar->HasAuthority() == false) return;
-
-	if (bIsInstantMulti)
+	
+	if (bIsSeparateMulti)
+	{
+		SeparateMultiAttack(ActorInfo, TargetLocation);
+	}
+	else if (bIsInstantMulti)
 	{
 		InstantMultiAttack(ActorInfo, TargetLocation);
 	}
@@ -70,6 +80,28 @@ void UGA_ApplyInstantDamage::OnSkillEffect(
 	{
 		NormalAttack(ActorInfo, TargetLocation);
 	}
+}
+
+void UGA_ApplyInstantDamage::EndAbility(const FGameplayAbilitySpecHandle Handle,
+                                        const FGameplayAbilityActorInfo* ActorInfo,
+                                        const FGameplayAbilityActivationInfo ActivationInfo,
+                                        bool bReplicateEndAbility, bool bWasCancelled)
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(LightningTimerHandle);
+	}
+
+	EnemyCandidates.Reset();
+	bLightningPending = false;
+
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
+
+void UGA_ApplyInstantDamage::OnMontageFinished()
+{
+	if (bLightningPending == true) return;
+	Super::OnMontageFinished();
 }
 
 
@@ -107,22 +139,6 @@ void UGA_ApplyInstantDamage::ApplyDamageAndCue(const FGameplayAbilityActorInfo* 
 	CueParams.Location = Target->GetActorLocation();
 	CueParams.EffectContext = SourceASC->MakeEffectContext();
 	SourceASC->ExecuteGameplayCue(SMSkillTag::GameplayCue_Skill_ApplyInstantDamage_Hit, CueParams);
-}
-
-//다중 적 공격
-void UGA_ApplyInstantDamage::InstantMultiAttack(const FGameplayAbilityActorInfo* ActorInfo, const FVector& Center)
-{
-	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
-
-	TargetCount = InstantMultiTargetCount;
-
-	TArray<AActor*> Enemies;
-	if (FindClosestEnemies(GetWorld(), Center, DetectionRadius, Avatar, TargetCount, Enemies) == false) return;
-
-	for (AActor* Enemy : Enemies)
-	{
-		ApplyDamageAndCue(ActorInfo, Avatar, Enemy);
-	}
 }
 
 bool UGA_ApplyInstantDamage::FindClosestEnemies(UWorld* World, const FVector& Center, float Radius,
@@ -187,4 +203,89 @@ bool UGA_ApplyInstantDamage::FindClosestEnemies(UWorld* World, const FVector& Ce
 	}
 
 	return OutEnemies.Num() > 0;
+}
+
+//다중 적 공격
+void UGA_ApplyInstantDamage::InstantMultiAttack(const FGameplayAbilityActorInfo* ActorInfo, const FVector& Center)
+{
+	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
+
+	TArray<AActor*> Enemies;
+	if (FindClosestEnemies(GetWorld(), Center, DetectionRadius, Avatar, TargetCount, Enemies) == false) return;
+
+	for (AActor* Enemy : Enemies)
+	{
+		ApplyDamageAndCue(ActorInfo, Avatar, Enemy);
+	}
+}
+
+//다중 적 다중 공격
+
+void UGA_ApplyInstantDamage::SeparateMultiAttack(const FGameplayAbilityActorInfo* ActorInfo, const FVector& Center)
+{
+	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
+
+	TArray<AActor*> Enemies;
+	if (FindClosestEnemies(GetWorld(), Center, DetectionRadius, Avatar, TargetCount, Enemies) == false) return;
+
+
+	EnemyCandidates = Enemies;
+	RemainingLightnings = SeparateMultiLightningCount;
+	LastHitTarget = nullptr;
+	bLightningPending = true;
+
+	//첫 낙뢰 즉시 발동, 이후 LightningDelay 간격 반복
+	GetWorld()->GetTimerManager().SetTimer(
+		LightningTimerHandle,
+		this,
+		&UGA_ApplyInstantDamage::FireNextLightningBolt,
+		LightningDelay,
+		true,
+		0.f);
+}
+
+void UGA_ApplyInstantDamage::FireNextLightningBolt()
+{
+	//유효하지 않은 적들 후보에서 제거
+	EnemyCandidates.RemoveAll([this](AActor* Actor)
+	{
+		return IsValid(Actor) == false || IsAvailableEnemy(Actor) == false;
+	});
+
+	//살아있는 적이 없으면 남은 발수와 관게 없이 종료
+	if (EnemyCandidates.IsEmpty() == true)
+	{
+		EndAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(),
+		           GetCurrentActivationInfo(), true, false);
+		return;
+	}
+
+	// LastHitTarget 제외 후보 수집 (연속 동일 타겟 방지)
+	TArray<AActor*> HitCandidates;
+	for (AActor* Enemy : EnemyCandidates)
+	{
+		if (Enemy != LastHitTarget.Get())
+		{
+			HitCandidates.Add(Enemy);
+		}
+	}
+	//후보 없으면 (남은적이 1명이다) 제한해제
+	if (HitCandidates.IsEmpty() == true)
+	{
+		HitCandidates = EnemyCandidates;
+	}
+
+	AActor* Target = HitCandidates[FMath::RandRange(0, HitCandidates.Num() - 1)];
+	LastHitTarget = Target;
+
+	APawn* Avatar = Cast<APawn>(GetCurrentActorInfo()->AvatarActor.Get());
+	ApplyDamageAndCue(GetCurrentActorInfo(), Avatar, Target);
+
+	// 발수 차감 후 소진 시 종료
+	RemainingLightnings--;
+	if (RemainingLightnings <= 0)
+	{
+		EndAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(),
+		           GetCurrentActivationInfo(), true, false);
+	}
 }

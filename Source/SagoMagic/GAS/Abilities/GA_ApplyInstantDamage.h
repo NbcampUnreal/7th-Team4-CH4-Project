@@ -26,6 +26,15 @@ protected:
 		const FVector& TargetLocation,
 		const FVector& AimDirection) override;
 
+	virtual void EndAbility(
+		const FGameplayAbilitySpecHandle Handle,
+		const FGameplayAbilityActorInfo* ActorInfo,
+		const FGameplayAbilityActivationInfo ActivationInfo,
+		bool bReplicateEndAbility,
+		bool bWasCancelled) override;
+	
+	virtual void OnMontageFinished() override;
+
 	//일반 공격
 	void NormalAttack(const FGameplayAbilityActorInfo* ActorInfo, const FVector& Center);
 
@@ -39,11 +48,7 @@ protected:
 	/** 시전 사운드 - 항상 재생  */
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
 	TObjectPtr<USoundBase> CastSound;
-
-	/** 어택 사운드 - 적 발견 시 추가 재생 */
-	UPROPERTY(EditDefaultsOnly, Category = "Sound")
-	TObjectPtr<USoundBase> AttackSound;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Skill|Debug")
 	bool bShowDebugSphere = true;
 
@@ -51,7 +56,7 @@ private:
 	// 공격할 적 숫자
 	int32 TargetCount = 1;
 
-	//지정 위치 기준 반경 내 가까운 적들을 MaxCount만큼 찿음 찾음. 성공 시 true, OutEnemy에 결과 저장
+	//지정 위치 기준 반경 내 가까운 적들을 MaxCount만큼 찾음. 성공 시 true, OutEnemy에 결과 저장
 	bool FindClosestEnemies(
 		UWorld* World,
 		const FVector& Center,
@@ -61,11 +66,37 @@ private:
 		TArray<AActor*>& OutEnemies) const;
 
 	//다중 적 공격
+	void InstantMultiAttack(const FGameplayAbilityActorInfo* ActorInfo, const FVector& Center);
+
 	bool bIsInstantMulti = false;
 
 	/** InstantMulti 업그레이드 적용시 동시에 공격할 적 숫자 */
 	UPROPERTY(EditDefaultsOnly, Category = "Skill|Upgrade")
 	int32 InstantMultiTargetCount = 3;
 
-	void InstantMultiAttack(const FGameplayAbilityActorInfo* ActorInfo, const FVector& Center);
+	//다중 적 다중 공격
+	void SeparateMultiAttack(const FGameplayAbilityActorInfo* ActorInfo, const FVector& Center);
+
+	void FireNextLightningBolt();
+
+	bool bIsSeparateMulti = false;
+
+	/** SeparateMulti 업그레이드 적용시 동시에 공격할 적 숫자 */
+	UPROPERTY(EditDefaultsOnly, Category = "Skill|Upgrade")
+	int32 SeparateMultiTargetCount = 4;
+	/** SeparateMulti 업그레이드 적용시 떨어질 공격 숫자 */
+	UPROPERTY(EditDefaultsOnly, Category = "Skill|Upgrade")
+	int32 SeparateMultiLightningCount = 7;
+	/** SeparateMulti 업그레이드 적용시 떨어질 공격 딜레이 */
+	UPROPERTY(EditDefaultsOnly, Category = "Skill|Upgrade")
+	float LightningDelay = 0.1f;
+
+	UPROPERTY()
+	TArray<AActor*> EnemyCandidates;
+	UPROPERTY()
+	TWeakObjectPtr<AActor> LastHitTarget;
+
+	int32 RemainingLightnings = 0;
+	bool bLightningPending = false;
+	FTimerHandle LightningTimerHandle;
 };

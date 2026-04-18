@@ -15,12 +15,14 @@ namespace SMSkillTag
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Skill_SpawnField, TEXT("Ability.Skill.SpawnField"))
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Skill_LineTrace, TEXT("Ability.Skill.LineTrace"))
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Skill_ApplyInstantDamage, TEXT("Ability.Skill.ApplyInstantDamage"))
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Skill_Explosion, TEXT("Ability.Skill.Explosion"))
 
 	//쿨다운 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_Projectile, TEXT("Cooldown.Skill.Projectile"))
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_SpawnField, TEXT("Cooldown.Skill.SpawnField"))
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_LineTrace, TEXT("Cooldown.Skill.LineTrace"))
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_ApplyInstantDamage, TEXT("Cooldown.Skill.ApplyInstantDamage"))
+	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_Explosion, TEXT("Cooldown.Skill.Explosion"))
 
 	//스킬 업그레이드 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Projectile_Multishot, TEXT("Upgrade.Projectile.Multishot"))
@@ -33,6 +35,9 @@ namespace SMSkillTag
 	//GE Spec 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Data_Damage_Amount, TEXT("Data.Damage.Amount"))
 	UE_DEFINE_GAMEPLAY_TAG(Data_Cooldown, TEXT("Data.Cooldown"))
+
+	//입력 이벤트 태그
+	UE_DEFINE_GAMEPLAY_TAG(Event_Input_AttackReleased, TEXT("Event.Input.AttackReleased"))
 
 	//Cue 태그
 	UE_DEFINE_GAMEPLAY_TAG(GameplayCue_Skill_Projectile_Hit, TEXT("GameplayCue.Skill.Projectile_Hit"))

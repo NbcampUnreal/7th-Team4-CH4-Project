@@ -102,8 +102,6 @@ void ASMSkillTurret::FireAtNearestEnemy()
 	
 	if (SkillLevel >= 3)
 	{
-		SpawnProjectile(BaseDirection);
-		
 		// 딜레이 후 두 번째 발사
 		CachedFireDirection = BaseDirection;
 		GetWorldTimerManager().SetTimer(

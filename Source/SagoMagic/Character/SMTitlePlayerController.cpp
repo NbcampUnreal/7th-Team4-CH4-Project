@@ -3,6 +3,7 @@
 
 #include "SMTitlePlayerController.h"
 #include "OnlineSubsystem.h"
+#include "Core/SMGameInstance.h"
 #include "Core/SessionSubsystem/SMSessionSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/SessionUI/SMTitleWidget.h"
@@ -10,33 +11,43 @@
 void ASMTitlePlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	if (IsLocalController() == false) return;
 
 	UGameInstance* GI = GetGameInstance();
 	if (IsValid(GI) == false) return;
-	
+
 	SessionSubsystem = GI->GetSubsystem<USMSessionSubsystem>();
 	if (IsValid(SessionSubsystem) == false) return;
-	
+
 	BindSessionDelegates();
-	
+
 	ShowMainWidget();
+
+	USMGameInstance* SMGameInst = Cast<USMGameInstance>(GI);
+	if (IsValid(SMGameInst) == true && SMGameInst->bWasLobbyFull == true)
+	{
+		if (IsValid(MainWidgetInstance) == true)
+		{
+			MainWidgetInstance->ShowLobbyFullMessage();
+		}
+		SMGameInst->bWasLobbyFull = false;
+	}
 }
 
 void ASMTitlePlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	if (IsLocalController() == true && IsValid(SessionSubsystem) == true )
+	if (IsLocalController() == true && IsValid(SessionSubsystem) == true)
 	{
-		UnbindSessionDelegates();	
+		UnbindSessionDelegates();
 	}
-	
+
 	Super::EndPlay(EndPlayReason);
 }
 
-void ASMTitlePlayerController::SetPendingServerAddress(const FString& Address)
+void ASMTitlePlayerController::TravelToCheck(const FString& Address)
 {
-	PendingServerAddress = Address;
+	UGameplayStatics::OpenLevel(GetWorld(), FName(*Address), true);
 }
 
 void ASMTitlePlayerController::ShowMainWidget()
@@ -54,14 +65,6 @@ void ASMTitlePlayerController::ShowMainWidget()
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 	SetInputMode(InputMode);
 	SetShowMouseCursor(true);
-}
-
-void ASMTitlePlayerController::OnCreateSessionComplete(bool bWasSuccessful)
-{
-	if (bWasSuccessful == false) return;
-
-	UGameplayStatics::OpenLevel(
-		GetWorld(),FName(*PendingServerAddress),true);
 }
 
 void ASMTitlePlayerController::OnJoinSessionComplete(EOnJoinSessionCompleteResult::Type Result)
@@ -84,15 +87,12 @@ void ASMTitlePlayerController::TravelToServer()
 	if (Address.IsEmpty() == true) return;
 
 	UGameplayStatics::OpenLevel(
-		GetWorld(),FName(*Address),true);
+		GetWorld(), FName(*Address), true);
 }
 
 void ASMTitlePlayerController::BindSessionDelegates()
 {
 	if (!SessionSubsystem) return;
-
-	SessionSubsystem->OnCreateSessionComplete.AddDynamic(
-		this, &ASMTitlePlayerController::OnCreateSessionComplete);
 
 	SessionSubsystem->OnJoinSessionComplete.AddUObject(
 		this, &ASMTitlePlayerController::OnJoinSessionComplete);
@@ -101,9 +101,6 @@ void ASMTitlePlayerController::BindSessionDelegates()
 void ASMTitlePlayerController::UnbindSessionDelegates()
 {
 	if (!SessionSubsystem) return;
-
-	SessionSubsystem->OnCreateSessionComplete.RemoveDynamic(
-		this, &ASMTitlePlayerController::OnCreateSessionComplete);
 
 	SessionSubsystem->OnJoinSessionComplete.RemoveAll(this);
 }

@@ -17,39 +17,31 @@ UCLASS()
 class SAGOMAGIC_API ASMTitlePlayerController : public APlayerController
 {
 	GENERATED_BODY()
-	
-	
+
 public:
 	virtual void BeginPlay() override;
-	
+
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	
+
 	// USMainWidget에서 호출
-	void SetPendingServerAddress(const FString& Address);
-	
+	void TravelToCheck(const FString& Address);
+
 private:
-	UPROPERTY(EditDefaultsOnly,Category = "UI")
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<USMTitleWidget> MainWidgetClass;
 	UPROPERTY(VisibleAnywhere, Category = "UI")
 	TObjectPtr<USMTitleWidget> MainWidgetInstance;
-	
-	FString PendingServerAddress = TEXT("127.0.0.1:17777");
-	
-	UPROPERTY(EditDefaultsOnly,Category = "Server|Maps")
-	FString MainMapName = TEXT("L_Title");
-	
+
 	UPROPERTY()
 	TObjectPtr<USMSessionSubsystem> SessionSubsystem;
-	
+
 	void ShowMainWidget();
-	
-	UFUNCTION()
-	void OnCreateSessionComplete(bool bWasSuccessful);
+
+	//Steam 오버레이 초대 수락 시 사용
 	void OnJoinSessionComplete(EOnJoinSessionCompleteResult::Type Result);
-	
+
 	void TravelToServer();
-	
+
 	void BindSessionDelegates();
 	void UnbindSessionDelegates();
-	
 };

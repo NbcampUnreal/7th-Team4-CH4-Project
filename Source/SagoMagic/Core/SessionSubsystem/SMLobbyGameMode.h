@@ -7,6 +7,7 @@
 #include "SMLobbyGameMode.generated.h"
 
 
+class USMSessionSubsystem;
 class USMItemDefinition;
 class ASMPlayerState;
 class ASMLobbyGameState;
@@ -21,6 +22,8 @@ class SAGOMAGIC_API ASMLobbyGameMode : public AGameModeBase
 
 public:
 	ASMLobbyGameMode();
+
+	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 
 	//로그인 후 처리
 	virtual void PostLogin(APlayerController* NewPlayer) override;
@@ -38,10 +41,13 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<APlayerController> HostController;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = "PlayMapRoot")
 	FString PlayMapRoot = TEXT("/Game/SagoMagic/Maps/L_Play");
-	
+
+	UPROPERTY(EditDefaultsOnly, Category = "Session")
+	int32 MaxPlayers = 4;
+
 	//방장을 제외한 모든 플레이어 ready확인
 	bool IsAllReady() const;
 	//방장 이탈시 새로운 호스트 임명
@@ -51,15 +57,24 @@ protected:
 
 	ASMPlayerState* GetSMPlayerState(APlayerController* PC) const;
 	ASMLobbyGameState* GetLobbyGameState() const;
-	
+
 	//================================
 	// 캐릭터 스킬 선택
 	//================================
 public:
 	const TSoftObjectPtr<USMItemDefinition>& GetPresetSkillDefinition(int32 index) const;
-	
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Skill|Preset")
 	TArray<TSoftObjectPtr<USMItemDefinition>> PresetSkillDefinitions;
 	
+	//================================
+	// 세션 정보
+	//================================
+private:
+	int32 MyPort = 0;
+	FString StatusFilePath;
+
+	void WriteStatusFile(int32 PlayerCount);
+	USMSessionSubsystem* GetSessionSubsystem() const;
 };

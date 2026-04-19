@@ -6,8 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "SMTitleWidget.generated.h"
 
+class UTextBlock;
 class ASMTitlePlayerController;
-class USMSessionSubsystem;
 class UEditableTextBox;
 class UButton;
 /**
@@ -20,29 +20,31 @@ class SAGOMAGIC_API USMTitleWidget : public UUserWidget
 
 public:
 	void MenuSetup();
+	
+	void ShowLobbyFullMessage();
 
 protected:
 	virtual bool Initialize() override;
 	virtual void NativeDestruct() override;
 
 private:
+	
+	UFUNCTION()
+	void OnHostButtonClicked();
+
+	void HideLobbyFullText();
+
+	ASMTitlePlayerController* GetSMTitlePlayerController() const;
+	
 	//위젯 컴포넌트 바인딩
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> HostButton;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UEditableTextBox> IPInputBox;
-
-	UPROPERTY()
-	TObjectPtr<USMSessionSubsystem> SessionSubsystem;
-
-	UFUNCTION()
-	void OnHostButtonClicked();
-
-	UFUNCTION()
-	void OnCreateSessionComplete(bool bWasSuccessful);
-
-	void TearDown();
-
-	ASMTitlePlayerController* GetSMTitlePlayerController() const;
+	
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> LobbyFullText;
+	
+	FTimerHandle LobbyFullTextTimer;
 };

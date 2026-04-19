@@ -14,4 +14,7 @@ UCLASS()
 class SAGOMAGIC_API USMGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
+	
+public:
+	bool bWasLobbyFull = false;
 };

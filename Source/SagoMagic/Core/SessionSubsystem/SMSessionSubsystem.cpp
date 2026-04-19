@@ -64,10 +64,26 @@ void USMSessionSubsystem::CreateSession(int32 MaxPlayer)
 	Settings->bAllowJoinInProgress = true;
 	Settings->BuildUniqueId = 1; 
 	Settings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL";
+	
+	bool bSuccess = false;
+	
+	//데디케이트 서버는 로컬 플레이어가 없으므로 인덱스 0으로 직접 호출
+	if (bIsDedicated)
+	{
+		bSuccess = SessionInterface->CreateSession(0, NAME_GameSession, *Settings);
+	}
+	else
+	{
+		// 기존 코드
+		const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+		if (LocalPlayer)
+		{
+			bSuccess = SessionInterface->CreateSession(
+				*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *Settings);
+		}
+	}
 
-	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
-	if (!SessionInterface->CreateSession(
-		*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *Settings))
+	if (bSuccess == false)
 	{
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(
 			CreateSessionCompleteDelegateHandle);

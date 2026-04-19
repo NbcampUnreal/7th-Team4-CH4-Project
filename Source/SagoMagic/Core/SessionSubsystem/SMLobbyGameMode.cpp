@@ -7,6 +7,9 @@
 #include "SMLobbyGameState.h"
 #include "SMPlayerSlotInfo.h"
 #include "Core/SMPlayerState.h"
+#include "SMSessionSubsystem.h"
+#include "Misc/FileHelper.h"
+#include "Misc/CommandLine.h"
 
 ASMLobbyGameMode::ASMLobbyGameMode()
 {
@@ -15,11 +18,36 @@ ASMLobbyGameMode::ASMLobbyGameMode()
 	bUseSeamlessTravel = true;
 }
 
+void ASMLobbyGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+{
+	Super::InitGame(MapName, Options, ErrorMessage);
+	
+	FParse::Value(FCommandLine::Get(), TEXT("port="), MyPort);
+	FParse::Value(FCommandLine::Get(), TEXT("statuspath="), StatusFilePath);
+
+	WriteStatusFile(0);
+}
+
 void ASMLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
 	PlayerList.Add(NewPlayer);
+	
+	//첫 번째 접속자 처리 — PlayerState 유효 여부와 무관하게 항상 실행
+	if (PlayerList.Num() == 1)
+	{
+		HostController = NewPlayer;
+
+		USMSessionSubsystem* SessionSubsystem = GetSessionSubsystem();
+		if (IsValid(SessionSubsystem) == true)
+		{
+			SessionSubsystem->CreateSession(MaxPlayers);
+		}
+	}
+
+	//상태 파일 업데이트
+	WriteStatusFile(PlayerList.Num());
 
 	ASMPlayerState* NewPlayerState = GetSMPlayerState(NewPlayer);
 	if (IsValid(NewPlayerState) == false) return;
@@ -50,14 +78,8 @@ void ASMLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 			}
 		}
 	}
-	
 	NewPlayerState->SetPlayerName(NewPlayerName);
-
-	if (PlayerList.Num() == 1)
-	{
-		HostController = NewPlayer;
-	}
-
+	
 	UpdateLobbyState();
 }
 
@@ -71,7 +93,20 @@ void ASMLobbyGameMode::Logout(AController* ExitingController)
 	{
 		AssignNewHost();
 	}
+	
+	// 마지막 플레이어 퇴장시 Steam 세션 삭제
+	if (PlayerList.IsEmpty() == true)
+	{
+		USMSessionSubsystem* SessionSubsystem = GetSessionSubsystem();
+		if (IsValid(SessionSubsystem) == true)
+		{
+			SessionSubsystem->DestroySession();
+		}
+	}
 
+	// 상태 파일 업데이트
+	WriteStatusFile(PlayerList.Num());
+	
 	UpdateLobbyState();
 
 	Super::Logout(ExitingController);
@@ -167,4 +202,20 @@ const TSoftObjectPtr<USMItemDefinition>& ASMLobbyGameMode::GetPresetSkillDefinit
 	if (PresetSkillDefinitions.IsValidIndex(Index) == false) return InValidDefinition;
 	
 	return PresetSkillDefinitions[Index];
+}
+
+void ASMLobbyGameMode::WriteStatusFile(int32 PlayerCount)
+{
+	if (StatusFilePath.IsEmpty() == true) return;
+
+	FString Content = FString::FromInt(PlayerCount);
+	FFileHelper::SaveStringToFile(Content, *StatusFilePath);
+}
+
+USMSessionSubsystem* ASMLobbyGameMode::GetSessionSubsystem() const
+{
+	UGameInstance* GI = GetGameInstance();
+	if (IsValid(GI) == false) return nullptr;
+	
+	return GI->GetSubsystem<USMSessionSubsystem>();
 }

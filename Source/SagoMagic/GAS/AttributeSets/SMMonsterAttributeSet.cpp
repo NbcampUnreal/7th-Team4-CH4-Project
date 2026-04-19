@@ -1,6 +1,8 @@
 #include "GAS/AttributeSets/SMMonsterAttributeSet.h"
 #include "GameplayEffectExtension.h"
 #include "Net/UnrealNetwork.h"
+#include "AbilitySystemComponent.h"
+#include "Enemy/SMMonsterBase.h"
 
 USMMonsterAttributeSet::USMMonsterAttributeSet()
 {
@@ -69,9 +71,21 @@ void USMMonsterAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModC
     }
 }
 
-void USMMonsterAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth) 
-{ 
-	GAMEPLAYATTRIBUTE_REPNOTIFY(USMMonsterAttributeSet, Health, OldHealth); 
+void USMMonsterAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(USMMonsterAttributeSet, Health, OldHealth);
+
+	// 피격 사운드: HP가 줄었고 아직 살아있을 때 클라이언트에서 재생
+	if (Health.GetCurrentValue() < OldHealth.GetCurrentValue() && Health.GetCurrentValue() > 0.f)
+	{
+		if (UAbilitySystemComponent* ASC = GetOwningAbilitySystemComponent())
+		{
+			if (ASMMonsterBase* Monster = Cast<ASMMonsterBase>(ASC->GetAvatarActor()))
+			{
+				Monster->PlayHitSound();
+			}
+		}
+	}
 }
 void USMMonsterAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth) 
 { 

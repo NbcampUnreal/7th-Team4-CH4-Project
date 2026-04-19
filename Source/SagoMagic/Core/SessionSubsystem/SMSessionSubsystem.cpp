@@ -135,6 +135,7 @@ void USMSessionSubsystem::OnCreateSessionCompleteInternal(FName SessionName, boo
 {
 	SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(
 		CreateSessionCompleteDelegateHandle);
+	UE_LOG(LogTemp, Log, TEXT("[Session] CreateSession %s"), bWasSuccessful ? TEXT("성공") : TEXT("실패"));
 	OnCreateSessionComplete.Broadcast(bWasSuccessful);
 }
 
@@ -149,6 +150,7 @@ void USMSessionSubsystem::OnDestroySessionCompleteInternal(FName SessionName, bo
 {
 	SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(
 		DestroySessionCompleteDelegateHandle);
+	UE_LOG(LogTemp, Log, TEXT("[Session] DestroySession %s"), bWasSuccessful ? TEXT("성공") : TEXT("실패"));
 	OnDestroySessionComplete.Broadcast(bWasSuccessful);
 }
 

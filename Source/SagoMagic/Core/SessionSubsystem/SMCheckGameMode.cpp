@@ -29,11 +29,16 @@ void ASMCheckGameMode::InitGame(const FString& MapName, const FString& Options, 
 	// serverip 커맨드라인 파싱은 InitGame에서 한 번만 수행
 	// 없으면 기본값 127.0.0.1 유지
 	FParse::Value(FCommandLine::Get(), TEXT("serverip="), ServerIP);
+	UE_LOG(LogTemp, Log, TEXT("[L_Check] 서버 시작 - ServerIP: %s"), *ServerIP);
 }
 
 void ASMCheckGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
+	
+	FString PlayerIP = NewPlayer->GetNetConnection() ? NewPlayer->GetNetConnection()->RemoteAddressToString() : TEXT("Unknown");
+	UE_LOG(LogTemp, Log, TEXT("[L_Check] 플레이어 접속 - IP: %s"), *PlayerIP);
+	
 	RoutePlayerToLobby(NewPlayer);
 }
 
@@ -54,14 +59,22 @@ void ASMCheckGameMode::RoutePlayerToLobby(APlayerController* PC)
 	for (const FLobbyInfo& Lobby : LobbyList)
 	{
 		int32 PlayerCount = ReadLobbyPlayerCount(Lobby.StatusFilePath);
+		
+		UE_LOG(LogTemp, Log, TEXT("[L_Check] 로비 포트 %d 현재 인원: %d"), Lobby.Port, PlayerCount);
+		
 		if (PlayerCount == 0)
 		{
 			FString URL = FString::Printf(TEXT("%s:%d"), *ServerIP, Lobby.Port);
+			
+			UE_LOG(LogTemp, Log, TEXT("[L_Check] → %s 로 라우팅"), *URL);
+			
 			PC->ClientTravel(URL, TRAVEL_Absolute);
 			return;
 		}
 	}
 
 	// 모든 방이 꽉 참 → 타이틀로 복귀 (LobbyFull 파라미터로 이유 전달)
+	UE_LOG(LogTemp, Warning, TEXT("[L_Check] 모든 로비 만석 → 타이틀로 복귀"));
+	
 	PC->ClientTravel(TEXT("/Game/SagoMagic/Maps/L_Title?LobbyFull=1"), TRAVEL_Absolute);
 }

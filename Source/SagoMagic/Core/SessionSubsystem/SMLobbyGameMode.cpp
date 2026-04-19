@@ -26,6 +26,13 @@ void ASMLobbyGameMode::InitGame(const FString& MapName, const FString& Options, 
 	FParse::Value(FCommandLine::Get(), TEXT("statuspath="), StatusFilePath);
 
 	WriteStatusFile(0);
+	UE_LOG(LogTemp, Log, TEXT("[L_Lobby] 서버 시작 - 포트: %d | 상태파일: %s"), MyPort, *StatusFilePath);
+	
+	IOnlineSubsystem* OSS = IOnlineSubsystem::Get();
+	if (OSS)
+	{
+		UE_LOG(LogTemp, Log, TEXT("[L_Lobby] OnlineSubsystem: %s"), *OSS->GetSubsystemName().ToString());
+	}
 }
 
 void ASMLobbyGameMode::PostLogin(APlayerController* NewPlayer)
@@ -34,15 +41,21 @@ void ASMLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 
 	PlayerList.Add(NewPlayer);
 	
+	UE_LOG(LogTemp, Log, TEXT("[L_Lobby:%d] 플레이어 접속 - 현재 인원: %d/%d"), MyPort, PlayerList.Num(), MaxPlayers);
+	
 	//첫 번째 접속자 처리 — PlayerState 유효 여부와 무관하게 항상 실행
 	if (PlayerList.Num() == 1)
 	{
 		HostController = NewPlayer;
 
+		UE_LOG(LogTemp, Log, TEXT("[L_Lobby:%d] 첫 번째 접속자 → 방장 지정"), MyPort);
+		
 		USMSessionSubsystem* SessionSubsystem = GetSessionSubsystem();
 		if (IsValid(SessionSubsystem) == true)
 		{
 			SessionSubsystem->CreateSession(MaxPlayers);
+			
+			UE_LOG(LogTemp, Log, TEXT("[L_Lobby:%d] Steam 세션 생성 요청 (MaxPlayers: %d)"), MyPort, MaxPlayers);
 		}
 	}
 
@@ -89,6 +102,9 @@ void ASMLobbyGameMode::Logout(AController* ExitingController)
 	if (IsValid(PC) == false) return;
 
 	PlayerList.Remove(PC);
+	
+	UE_LOG(LogTemp, Log, TEXT("[L_Lobby:%d] 플레이어 퇴장 - 현재 인원: %d/%d"), MyPort, PlayerList.Num(), MaxPlayers);
+	
 	if (PC == HostController)
 	{
 		AssignNewHost();
@@ -101,6 +117,7 @@ void ASMLobbyGameMode::Logout(AController* ExitingController)
 		if (IsValid(SessionSubsystem) == true)
 		{
 			SessionSubsystem->DestroySession();
+			UE_LOG(LogTemp, Log, TEXT("[L_Lobby:%d] 인원 0 → Steam 세션 삭제 요청"), MyPort);
 		}
 	}
 

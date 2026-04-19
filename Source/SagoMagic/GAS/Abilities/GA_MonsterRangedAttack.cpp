@@ -36,6 +36,12 @@ void UGA_MonsterRangedAttack::ActivateAbility(
 		ASC->AddLooseGameplayTags(AttackingTags);
 	}
 
+	// 공격 사운드 — 모든 클라이언트에 멀티캐스트
+	if (ASMMonsterBase* Monster = Cast<ASMMonsterBase>(GetAvatarActorFromActorInfo()))
+	{
+		Monster->Multicast_PlayAttackSound();
+	}
+
 	// IsAttacking = true → BT에서 MoveTo 중단
 	if (APawn* MonsterPawn = Cast<APawn>(GetAvatarActorFromActorInfo()))
 	{

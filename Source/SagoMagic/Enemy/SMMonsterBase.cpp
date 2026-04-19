@@ -466,4 +466,26 @@ void ASMMonsterBase::OnRep_IsDead()
 void ASMMonsterBase::HandleClientDeath()
 {
     MonsterAbilitySystemComponent->AddLooseGameplayTag(SMEnemyTag::Enemy_State_Death);
+
+    // 사망 사운드 재생
+    if (DeathSound)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation());
+    }
+}
+
+void ASMMonsterBase::PlayHitSound()
+{
+    if (HitSound)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, HitSound, GetActorLocation());
+    }
+}
+
+void ASMMonsterBase::Multicast_PlayAttackSound_Implementation()
+{
+    if (AttackSound)
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, AttackSound, GetActorLocation());
+    }
 }

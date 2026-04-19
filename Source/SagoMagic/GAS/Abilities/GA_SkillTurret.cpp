@@ -37,6 +37,10 @@ void UGA_SkillTurret::OnSkillEffect(
 	if (SkillLevel >= 2 && SplashDamageEffectClass)
 	{
 		SplashSpec = MakeOutgoingGameplayEffectSpec(SplashDamageEffectClass);
+		if (SplashSpec.IsValid())
+		{
+			SplashSpec.Data->SetSetByCallerMagnitude(SMSkillTag::Data_Damage_Amount, -(BaseDamage * 0.5f));
+		}
 	}
 
 	FActorSpawnParameters SpawnParams;

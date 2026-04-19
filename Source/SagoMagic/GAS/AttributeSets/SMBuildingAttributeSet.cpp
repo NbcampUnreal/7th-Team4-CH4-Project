@@ -36,6 +36,14 @@ void USMBuildingAttributeSet::PostGameplayEffectExecute(const FGameplayEffectMod
 		const float Clamped = FMath::Clamp(GetHealth(), 0.f, GetMaxHealth());
 		SetHealth(Clamped);
 
+		if (Data.EvaluatedData.Magnitude < 0.f)
+		{
+			if (ASMBaseBuilding* Building = Cast<ASMBaseBuilding>(GetOwningActor()))
+			{
+				AActor* Attacker = Data.EffectSpec.GetContext().GetInstigator();
+				Building->OnDamageReceived(Attacker, -Data.EvaluatedData.Magnitude);
+			}
+		}
 		if (Clamped <= 0.f)
 		{
 			if (ASMBaseBuilding* Building = Cast<ASMBaseBuilding>(GetOwningActor()))

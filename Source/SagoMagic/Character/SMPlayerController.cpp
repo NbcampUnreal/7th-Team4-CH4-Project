@@ -586,6 +586,11 @@ void ASMPlayerController::ShowInventoryWidget()
 		}
 		else
 		{
+			if (USMPlayerInventoryPanelWidget* CurrentPanelWidget = InventoryRootWidgetInstance->GetCurrentPanelWidget())
+			{
+				CurrentPanelWidget->PreparePanelForOpen();
+			}
+
 			InventoryRootWidgetInstance->RefreshRootWidget();
 		}
 	}

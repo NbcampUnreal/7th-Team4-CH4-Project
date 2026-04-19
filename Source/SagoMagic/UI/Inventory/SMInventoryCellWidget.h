@@ -99,6 +99,12 @@ public:
 		return bOccupiedCell;
 	}
 
+	/** 현재 열려 있는 스킬 셀 여부 Getter */
+	bool IsOpenedSkillCell() const
+	{
+		return bOpenedSkillCell;
+	}
+
 	/** 점유 셀 강조 색상 Getter */
 	const FLinearColor& GetOccupiedAccentColor() const
 	{
@@ -218,6 +224,10 @@ protected:
 	/** 현재 셀 점유 상태 표시 여부 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Cell Widget")
 	bool bOccupiedCell;
+
+	/** 현재 열려 있는 스킬 셀 여부 */
+	UPROPERTY(BlueprintReadOnly, Category="Inventory Cell Widget")
+	bool bOpenedSkillCell;
 
 	/** 현재 셀 점유 아이템 강조 색상 */
 	UPROPERTY(BlueprintReadOnly, Category="Inventory Cell Widget")

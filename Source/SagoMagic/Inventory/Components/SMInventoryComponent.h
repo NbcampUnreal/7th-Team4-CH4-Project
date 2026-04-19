@@ -168,6 +168,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Inventory|Query")
 	bool CanDropItem(const FGuid& InItemInstanceId) const;
 
+	/** 현재 활성 퀵슬롯의 스킬 인스턴스 ID 조회 요청 */
+	UFUNCTION(BlueprintCallable, Category="Inventory|Query")
+	bool GetActiveQuickSlotSkillId(FGuid& OutSkillInstanceId) const;
+
 	/** 현재 활성 퀵슬롯의 스킬 요약 데이터 조회 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory|Query")
 	bool GetActiveSkillSummary(FSMCompiledSkillSummary& OutSummary) const;

@@ -17,6 +17,7 @@ USMInventoryCellWidget::USMInventoryCellWidget(const FObjectInitializer& ObjectI
 	  , bPlaceableHighlighted(false)
 	  , bBlockedHighlighted(false)
 	  , bOccupiedCell(false)
+	  , bOpenedSkillCell(false)
 	  , OccupiedAccentColor(FLinearColor::White)
 {
 }
@@ -193,6 +194,7 @@ void USMInventoryCellWidget::InitializeCellWidget(int32 InGridX, int32 InGridY, 
 	bBlockedHighlighted = false;
 	OwnerItemInstanceId.Invalidate();
 	bOccupiedCell = false;
+	bOpenedSkillCell = false;
 	OccupiedAccentColor = FLinearColor::White;
 
 	BP_OnCellStateChanged();
@@ -208,12 +210,21 @@ void USMInventoryCellWidget::UpdateCellState(
 		OwnerItemInstanceId.IsValid() &&
 		bInPlaceableHighlighted == false &&
 		bInBlockedHighlighted == false;
+	bool bShouldMarkOpenedSkillCell = false;
+	if (OwnerItemInstanceId.IsValid())
+	{
+		if (const USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			bShouldMarkOpenedSkillCell = OwnerItemInstanceId == OwningPanel->GetSelectedSkillInstanceId();
+		}
+	}
 
 	if (bCellEnabled == bInCellEnabled &&
 		bHoveredCell == bInHoveredCell &&
 		bPlaceableHighlighted == bInPlaceableHighlighted &&
 		bBlockedHighlighted == bInBlockedHighlighted &&
-		bOccupiedCell == bShouldDisplayOccupiedState)
+		bOccupiedCell == bShouldDisplayOccupiedState &&
+		bOpenedSkillCell == bShouldMarkOpenedSkillCell)
 	{
 		return;
 	}
@@ -223,6 +234,7 @@ void USMInventoryCellWidget::UpdateCellState(
 	bPlaceableHighlighted = bInPlaceableHighlighted;
 	bBlockedHighlighted = bInBlockedHighlighted;
 	bOccupiedCell = bShouldDisplayOccupiedState;
+	bOpenedSkillCell = bShouldMarkOpenedSkillCell;
 
 	BP_OnCellStateChanged();
 }
@@ -239,8 +251,18 @@ void USMInventoryCellWidget::ClearHighlightState()
 void USMInventoryCellWidget::UpdateOccupiedItem(const FGuid& InOwnerItemInstanceId, const FLinearColor& InOccupiedAccentColor)
 {
 	const bool bInOccupiedCell = InOwnerItemInstanceId.IsValid();
+	bool bInOpenedSkillCell = false;
+	if (InOwnerItemInstanceId.IsValid())
+	{
+		if (const USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
+		{
+			bInOpenedSkillCell = InOwnerItemInstanceId == OwningPanel->GetSelectedSkillInstanceId();
+		}
+	}
+
 	if (OwnerItemInstanceId == InOwnerItemInstanceId &&
 		bOccupiedCell == bInOccupiedCell &&
+		bOpenedSkillCell == bInOpenedSkillCell &&
 		OccupiedAccentColor.Equals(InOccupiedAccentColor))
 	{
 		return;
@@ -248,6 +270,7 @@ void USMInventoryCellWidget::UpdateOccupiedItem(const FGuid& InOwnerItemInstance
 
 	OwnerItemInstanceId = InOwnerItemInstanceId;
 	bOccupiedCell = bInOccupiedCell;
+	bOpenedSkillCell = bInOpenedSkillCell;
 	OccupiedAccentColor = bOccupiedCell ? InOccupiedAccentColor : FLinearColor::White;
 	BP_OnCellStateChanged();
 }

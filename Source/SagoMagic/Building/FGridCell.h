@@ -6,9 +6,10 @@
 UENUM(BlueprintType)
 enum class EGridBuildingType : uint8
 {
-	None	UMETA(DisplayName = "None"),
-	Fence	UMETA(DisplayName = "Fence"),
-	Tower	UMETA(DisplayName = "Tower"),
+	None		UMETA(DisplayName = "None"),
+	Fence		UMETA(DisplayName = "Fence"),
+	ThornsFence	UMETA(DisplayName = "ThornsFence"),
+	Tower		UMETA(DisplayName = "Tower"),
 };
 
 UENUM(BlueprintType)

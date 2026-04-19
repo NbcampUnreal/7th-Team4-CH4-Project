@@ -1,6 +1,7 @@
 #include "SMThornsFenceBuilding.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "GameplayTags/Character/SMSkillTag.h"
 #include "GAS/AttributeSets/SMThornsBuildingAttributeSet.h"
 
 ASMThornsFenceBuilding::ASMThornsFenceBuilding()
@@ -17,7 +18,7 @@ void ASMThornsFenceBuilding::ApplyThornsDamage(UAbilitySystemComponent* SourceAS
 	if (!Spec.IsValid()) return;
 	
 	Spec.Data->SetSetByCallerMagnitude(
-		FGameplayTag::RequestGameplayTag("Data.Damage.Amount"), -ThornsDamage);
+		SMSkillTag::Data_Damage_Amount, -ThornsDamage);
 	SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(), TargetASC);
 }
 

@@ -39,6 +39,13 @@ void UGA_MonsterAttackBase::ActivateAbility(
     {
         ASC->AddLooseGameplayTags(AttackingTags);
     }
+
+    // 공격 사운드 — 모든 클라이언트에 멀티캐스트
+    if (ASMMonsterBase* Monster = Cast<ASMMonsterBase>(GetAvatarActorFromActorInfo()))
+    {
+        Monster->Multicast_PlayAttackSound();
+    }
+
     // 1. 몽타주 재생
     UAbilityTask_PlayMontageAndWait* MontageTask =
         UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(

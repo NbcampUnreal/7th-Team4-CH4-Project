@@ -8,6 +8,7 @@
 
 #include "SMMonsterBase.generated.h"
 
+class USoundBase;
 class USMMonsterDataAsset;
 class USMMonsterAttributeSet;
 class ASMBaseItemDropActor;
@@ -82,6 +83,19 @@ public:
     /** 자폭 시 1마리당 BaseCamp에 적용할 데미지 양 */
     UPROPERTY(EditDefaultsOnly, Category = "SelfKill")
     float SelfKillDamage = 5.0f;
+
+    // ── 사운드 ──
+    /** 공격 시작 사운드 (근거리: 휘두름, 원거리: 발사) */
+    UPROPERTY(EditDefaultsOnly, Category = "Sound")
+    TObjectPtr<USoundBase> AttackSound;
+
+    /** 피격 사운드 */
+    UPROPERTY(EditDefaultsOnly, Category = "Sound")
+    TObjectPtr<USoundBase> HitSound;
+
+    /** 사망 사운드 */
+    UPROPERTY(EditDefaultsOnly, Category = "Sound")
+    TObjectPtr<USoundBase> DeathSound;
     
     /** DamageEffect를 저장해둘 멤버(런타임에 DataAsset에서 가져옴) */
     UPROPERTY()
@@ -98,8 +112,15 @@ public:
     
     UFUNCTION()
     void OnRep_IsDead();
-    
+
     //클라이언트에서만 실행되는 Death로직, 클라 전용 애니메이션 등 추가 가능
     void HandleClientDeath();
+
+    /** AttributeSet의 OnRep_Health에서 호출 — 클라이언트 피격 사운드 */
+    void PlayHitSound();
+
+    /** 서버→모든 클라이언트 공격 사운드 재생 (ServerOnly GA에서 호출) */
+    UFUNCTION(NetMulticast, Unreliable)
+    void Multicast_PlayAttackSound();
     
 };

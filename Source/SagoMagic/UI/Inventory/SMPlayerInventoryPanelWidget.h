@@ -88,6 +88,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
 	void InitializePanelWidget(USMInventoryComponent* InInventoryComponent);
 
+	/** 패널 오픈 시 기본 선택 상태 준비 */
+	void PreparePanelForOpen();
+
 	/** 패널 전체 새로고침 요청 */
 	UFUNCTION(BlueprintCallable, Category="Player Inventory Panel Widget")
 	void RefreshPanel();

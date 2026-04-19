@@ -46,8 +46,31 @@ void USMPlayerInventoryPanelWidget::InitializePanelWidget(USMInventoryComponent*
 	UnregisterInventoryMessageListeners();
 	InventoryComponent = InInventoryComponent;
 	InitializeChildWidgets();
+	PreparePanelForOpen();
 	RegisterInventoryMessageListeners();
 	RefreshPanel();
+}
+
+void USMPlayerInventoryPanelWidget::PreparePanelForOpen()
+{
+	if (InventoryComponent == nullptr)
+	{
+		SelectedSkillInstanceId.Invalidate();
+		ApplySelectedSkillState();
+		return;
+	}
+
+	FGuid ActiveSkillInstanceId;
+	if (InventoryComponent->GetActiveQuickSlotSkillId(ActiveSkillInstanceId))
+	{
+		SelectedSkillInstanceId = ActiveSkillInstanceId;
+	}
+	else
+	{
+		SelectedSkillInstanceId.Invalidate();
+	}
+
+	ApplySelectedSkillState();
 }
 
 void USMPlayerInventoryPanelWidget::RegisterInventoryMessageListeners()
@@ -192,6 +215,7 @@ void USMPlayerInventoryPanelWidget::OpenSkillInventory(const FGuid& InSkillInsta
 
 	SelectedSkillInstanceId = InSkillInstanceId;
 	ApplySelectedSkillState();
+	RefreshMainInventoryWidget();
 	RefreshSkillInventoryWidget();
 	BP_OnPanelRefreshed();
 }
@@ -207,6 +231,7 @@ void USMPlayerInventoryPanelWidget::CloseSkillInventory()
 
 	SelectedSkillInstanceId.Invalidate();
 	ApplySelectedSkillState();
+	RefreshMainInventoryWidget();
 	BP_OnPanelRefreshed();
 }
 

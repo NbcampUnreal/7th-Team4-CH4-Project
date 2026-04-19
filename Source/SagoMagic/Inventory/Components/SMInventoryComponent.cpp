@@ -1594,9 +1594,9 @@ bool USMInventoryComponent::CanDropItem(const FGuid& InItemInstanceId) const
 	return CanDropItemInternal(InItemInstanceId);
 }
 
-bool USMInventoryComponent::GetActiveSkillSummary(FSMCompiledSkillSummary& OutSummary) const
+bool USMInventoryComponent::GetActiveQuickSlotSkillId(FGuid& OutSkillInstanceId) const
 {
-	OutSummary.Reset();
+	OutSkillInstanceId.Invalidate();
 
 	FGuid ActiveSkillId;
 	if (const FSMQuickSlotEntry* ActiveSlot = FindQuickSlotEntry(QuickSlots.ActiveSlotIndex))
@@ -1611,7 +1611,21 @@ bool USMInventoryComponent::GetActiveSkillSummary(FSMCompiledSkillSummary& OutSu
 			                : QuickSlots.Slot1SkillId;
 	}
 
-	if (ActiveSkillId.IsValid() == false)
+	if (ActiveSkillId.IsValid() == false || FindSkill(ActiveSkillId) == nullptr)
+	{
+		return false;
+	}
+
+	OutSkillInstanceId = ActiveSkillId;
+	return true;
+}
+
+bool USMInventoryComponent::GetActiveSkillSummary(FSMCompiledSkillSummary& OutSummary) const
+{
+	OutSummary.Reset();
+
+	FGuid ActiveSkillId;
+	if (GetActiveQuickSlotSkillId(ActiveSkillId) == false)
 	{
 		return false;
 	}
@@ -1629,19 +1643,7 @@ bool USMInventoryComponent::GetActiveSkillSummary(FSMCompiledSkillSummary& OutSu
 FGameplayTag USMInventoryComponent::GetActiveSkillTag() const
 {
 	FGuid ActiveSkillId;
-	if (const FSMQuickSlotEntry* ActiveSlot = FindQuickSlotEntry(QuickSlots.ActiveSlotIndex))
-	{
-		ActiveSkillId = ActiveSlot->GetEquippedSkillId();
-	}
-
-	if (ActiveSkillId.IsValid() == false)
-	{
-		ActiveSkillId = QuickSlots.ActiveSlotIndex == 1
-			                ? QuickSlots.Slot2SkillId
-			                : QuickSlots.Slot1SkillId;
-	}
-
-	if (ActiveSkillId.IsValid() == false)
+	if (GetActiveQuickSlotSkillId(ActiveSkillId) == false)
 	{
 		return FGameplayTag();
 	}

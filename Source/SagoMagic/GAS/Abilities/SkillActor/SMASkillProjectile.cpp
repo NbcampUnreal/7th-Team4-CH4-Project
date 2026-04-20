@@ -13,7 +13,6 @@
 #include "SMASkillField.h"
 #include "Building/SMBaseCampActor.h"
 #include "Building/SMBaseBuilding.h"
-#include "GameplayTags/Enemy/SMEnemyTag.h"
 #include "GAS/SMGameplayAbilityUtils.h"
 
 ASMASkillProjectile::ASMASkillProjectile()
@@ -66,8 +65,11 @@ void ASMASkillProjectile::InitProjectile(FGameplayEffectSpecHandle InSpecHandle,
 	if (RangeCm > 0.f && ProjectileSpeed > 0.f)
 	{
 		const float FlightTime = RangeCm / ProjectileSpeed;
-		GetWorldTimerManager().SetTimer(TimerHandleMaxRange, this,
-		                                &ASMASkillProjectile::OnMaxRangeReached, FlightTime, false);
+		GetWorldTimerManager().SetTimer(TimerHandleMaxRange,
+		                                this,
+		                                &ASMASkillProjectile::OnMaxRangeReached,
+		                                FlightTime,
+		                                false);
 	}
 }
 
@@ -122,7 +124,37 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
 		InstigatorASC->ExecuteGameplayCue(SMSkillTag::GameplayCue_Skill_Projectile_Hit, CueParams);
 	}
 
+	// 직격 데미지
 	TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data.Get());
+
+
+	// 2레벨 이상 스플래쉬 데미지
+	if (SplashSpecHandle.IsValid() && SplashRadiusCm > 0.0f)
+	{
+		TArray<AActor*> SplashActors;
+
+		UKismetSystemLibrary::SphereOverlapActors(
+			this,
+			GetActorLocation(),
+			SplashRadiusCm,
+			{UEngineTypes::ConvertToObjectType(ECC_Pawn)},
+			APawn::StaticClass(),
+			{this, OtherActor, InstigatorActor.Get()}, // 피격대상 중복 방지
+			SplashActors);
+		
+		for (AActor* SplashTarget : SplashActors)
+		{
+			if (!IsValid(SplashTarget)) continue;
+			
+			UAbilitySystemComponent* SplashASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(SplashTarget);
+			
+			if (!SplashASC) continue;
+			if (SplashASC->HasMatchingGameplayTag(SMGameFlowTag::Team)) continue;
+			
+			SplashASC->ApplyGameplayEffectSpecToSelf(*SplashSpecHandle.Data.Get());
+		}
+	}
+
 	Destroy();
 }
 
@@ -189,4 +221,10 @@ void ASMASkillProjectile::FindAndSetHomingTarget()
 		ProjectileMovement->HomingTargetComponent = BestTarget->GetRootComponent();
 		ProjectileMovement->HomingAccelerationMagnitude = HomingAccelerationMagnitude;
 	}
+}
+
+void ASMASkillProjectile::SetSplashConfig(FGameplayEffectSpecHandle InSplashSpecHandle, float InSplashRadiusCm)
+{
+	SplashSpecHandle = InSplashSpecHandle;
+	SplashRadiusCm = InSplashRadiusCm;
 }

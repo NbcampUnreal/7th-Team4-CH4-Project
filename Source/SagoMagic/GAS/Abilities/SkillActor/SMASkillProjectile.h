@@ -73,4 +73,17 @@ protected:
 
 private:
 	void FindAndSetHomingTarget();
+	
+	// GA_SkillTurret용
+public:
+	/** 폭발 이펙트와 스플래쉬 설정(스폰 후 별도 호출) */
+	void SetSplashConfig(FGameplayEffectSpecHandle InSplashSpecHandle, float InSplashRadiusCm);
+	
+protected:
+
+	
+private:
+	FGameplayEffectSpecHandle SplashSpecHandle;
+	
+	float SplashRadiusCm = 0.0f;
 };

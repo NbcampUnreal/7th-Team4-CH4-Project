@@ -25,6 +25,8 @@ namespace SMSkillTag
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Skill_ApplyInstantDamage)
 	//폭발
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Skill_Explosion)
+	// 터렛 소환
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Skill_SummonTurret)
 
 	//쿨다운 태그들
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Skill_Projectile)
@@ -32,6 +34,7 @@ namespace SMSkillTag
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Skill_LineTrace)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Skill_ApplyInstantDamage)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Skill_Explosion)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Skill_SummonTurret)
 
 	//스킬 업그레이드 태그들
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_Projectile_Multishot)
@@ -42,6 +45,8 @@ namespace SMSkillTag
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_Field_Slow)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_ApplyInstantDamage_InstantMulti)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_ApplyInstantDamage_SeparateMulti)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_Turret_Splash)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Upgrade_Turret_Barrage)
 
 	//Set By Caller 데이터 태그
 	//UGE_SkillDamage 에서 피해량

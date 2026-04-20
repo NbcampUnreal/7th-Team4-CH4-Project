@@ -16,6 +16,7 @@ namespace SMSkillTag
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Skill_LineTrace, TEXT("Ability.Skill.LineTrace"))
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Skill_ApplyInstantDamage, TEXT("Ability.Skill.ApplyInstantDamage"))
 	UE_DEFINE_GAMEPLAY_TAG(Ability_Skill_Explosion, TEXT("Ability.Skill.Explosion"))
+	UE_DEFINE_GAMEPLAY_TAG(Ability_Skill_SummonTurret, TEXT("Ability.Skill.SummonTurret"))
 
 	//쿨다운 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_Projectile, TEXT("Cooldown.Skill.Projectile"))
@@ -23,6 +24,7 @@ namespace SMSkillTag
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_LineTrace, TEXT("Cooldown.Skill.LineTrace"))
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_ApplyInstantDamage, TEXT("Cooldown.Skill.ApplyInstantDamage"))
 	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_Explosion, TEXT("Cooldown.Skill.Explosion"))
+	UE_DEFINE_GAMEPLAY_TAG(Cooldown_Skill_SummonTurret, TEXT("Cooldown.Skill.SummonTurret"))
 
 	//스킬 업그레이드 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Projectile_Multishot, TEXT("Upgrade.Projectile.Multishot"))
@@ -33,6 +35,8 @@ namespace SMSkillTag
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Field_Slow, TEXT("Upgrade.Field.Slow"))
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_ApplyInstantDamage_InstantMulti, TEXT("Upgrade.ApplyInstantDamage.InstantMulti"))
 	UE_DEFINE_GAMEPLAY_TAG(Upgrade_ApplyInstantDamage_SeparateMulti, TEXT("Upgrade.ApplyInstantDamage.SeparateMulti"))
+	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Turret_Splash, TEXT("Upgrade.Turret.Splash"))
+	UE_DEFINE_GAMEPLAY_TAG(Upgrade_Turret_Barrage, TEXT("Upgrade.Turret.Barrage"))
 	
 	//GE Spec 태그들
 	UE_DEFINE_GAMEPLAY_TAG(Data_Damage_Amount, TEXT("Data.Damage.Amount"))

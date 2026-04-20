@@ -103,12 +103,17 @@ void ASMSkillTurret::FireAtNearestEnemy()
 	{
 		// 딜레이 후 두 번째 발사
 		CachedFireDirection = BaseDirection;
-		GetWorldTimerManager().SetTimer(
+		
+		if (!GetWorldTimerManager().IsTimerActive(SecondShotTimerHandle))
+		{
+			GetWorldTimerManager().SetTimer(
 			SecondShotTimerHandle,
 			this,
 			&ThisClass::FireSecondShot,
 			DualFireDelay,
 			false);
+		}
+		
 	}
 }
 

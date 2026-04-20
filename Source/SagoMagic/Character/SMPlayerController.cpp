@@ -14,6 +14,7 @@
 #include "GameFramework/Pawn.h"
 #include "InputAction.h"
 #include "Core/SMGameMode.h"
+#include "GameplayTags/UI/SMUITag.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/Inventory/SMInventoryRootWidget.h"
@@ -101,6 +102,24 @@ void ASMPlayerController::ClientRPC_HideDeathUI_Implementation()
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
 	SetShowMouseCursor(true);
+}
+
+void ASMPlayerController::ClientRPC_ShowNotification_Implementation(
+	const FGameplayTag& InChannel,
+	const FText& InMessage,
+	float InDuration)
+{
+	if (UGameplayMessageSubsystem::HasInstance(this) == false)
+	{
+		return;
+	}
+
+	FNotificationMsg Message;
+	Message.Message = InMessage;
+	Message.DisplayDuration = InDuration;
+
+	UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
+	MessageSubsystem.BroadcastMessage(InChannel, Message);
 }
 
 void ASMPlayerController::SetupInputComponent()
@@ -279,7 +298,22 @@ void ASMPlayerController::ServerRPCMoveInventoryItem_Implementation(
 		return;
 	}
 
-	InventoryComponent->MoveItem(InItemInstanceId, InTargetContainerId, InGridX, InGridY, InRotation);
+	if (InventoryComponent->MoveItem(InItemInstanceId, InTargetContainerId, InGridX, InGridY, InRotation))
+	{
+		return;
+	}
+
+	FText FailureMessage;
+	if (InventoryComponent->TryGetMoveItemFailureNotification(
+		InItemInstanceId,
+		InTargetContainerId,
+		InGridX,
+		InGridY,
+		InRotation,
+		FailureMessage))
+	{
+		ClientRPC_ShowNotification(SMUITag::Event_Notification_Inventory, FailureMessage, 2.0f);
+	}
 }
 
 void ASMPlayerController::ServerRPCDropInventoryItem_Implementation(const FGuid& InItemInstanceId)
@@ -359,7 +393,16 @@ void ASMPlayerController::ServerRPCDetachEmbeddedItem_Implementation(const FGuid
 		return;
 	}
 
-	InventoryComponent->DetachEmbeddedItem(InItemInstanceId);
+	if (InventoryComponent->DetachEmbeddedItem(InItemInstanceId))
+	{
+		return;
+	}
+
+	FText FailureMessage;
+	if (InventoryComponent->TryGetDetachEmbeddedItemFailureNotification(InItemInstanceId, FailureMessage))
+	{
+		ClientRPC_ShowNotification(SMUITag::Event_Notification_Inventory, FailureMessage, 2.0f);
+	}
 }
 
 void ASMPlayerController::ServerRPCSetActiveQuickSlot_Implementation(int32 InSlotIndex)
@@ -394,7 +437,16 @@ void ASMPlayerController::ServerRPCEquipSkillToQuickSlot_Implementation(const FG
 		return;
 	}
 
-	InventoryComponent->EquipSkillToQuickSlot(InSkillInstanceId, InSlotIndex);
+	if (InventoryComponent->EquipSkillToQuickSlot(InSkillInstanceId, InSlotIndex))
+	{
+		return;
+	}
+
+	FText FailureMessage;
+	if (InventoryComponent->TryGetEquipSkillToQuickSlotFailureNotification(InSkillInstanceId, InSlotIndex, FailureMessage))
+	{
+		ClientRPC_ShowNotification(SMUITag::Event_Notification_Inventory, FailureMessage, 2.0f);
+	}
 }
 
 void ASMPlayerController::ServerRPCEquipSkillToFirstAvailableQuickSlot_Implementation(const FGuid& InSkillInstanceId)
@@ -411,7 +463,16 @@ void ASMPlayerController::ServerRPCEquipSkillToFirstAvailableQuickSlot_Implement
 		return;
 	}
 
-	InventoryComponent->EquipSkillToFirstAvailableQuickSlot(InSkillInstanceId);
+	if (InventoryComponent->EquipSkillToFirstAvailableQuickSlot(InSkillInstanceId))
+	{
+		return;
+	}
+
+	FText FailureMessage;
+	if (InventoryComponent->TryGetEquipSkillToFirstAvailableQuickSlotFailureNotification(InSkillInstanceId, FailureMessage))
+	{
+		ClientRPC_ShowNotification(SMUITag::Event_Notification_Inventory, FailureMessage, 2.0f);
+	}
 }
 
 void ASMPlayerController::ServerRPCUnequipSkillFromQuickSlot_Implementation(int32 InSlotIndex)
@@ -428,7 +489,16 @@ void ASMPlayerController::ServerRPCUnequipSkillFromQuickSlot_Implementation(int3
 		return;
 	}
 
-	InventoryComponent->UnequipSkillFromQuickSlot(InSlotIndex);
+	if (InventoryComponent->UnequipSkillFromQuickSlot(InSlotIndex))
+	{
+		return;
+	}
+
+	FText FailureMessage;
+	if (InventoryComponent->TryGetUnequipSkillFromQuickSlotFailureNotification(InSlotIndex, FailureMessage))
+	{
+		ClientRPC_ShowNotification(SMUITag::Event_Notification_Inventory, FailureMessage, 2.0f);
+	}
 }
 
 void ASMPlayerController::ServerRPCUnequipSkillFromQuickSlotToMainInventory_Implementation(

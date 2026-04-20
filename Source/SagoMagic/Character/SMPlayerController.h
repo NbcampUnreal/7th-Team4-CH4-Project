@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Inventory/Core/SMInventoryCoreTypes.h"
 #include "GameFramework/PlayerController.h"
 #include "SMPlayerController.generated.h"
@@ -109,6 +110,10 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientRPC_HideDeathUI();
 	
+	/** 특정 클라이언트에게만 로컬 알림 메시지를 표시 */
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_ShowNotification(const FGameplayTag& InChannel, const FText& InMessage, float InDuration = 2.0f);
+
 	/** 게임 결과 UI 표시용 */
 	UFUNCTION(Client, Reliable)
 	void ClientRPC_ShowGameResult(bool bIsVictory, float InReturnDelay);

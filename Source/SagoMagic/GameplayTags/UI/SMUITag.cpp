@@ -13,6 +13,7 @@ namespace SMUITag
 	UE_DEFINE_GAMEPLAY_TAG(Event_BaseCamp, "UI.Event.BaseCamp");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Wave, "UI.Event.Wave"); 
 	UE_DEFINE_GAMEPLAY_TAG(Event_Notification, "UI.Event.Notification");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Notification_Inventory, "UI.Event.Notification.Inventory");
 	UE_DEFINE_GAMEPLAY_TAG(Event_BuildMode, "UI.Event.BuildMode");
 	UE_DEFINE_GAMEPLAY_TAG(Event_EditMode, "UI.Event.EditMode");
 }

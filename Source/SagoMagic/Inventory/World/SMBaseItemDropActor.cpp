@@ -4,6 +4,7 @@
 #include "Components/PrimitiveComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Character/SMPlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerState.h"
 #include "Engine/StaticMesh.h"
@@ -22,6 +23,7 @@
 #include "Inventory/Items/Fragments/SMDisplayInfoFragment.h"
 #include "Inventory/Items/Fragments/SMSkillProgressionFragment.h"
 #include "Inventory/Items/Fragments/SMWorldVisualFragment.h"
+#include "GameplayTags/UI/SMUITag.h"
 #include "UI/Inventory/SMInteractionWorldInfoWidget.h"
 
 ASMBaseItemDropActor::ASMBaseItemDropActor()
@@ -113,9 +115,18 @@ void ASMBaseItemDropActor::HandleInteract(APawn* InInteractingPawn)
 		return;
 	}
 
-	const FGuid AddedItemInstanceId = InventoryComponent->AddItemFromDropPayload(ItemDropPayload);
+	FText FailureMessage;
+	const FGuid AddedItemInstanceId = InventoryComponent->AddItemFromDropPayloadWithFailureMessage(ItemDropPayload, FailureMessage);
 	if (AddedItemInstanceId.IsValid() == false)
 	{
+		if (FailureMessage.IsEmpty() == false)
+		{
+			if (ASMPlayerController* PlayerController = Cast<ASMPlayerController>(InInteractingPawn->GetController()))
+			{
+				PlayerController->ClientRPC_ShowNotification(SMUITag::Event_Notification, FailureMessage, 2.0f);
+			}
+		}
+
 		UE_LOG(LogTemp, Warning, TEXT("Guid for current item is invalid. can't get item from actor %s"),
 		       *InventoryComponent->GetName());
 		return;

@@ -6,6 +6,7 @@
 #include "Inventory/Core/SMItemInstanceTypes.h"
 #include "Inventory/Core/SMContainerTypes.h"
 #include "GameplayTags/Message/SMMessageTag.h"
+#include "GameplayTags/UI/SMUITag.h"
 
 #include "UI/Inventory/SMInventoryGridWidget.h"
 #include "UI/Inventory/SMSkillInventoryWidget.h"
@@ -14,6 +15,7 @@
 #include "UI/Inventory/SMItemHoverInfoWidget.h"
 #include "UI/Inventory/SMInventoryDragDropOperation.h"
 #include "UI/Inventory/SMDragItemPreviewWidget.h"
+#include "UI/SMNotificationWidget.h"
 
 USMPlayerInventoryPanelWidget::USMPlayerInventoryPanelWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -23,6 +25,7 @@ USMPlayerInventoryPanelWidget::USMPlayerInventoryPanelWidget(const FObjectInitia
 	  , QuickSlotBarWidget(nullptr)
 	  , ContextMenuWidget(nullptr)
 	  , ItemHoverInfoWidget(nullptr)
+	  , InventoryNotificationWidget(nullptr)
 	  , ContextMenuScreenPosition(FVector2D::ZeroVector)
 	  , ActiveDragPreviewOperation(nullptr)
 	  , ActiveDragPreviewWidget(nullptr)
@@ -545,6 +548,11 @@ void USMPlayerInventoryPanelWidget::InitializeChildWidgets()
 	if (ItemHoverInfoWidget != nullptr)
 	{
 		ItemHoverInfoWidget->InitializeHoverInfoWidget(InventoryComponent);
+	}
+
+	if (InventoryNotificationWidget != nullptr)
+	{
+		InventoryNotificationWidget->SetListenChannel(SMUITag::Event_Notification_Inventory);
 	}
 
 	HideHoveredItemInfo();

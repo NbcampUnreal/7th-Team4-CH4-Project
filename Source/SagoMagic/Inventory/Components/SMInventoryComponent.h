@@ -90,6 +90,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Inventory")
 	FGuid AddItemFromDropPayload(const FSMItemDropPayload& InDropPayload);
 
+	/** 아이템 드랍 페이로드 기반 아이템 추가 요청 및 실패 메시지 반환 */
+	FGuid AddItemFromDropPayloadWithFailureMessage(const FSMItemDropPayload& InDropPayload, FText& OutFailureMessage);
+
 	/** 아이템 제거 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory")
 	bool RemoveItem(const FGuid& InItemInstanceId);
@@ -183,6 +186,27 @@ public:
 	/** 컨테이너 데이터 조회 요청 */
 	UFUNCTION(BlueprintCallable, Category="Inventory|Query")
 	bool GetContainerData(const FGuid& InContainerId, FSMGridContainerState& OutContainerData) const;
+
+	/** 아이템 이동 실패 시 사용자에게 보여줄 알림 메시지 조회 */
+	bool TryGetMoveItemFailureNotification(
+		const FGuid& InItemInstanceId,
+		const FGuid& InTargetContainerId,
+		int32 InGridX,
+		int32 InGridY,
+		ESMGridRotation InRotation,
+		FText& OutMessage) const;
+
+	/** 퀵슬롯 장착 실패 시 사용자에게 보여줄 알림 메시지 조회 */
+	bool TryGetEquipSkillToQuickSlotFailureNotification(const FGuid& InSkillInstanceId, int32 InSlotIndex, FText& OutMessage) const;
+
+	/** 빈 퀵슬롯 자동 장착 실패 시 사용자에게 보여줄 알림 메시지 조회 */
+	bool TryGetEquipSkillToFirstAvailableQuickSlotFailureNotification(const FGuid& InSkillInstanceId, FText& OutMessage) const;
+
+	/** 퀵슬롯 해제 실패 시 사용자에게 보여줄 알림 메시지 조회 */
+	bool TryGetUnequipSkillFromQuickSlotFailureNotification(int32 InSlotIndex, FText& OutMessage) const;
+
+	/** 내부 장착 아이템 해제 실패 시 사용자에게 보여줄 알림 메시지 조회 */
+	bool TryGetDetachEmbeddedItemFailureNotification(const FGuid& InEmbeddedItemInstanceId, FText& OutMessage) const;
 
 private:
 	/** 복제 상태 변경 수신 함수 */
@@ -322,6 +346,9 @@ private:
 
 	/** 실제 아이템 제거 내부 함수 */
 	bool RemoveItemInternal(const FGuid& InItemInstanceId, bool bPublishInventoryMessage);
+
+	/** 드랍 페이로드 추가 내부 함수 */
+	FGuid AddItemFromDropPayloadInternal(const FSMItemDropPayload& InDropPayload, FText* OutFailureMessage);
 
 public:
 	/** 기본 메인 인벤토리 마스크 설정값 */

@@ -92,7 +92,7 @@ private:
 	/** Wave DT 실제 경로 */
 	FString WaveDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/WaveData/DT_Wave.DT_Wave");
 	/** Skill DT 실제 경로 */
-	FString SkillDataTablePath = TEXT("/Game/Test/DT_Skill.DT_Skill");
+	FString SkillDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/Skill_GemData/DT_Skill.DT_Skill");
 	/** Building DT 경로 */
 	FString BuildingDataTablePath = TEXT("/Game/SagoMagic/Data/DataTables/BuildingData/DT_Building.DT_Building");
 	/** DropTable DT 실제 경로 */

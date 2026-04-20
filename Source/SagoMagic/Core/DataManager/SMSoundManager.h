@@ -111,4 +111,16 @@ private:
 	float MasterVolume = 1.0f;
 	float BGMVolume = 1.0f;
 	float SFXVolume = 1.0f;
+	
+	//================================
+	// 루프 사운드 재생/정지 
+	//================================
+public:
+	/** 지정 컴포넌트에 루프 사운드를 attach하여 재생하고, 호출자가 제어할 수 있도록 AudioComponent를 반환 / StopSoundLoop 호출 필요 */
+	UFUNCTION(BlueprintCallable, Category = "Sound")
+	UAudioComponent* PlaySoundLoopAttached(FName SoundID, USceneComponent* AttachToComponent);
+
+	/** PlaySoundLoopAttached로 받은 컴포넌트를 페이드아웃 후 파괴 / PlaySoundLoopAttached 사용시 호출 필요  */
+	UFUNCTION(BlueprintCallable, Category = "Sound")
+	void StopSoundLoop(UAudioComponent* LoopComponent, float FadeOutTime = 0.5f);
 };

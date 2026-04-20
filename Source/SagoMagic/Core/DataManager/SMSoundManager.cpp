@@ -227,3 +227,57 @@ USoundClass* USMSoundManager::GetSoundClassByCategory(ESMSoundCategory Category)
 	default: return SFXSoundClass;
 	}
 }
+
+UAudioComponent* USMSoundManager::PlaySoundLoopAttached(FName SoundID, USceneComponent* AttachToComponent)
+{
+	// 오디오 디바이스 검사 (데디 서버는 디바이스 없음 → nullptr 반환)
+	if (!GEngine || !GEngine->GetMainAudioDevice()) return nullptr;
+
+	// Attach 타겟 유효성 검사
+	if (IsValid(AttachToComponent) == false) return nullptr;
+
+	// DT 조회 및 에셋 유효성 검사
+	FSMSoundData* Data = GetSoundData(SoundID);
+	if (!Data || !Data->SoundAsset) return nullptr;
+
+	// 카테고리에 맞는 SoundClass 적용 (볼륨 일괄 제어용)
+	Data->SoundAsset->SoundClassObject = GetSoundClassByCategory(Data->Category);
+
+	// bAutoDestroy=false → 호출자가 StopSoundLoop로 수명 관리
+	UAudioComponent* LoopComp = UGameplayStatics::SpawnSoundAttached(
+		Data->SoundAsset,
+		AttachToComponent,
+		NAME_None,
+		FVector::ZeroVector,
+		EAttachLocation::KeepRelativeOffset,
+		true,                   
+		Data->VolumeMultiplier,
+		1.f,
+		0.f,
+		nullptr,
+		Data->ConcurrencySettings
+	);
+
+	if (IsValid(LoopComp) == false) return nullptr;
+
+	LoopComp->bAutoDestroy = false;
+	return LoopComp;
+}
+
+void USMSoundManager::StopSoundLoop(UAudioComponent* LoopComponent, float FadeOutTime)
+{
+	// 컴포넌트 유효성 검사
+	if (IsValid(LoopComponent) == false) return;
+
+	// 페이드아웃 + 자동 파괴 (StopBGM과 동일 패턴)
+	if (FadeOutTime > 0.f)
+	{
+		LoopComponent->bAutoDestroy = true;
+		LoopComponent->FadeOut(FadeOutTime, 0.f);
+	}
+	else
+	{
+		LoopComponent->Stop();
+		LoopComponent->DestroyComponent();
+	}
+}

@@ -93,6 +93,14 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> SkillButton3;
 	
+	/** 스킬 4번 선택 버튼  */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> SkillButton4;
+
+	/** 스킬 5번 선택 버튼 */
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> SkillButton5;
+	
 	UFUNCTION()
 	void OnSkillButton0Clicked();
 	UFUNCTION()
@@ -101,6 +109,10 @@ private:
 	void OnSkillButton2Clicked();
 	UFUNCTION()
 	void OnSkillButton3Clicked();
+	UFUNCTION()
+	void OnSkillButton4Clicked();
+	UFUNCTION()
+	void OnSkillButton5Clicked();
 	
 	/** 
 	 * CurrentSkillIndex 확인용 

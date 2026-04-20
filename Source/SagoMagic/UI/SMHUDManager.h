@@ -15,6 +15,7 @@ class USMSkillCooldownWidget;
 class USMBuildModeWidget;
 class USMEditModeWidget;
 class UButton;
+class USMVolumeWidget;
 /**
  * 인게임 HUD 루트 위젯 - 뷰포트에 올라가며 자식 위젯들 소유
  * 플레이어 캐릭터 찾아 ASC 확보 -> 자식 위젯에 넘겨줌
@@ -61,6 +62,8 @@ protected:
 	TObjectPtr<USMEditModeWidget> WBP_EditMode;
 	UPROPERTY(meta = (BindWidgetOptional), BlueprintReadOnly, Category = "HUD")
 	TObjectPtr<UButton> Button_Quit;
+	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="HUD")
+	TObjectPtr<USMVolumeWidget> WBP_Volume;
 	
 private:
 	/** ASC를 안전하게 가져오기 위해 재시도 */

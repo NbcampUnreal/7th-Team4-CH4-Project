@@ -114,11 +114,13 @@ void USMCombatState::Tick(float DeltaTime)
         if (CachedWaveManager)
         {
             CachedWaveManager->SelfKillAllAliveMonsters();
-            //ChangeState(EGameState::Result);
+            if (StateMachine->GetCurrentWaveIndex() >= StateMachine->GetMaxWaveCount())
+            {
+                StateMachine->SetPendingVictory(false);
+                ChangeState(EGameState::Result);
+            }
         }
     }
-    //TODO 은서 : 몬스터가 다 죽었을 때도 체크
-    //TODO 은서 : 베이스 캠프 HP 0일때 체크
 }
 
 void USMCombatState::Exit()

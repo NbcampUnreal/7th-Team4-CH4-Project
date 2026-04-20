@@ -29,7 +29,8 @@
 ASMBaseItemDropActor::ASMBaseItemDropActor()
 	: bInitialized(false)
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = true;
 	bReplicates = true;
 
 	RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
@@ -64,6 +65,18 @@ void ASMBaseItemDropActor::BeginPlay()
 	}
 
 	RefreshInteractionState();
+}
+
+void ASMBaseItemDropActor::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (GetNetMode() == NM_DedicatedServer || StaticMeshComponent == nullptr || HasValidPayload() == false)
+	{
+		return;
+	}
+
+	StaticMeshComponent->AddLocalRotation(FRotator(0.0f, RotationSpeedDegreesPerSecond * DeltaTime, 0.0f));
 }
 
 void ASMBaseItemDropActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

@@ -2,6 +2,7 @@
 #include "UI/SMPlayerStatusWidget.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
+#include "SMVolumeWidget.h"
 #include "TimerManager.h"
 #include "UI/SMGameResultWidget.h"
 #include "UI/SMPlayerDeathWidget.h"
@@ -109,6 +110,10 @@ void USMHUDManager::ShowGameResult(bool bIsVictory, float InReturnDelay)
 	if (Button_Quit)
 	{
 		Button_Quit->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	if (WBP_Volume)
+	{
+		WBP_Volume->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	
 	if (WBP_GameResult)

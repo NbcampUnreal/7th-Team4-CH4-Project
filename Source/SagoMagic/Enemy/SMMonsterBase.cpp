@@ -339,7 +339,10 @@ void ASMMonsterBase::HandleDeath(AController* KillerController)
         }
     }
     // ── 아이템 드롭 (공용 드롭 테이블에서 가중치 기반 1개) ──
-    SpawnDropItem();
+    if (FMath::FRandRange(0.f, 1.f) < DropChance)
+    {
+        SpawnDropItem();
+    }
 
     if (USMWaveManagerSubsystem* WM = USMWaveManagerSubsystem::Get(this))
     {

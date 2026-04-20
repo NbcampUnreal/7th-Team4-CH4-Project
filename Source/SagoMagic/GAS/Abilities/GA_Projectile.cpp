@@ -1,6 +1,7 @@
 #include "GA_Projectile.h"
 
 #include "AbilitySystemComponent.h"
+#include "SagoMagic.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Core/DataManager/SMSoundManager.h"
 #include "GameplayTags/Character/SMSkillTag.h"
@@ -41,27 +42,29 @@ void UGA_Projectile::OnSkillEffect(
 	if (!SpecHandle.IsValid()) return;
 
 	// 스태프끝에서 발사
-	FName MuzzleSocketName = FName("Staff_Tip");
+	const FName MuzzleSocketName = FName("Staff_Tip");
 	// 소캣 없으면 캐릭터 앞 30cm
 	FVector SpawnLocation = CurrentAimOrigin + CurrentAimDirection * 50.f;
+	
+	
+	TArray<UStaticMeshComponent*> StaticMeshes;
+	Avatar->GetComponents<UStaticMeshComponent>(StaticMeshes);
 
-	USkeletalMeshComponent* CharacterMesh = Avatar->GetComponentByClass<USkeletalMeshComponent>();
-	if (CharacterMesh)
+	for (UStaticMeshComponent* Mesh : StaticMeshes)
 	{
-		// 애니메이션 포즈에 맞춰 서버 뼈대 좌표 갱신
-		CharacterMesh->RefreshBoneTransforms();
-		if (CharacterMesh->DoesSocketExist(MuzzleSocketName))
+		if (Mesh && Mesh->DoesSocketExist(MuzzleSocketName))
 		{
-			SpawnLocation = CharacterMesh->GetSocketLocation(MuzzleSocketName);
+			SpawnLocation = Mesh->GetSocketLocation(MuzzleSocketName);
+			break;
 		}
 	}
-
+	
 	FVector FinalDirection = AimDirection;
 	float DistanceToTarget = FVector::Dist2D(Avatar->GetActorLocation(), TargetLocation);
 
 	if (DistanceToTarget > 20.0f)
 	{
-		FinalDirection = (TargetLocation - SpawnLocation).GetSafeNormal2D();
+		FinalDirection = (TargetLocation - Avatar->GetActorLocation()).GetSafeNormal2D();
 	}
 	
 	bEnableHoming = SkillUpgradeTags.HasTag(SMSkillTag::Upgrade_Projectile_Homing);

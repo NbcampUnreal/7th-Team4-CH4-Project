@@ -38,6 +38,9 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UVerticalBox> PlayerSlotBox;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> Button_Quit;
 
 	UFUNCTION()
 	void OnReadyButtonClicked();
@@ -47,6 +50,9 @@ private:
 
 	UFUNCTION()
 	void OnInviteButtonClicked();
+	
+	UFUNCTION()
+	void OnQuitButtonClicked();
 
 	// GameState 슬롯 변경 시 호출
 	UFUNCTION()

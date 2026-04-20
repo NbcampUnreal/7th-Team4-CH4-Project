@@ -11,6 +11,7 @@
 #include "Core/SMPlayerState.h"
 #include "Core/SessionSubsystem/SMLobbyGameState.h"
 #include "Interfaces/OnlineSessionInterface.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 void USMLobbyWidget::LobbySetup()
 {
@@ -45,6 +46,10 @@ bool USMLobbyWidget::Initialize()
 	if (IsValid(CustomizeButton))
 	{
 		CustomizeButton->OnClicked.AddDynamic(this, &ThisClass::OnCustomizeButtonClicked);
+	}
+	if (IsValid(Button_Quit) == true)
+	{
+		Button_Quit->OnClicked.AddDynamic(this, &ThisClass::OnQuitButtonClicked);
 	}
 
 	return true;
@@ -151,6 +156,15 @@ void USMLobbyWidget::OnCustomizeButtonClicked()
 	if (IsValid(PC) == false) return;
 
 	PC->OpenCustomizeWidget();
+}
+
+void USMLobbyWidget::OnQuitButtonClicked()
+{
+	ASMPlayerController* PC = GetSMPlayerController();
+	if (IsValid(PC) == true)
+	{
+		UKismetSystemLibrary::QuitGame(this, PC, EQuitPreference::Quit, false);
+	}
 }
 
 ASMPlayerController* USMLobbyWidget::GetSMPlayerController() const

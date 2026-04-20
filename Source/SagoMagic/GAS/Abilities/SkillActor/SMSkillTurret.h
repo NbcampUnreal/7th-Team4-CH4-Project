@@ -24,7 +24,7 @@ public:
 		FGameplayEffectSpecHandle InSpecHandle,
 		FGameplayEffectSpecHandle InSplashSpecHandle,
 		AActor* InInstigatorActor,
-		float Induration,
+		float InDuration,
 		float InRangeCm,
 		float InFireInterval,
 		int32 InSkillLevel);

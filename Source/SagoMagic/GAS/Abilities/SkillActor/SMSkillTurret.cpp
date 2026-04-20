@@ -24,7 +24,7 @@ void ASMSkillTurret::InitTurret(
 	FGameplayEffectSpecHandle InSpecHandle,
 	FGameplayEffectSpecHandle InSplashSpecHandle,
 	AActor* InInstigatorActor,
-	float Induration,
+	float InDuration,
 	float InRangeCm,
 	float InFireInterval,
 	int32 InSkillLevel)
@@ -43,7 +43,7 @@ void ASMSkillTurret::InitTurret(
 	
 	// 터렛 지속시간 타이머
 	World->GetTimerManager().SetTimer(
-		DurationEndHandle, this, &ThisClass::OnDurationExpired, Induration, false);
+		DurationEndHandle, this, &ThisClass::OnDurationExpired, InDuration, false);
 	
 	// 터렛 발사 간격 타이머
 	World->GetTimerManager().SetTimer(

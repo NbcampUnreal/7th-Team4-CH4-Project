@@ -126,6 +126,10 @@ void USMAsyncDataManager::LoadAssetsByIDWithBundles(const TArray<FPrimaryAssetId
 					LoadedAssets.Add(ID, Asset);
 					UE_LOG(LogTemp, Log, TEXT("[AsyncDataManager] 번들 로드 완료: %s"), *ID.ToString());
 				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("[AsyncDataManager] 번들 로드 실패 %s"), *ID.ToString());
+				}
 			}
 
 			if (OnComplete.IsBound())

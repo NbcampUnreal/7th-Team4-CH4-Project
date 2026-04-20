@@ -8,6 +8,7 @@
 #include "Data/SMMonsterDataAsset.h"
 #include "Data/SMMonsterData.h"
 #include "Data/SMWaveData.h"
+#include "Enemy/SMMonsterAIController.h"
 #include "Engine/AssetManager.h"
 
 bool USMWaveManagerSubsystem::ShouldCreateSubsystem(UObject* Outer) const
@@ -210,6 +211,9 @@ void USMWaveManagerSubsystem::TickActivation()
             Cast<USMMonsterDataAsset>(AM->GetLoadAsset(*AssetIdPtr));
         if (DataAsset)
         {
+            if (!DataAsset->AIControllerClass.IsNull())
+                Monster->AIControllerClass = DataAsset->AIControllerClass.LoadSynchronous();
+            
             TSubclassOf<UGameplayEffect> EffectClass = DataAsset->DamageEffect.LoadSynchronous();
             // TODO 은서 : EffectClass를 Monster의 GA에 주입
             // if (EffectClass && Monster->MonsterAbilitySystemComponent)
@@ -224,7 +228,7 @@ void USMWaveManagerSubsystem::TickActivation()
             // }
         }
     }
-    
+    Monster->SpawnDefaultController();
     //랜덤 Spawner 위치로 이동
     if (ASMMonsterSpawner* Spawner = GetRandomSpawner())
     {

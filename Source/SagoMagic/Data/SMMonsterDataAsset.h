@@ -6,6 +6,7 @@
 #include "GameplayEffect.h"
 #include "SMMonsterDataAsset.generated.h"
 
+class ASMMonsterAIController;
 class ASMMonsterBase;
 
 /**
@@ -49,6 +50,9 @@ public:
 		Meta = (AssetBundles = "Server"))
 	TSoftObjectPtr<UBehaviorTree> BehaviorTree;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|AI",
+		Meta = (AssetBundles = "Server"))
+	TSoftClassPtr<ASMMonsterAIController> AIControllerClass;
 	// GAS
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Monster|GAS")
 	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilities;

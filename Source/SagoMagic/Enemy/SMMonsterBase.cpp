@@ -28,7 +28,7 @@
 ASMMonsterBase::ASMMonsterBase()
 {
     PrimaryActorTick.bCanEverTick = false;
-    AIControllerClass = ASMMonsterAIController::StaticClass();
+    //AIControllerClass = ASMMonsterAIController::StaticClass();
     
     //PreSpawn 시 AI가 즉시 시작되는 것을 방지
     //TickActivation에서 활성화할 때 SpawnDefaultController()로 수동 시작
@@ -251,6 +251,7 @@ void ASMMonsterBase::PossessedBy(AController* NewController)
             if (DataAsset)
             {
                 ApplyLogicData(DataAsset);
+                ApplyVisuals(DataAsset);
             }
         }
     }

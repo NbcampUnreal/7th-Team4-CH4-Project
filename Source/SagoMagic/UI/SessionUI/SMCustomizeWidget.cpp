@@ -54,7 +54,7 @@ bool USMCustomizeWidget::Initialize()
 	if (Super::Initialize() == false) return false;
 	
 	WeaponButtons = { WeaponButton0, WeaponButton1, WeaponButton2 };
-	SkillButtons = { SkillButton0, SkillButton1, SkillButton2, SkillButton3 };
+	SkillButtons = { SkillButton0, SkillButton1, SkillButton2, SkillButton3, SkillButton4, SkillButton5 };
 	
 	if (IsValid(WeaponButton0) == true)
 	{
@@ -84,6 +84,14 @@ bool USMCustomizeWidget::Initialize()
 	if (IsValid(SkillButton3) == true)
 	{
 		SkillButton3->OnClicked.AddDynamic(this, &USMCustomizeWidget::OnSkillButton3Clicked);
+	}
+	if (IsValid(SkillButton4) == true)
+	{
+		SkillButton4->OnClicked.AddDynamic(this, &USMCustomizeWidget::OnSkillButton4Clicked);
+	}
+	if (IsValid(SkillButton5) == true)
+	{
+		SkillButton5->OnClicked.AddDynamic(this, &USMCustomizeWidget::OnSkillButton5Clicked);
 	}
 
 	if (IsValid(MaterialPrevButton) == true)
@@ -173,9 +181,13 @@ void USMCustomizeWidget::OnSkillButton2Clicked() { SelectSkill(2); }
 
 void USMCustomizeWidget::OnSkillButton3Clicked() { SelectSkill(3); }
 
+void USMCustomizeWidget::OnSkillButton4Clicked() { SelectSkill(4); }
+
+void USMCustomizeWidget::OnSkillButton5Clicked() { SelectSkill(5); }
+
 void USMCustomizeWidget::SelectSkill(int32 Index)
 {
-	if (Index < 0 || Index > 3) return;
+	if (Index < 0 || Index > 6) return;
 	CurrentSkillIndex = Index;
 	
 	UpdateSkillButtonHighlight();

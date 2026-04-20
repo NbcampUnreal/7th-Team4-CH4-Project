@@ -113,10 +113,10 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
         }
 
         // ★ BaseCamp HP 확인 로그
-        UE_LOG(LogTemp, Warning, TEXT("[Attack] Target: %s, TargetASC: %s, DamageEffectClass: %s"),
-            *HitResult.GetActor()->GetName(),
-            TargetASC ? TEXT("Valid") : TEXT("NULL"),
-            DamageEffectClass ? TEXT("Valid") : TEXT("NULL"));
+        //UE_LOG(LogTemp, Warning, TEXT("[Attack] Target: %s, TargetASC: %s, DamageEffectClass: %s"),
+        //    *HitResult.GetActor()->GetName(),
+        //    TargetASC ? TEXT("Valid") : TEXT("NULL"),
+        //    DamageEffectClass ? TEXT("Valid") : TEXT("NULL"));
 
         if (TargetASC && SourceASC && DamageEffectClass)
         {
@@ -131,12 +131,12 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
                 if (BuildingAttr)
                 {
                     HealthBefore = BuildingAttr->GetHealth();
-                    UE_LOG(LogTemp, Warning, TEXT("[Attack] Building HP (적용 전): %.1f / %.1f"),
-                        BuildingAttr->GetHealth(), BuildingAttr->GetMaxHealth());
+                    //UE_LOG(LogTemp, Warning, TEXT("[Attack] Building HP (적용 전): %.1f / %.1f"),
+                    //    BuildingAttr->GetHealth(), BuildingAttr->GetMaxHealth());
                 }
                 else
                 {
-                    UE_LOG(LogTemp, Warning, TEXT("[Attack] Building에 USMBuildingAttributeSet 없음!"));
+                    //UE_LOG(LogTemp, Warning, TEXT("[Attack] Building에 USMBuildingAttributeSet 없음!"));
                 }
             }
             // ── Building 대상일 때만 HP 추적 ──//
@@ -162,8 +162,8 @@ void UGA_MonsterAttackBase::OnHitEventReceived(FGameplayEventData Payload)
                 // ── Building일 때만 적용 후 HP 확인 ──//
                 if (bIsBuilding && BuildingAttr)
                 {
-                    UE_LOG(LogTemp, Warning, TEXT("[Attack] Building HP (적용 후): %.1f (변화량: %.1f)"),
-                        BuildingAttr->GetHealth(), BuildingAttr->GetHealth() - HealthBefore);
+                    //UE_LOG(LogTemp, Warning, TEXT("[Attack] Building HP (적용 후): %.1f (변화량: %.1f)"),
+                    //    BuildingAttr->GetHealth(), BuildingAttr->GetHealth() - HealthBefore);
                 }
                 // ── Building일 때만 적용 후 HP 확인 ──//
                 

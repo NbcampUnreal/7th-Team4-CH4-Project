@@ -83,6 +83,10 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "SelfKill")
     float SelfKillDamage = 5.0f;
 
+    /** 아이템 드롭 확률 0.01이 1% */
+    UPROPERTY(EditDefaultsOnly, Category = "Drop")
+    float DropChance = 0.2f;
+
     // ── 사운드 ID (DT_Sound DataTable의 SoundName 컬럼과 일치) ──
     /** 공격 시작 사운드 ID */
     UPROPERTY(EditDefaultsOnly, Category = "Sound")

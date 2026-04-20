@@ -63,8 +63,8 @@ void USMMonsterAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModC
                 }
             }
 
-            UE_LOG(LogTemp, Warning, TEXT("[Monster] 처치한 플레이어: %s"),
-                KillerController ? *KillerController->GetName() : TEXT("Unknown"));
+            //UE_LOG(LogTemp, Warning, TEXT("[Monster] 처치한 플레이어: %s"),
+            //    KillerController ? *KillerController->GetName() : TEXT("Unknown"));
 
             OnMonsterDied.Broadcast(KillerController);
         }

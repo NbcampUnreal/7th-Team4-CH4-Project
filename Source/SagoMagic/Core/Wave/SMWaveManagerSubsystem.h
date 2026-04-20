@@ -44,6 +44,9 @@ public:
 
     /** Wave 종료 시 남아있는 모든 몬스터를 자폭시킴 (BaseCamp 데미지 + 제거) */
     void SelfKillAllAliveMonsters();
+    
+    void StopAllTimers();
+    void CleanUp();
 private:
     /** SetTimer로 PreLoading을 담당하는 함수 */
     void TickPreSpawning();

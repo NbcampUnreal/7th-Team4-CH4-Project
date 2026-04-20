@@ -1,6 +1,7 @@
 #include "SMWaveManagerSubsystem.h"
 
 #include "EngineUtils.h"
+#include "SagoMagic.h"
 #include "Core/SMGameMode.h"
 #include "Core/SMGameState.h"
 #include "Core/DataManager/SMAsyncDataManager.h"
@@ -340,6 +341,30 @@ void USMWaveManagerSubsystem::SelfKillAllAliveMonsters()
             Monster->SelfKill();
         }
     }
+}
+
+void USMWaveManagerSubsystem::StopAllTimers()
+{
+    GetWorld()->GetTimerManager().ClearTimer(PreSpawnTimerHandle);
+    GetWorld()->GetTimerManager().ClearTimer(ActivateTimerHandle);
+    GetWorld()->GetTimerManager().ClearTimer(DestroyTimerHandle);
+    SM_LOG(this, LogSM, Log, TEXT("모든 플레이어 퇴장 - 타이머 정지"));
+}
+
+void USMWaveManagerSubsystem::CleanUp()
+{
+    for (ASMMonsterBase* Monster : PreSpawnedActors)
+        if (IsValid(Monster)) Monster->Destroy();
+    for (ASMMonsterBase* Monster : AliveMonsters)
+        if (IsValid(Monster)) Monster->Destroy();
+    for (ASMMonsterBase* Monster : PendingDestroyActors)
+        if (IsValid(Monster)) Monster->Destroy();
+    
+    SpawnQueue.Empty();
+    PreSpawnedActors.Empty();
+    AliveMonsters.Empty();
+    Spawners.Empty();
+    PendingDestroyActors.Empty();
 }
 
 void USMWaveManagerSubsystem::CollectSpawners()

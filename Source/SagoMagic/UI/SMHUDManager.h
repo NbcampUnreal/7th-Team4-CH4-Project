@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "SMGameplayMessages.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
+#include "Inventory/Core/SMInventoryMessageTypes.h"
 #include "SMHUDManager.generated.h"
 
 
@@ -72,7 +74,16 @@ private:
 	/** 버튼 클릭 시 게임 종료 */
 	UFUNCTION()
 	void OnQuitButtonClicked();
-	
+
 	/** 재시도 타이머를 관리할 타이머 핸들 */
 	FTimerHandle ASC_InitTimerHandle;
+	
+private:
+	void RefreshCooldownWidget(UAbilitySystemComponent* InPlayerASC);
+	
+	void OnQuickSlotUpdated(FGameplayTag InChannel, const FSMQuickSlotUpdatedMessage& InMessage);
+	FGameplayMessageListenerHandle QuickSlotListenerHandle;
+    
+	UPROPERTY()
+	TObjectPtr<UAbilitySystemComponent> CachedASC;
 };

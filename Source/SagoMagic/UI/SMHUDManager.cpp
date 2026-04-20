@@ -14,6 +14,9 @@
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "Components/Button.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "GameplayTags/Message/SMMessageTag.h"
+#include "Inventory/Components/SMInventoryComponent.h"
+#include "Inventory/Core/SMInventoryMessageTypes.h"
 
 void USMHUDManager::NativeConstruct()
 {
@@ -23,12 +26,23 @@ void USMHUDManager::NativeConstruct()
 	{
 		Button_Quit->OnClicked.AddDynamic(this, &USMHUDManager::OnQuitButtonClicked);
 	}
+	
+	// 퀵슬롯 변경 구독
+	UGameplayMessageSubsystem& MsgSys = UGameplayMessageSubsystem::Get(this);
+	QuickSlotListenerHandle = MsgSys.RegisterListener<FSMQuickSlotUpdatedMessage>(
+		SMMessageTag::Inventory_QuickSlotUpdated,
+		this,
+		&USMHUDManager::OnQuickSlotUpdated);
 
 	TryInitASC();
 }
 
 void USMHUDManager::NativeDestruct()
 {
+	if (QuickSlotListenerHandle.IsValid())
+	{
+		QuickSlotListenerHandle.Unregister();
+	}
 	if (GetWorld())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(ASC_InitTimerHandle);
@@ -70,17 +84,14 @@ void USMHUDManager::TryInitASC()
 void USMHUDManager::InitializeHUD(UAbilitySystemComponent* InPlayerASC)
 {
 	if (!InPlayerASC) return;
-	
+	CachedASC = InPlayerASC; // ASC 캐싱
+    
 	if (WBP_PlayerStatus) 
 	{
 		WBP_PlayerStatus->InitializeStatus(InPlayerASC);
 	}
     
-	// 스킬 쿨다운 위젯 초기화
-	if (WBP_SkillCooldown)
-	{
-		WBP_SkillCooldown->InitializeWithASC(InPlayerASC, SMSkillTag::Cooldown_Skill_Projectile); 
-	}
+	RefreshCooldownWidget(InPlayerASC);
 }
 
 void USMHUDManager::RefreshHUD(UAbilitySystemComponent* InPlayerASC)
@@ -144,5 +155,51 @@ void USMHUDManager::OnQuitButtonClicked()
 	if (APlayerController* PC = GetOwningPlayer())
 	{
 		UKismetSystemLibrary::QuitGame(this, PC, EQuitPreference::Quit, false);
+	}
+}
+
+void USMHUDManager::RefreshCooldownWidget(UAbilitySystemComponent* InPlayerASC)
+{
+	if (!WBP_SkillCooldown || !InPlayerASC) return;
+
+	FGameplayTag FoundCooldownTag;
+
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (APlayerState* PS = PC->GetPlayerState<APlayerState>())
+		{
+			if (USMInventoryComponent* Inv = PS->FindComponentByClass<USMInventoryComponent>())
+			{
+				FGameplayTag ActiveSkillTag = Inv->GetActiveSkillTag();
+				if (ActiveSkillTag.IsValid())
+				{
+					FString TagString = ActiveSkillTag.ToString();
+					TagString = TagString.Replace(TEXT("Ability.Skill."), TEXT("Cooldown.Skill."));
+					FoundCooldownTag = FGameplayTag::RequestGameplayTag(FName(*TagString), false);
+				}
+			}
+		}
+	}
+
+	if (FoundCooldownTag.IsValid())
+	{
+		WBP_SkillCooldown->InitializeWithASC(InPlayerASC, FoundCooldownTag);
+	}
+}
+
+void USMHUDManager::OnQuickSlotUpdated(FGameplayTag InChannel, const FSMQuickSlotUpdatedMessage& InMessage)
+{
+	// 내 플레이어 것인지 확인
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (APlayerState* PS = PC->GetPlayerState<APlayerState>())
+		{
+			if (InMessage.GetOwningPlayerState() != PS) return;
+		}
+	}
+
+	if (CachedASC)
+	{
+		RefreshCooldownWidget(CachedASC);
 	}
 }

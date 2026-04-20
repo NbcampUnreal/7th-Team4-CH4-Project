@@ -450,8 +450,9 @@ bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid&
 	const ESMGridRotation PreviousRotation = bIsNormalItem
 		                                         ? EditableItem->Rotation
 		                                         : EditableSkill->BaseItem.Rotation;
+	const bool bIsMovingWithinSameContainer = PreviousContainerId == InTargetContainerId;
 
-	if (PreviousContainerId == InTargetContainerId &&
+	if (bIsMovingWithinSameContainer &&
 		PreviousGridX == InGridX &&
 		PreviousGridY == InGridY &&
 		PreviousRotation == InRotation)
@@ -501,88 +502,91 @@ bool USMInventoryComponent::MoveItem(const FGuid& InItemInstanceId, const FGuid&
 			return false;
 		}
 
-		const USMItemDefinition* TargetSkillDefinition = ResolveItemDefinition(TargetOwningSkill->BaseItem);
-		if (TargetSkillDefinition == nullptr)
+		if (bIsMovingWithinSameContainer == false)
 		{
-			return false;
-		}
-
-		const USMInternalInventoryFragment* TargetInternalInventoryFragment =
-			TargetSkillDefinition->FindFragmentByClass<USMInternalInventoryFragment>();
-		if (TargetInternalInventoryFragment == nullptr)
-		{
-			return false;
-		}
-
-		if (MovingItemType == ESMItemType::Gem)
-		{
-			if (bIsNormalItem == false)
+			const USMItemDefinition* TargetSkillDefinition = ResolveItemDefinition(TargetOwningSkill->BaseItem);
+			if (TargetSkillDefinition == nullptr)
 			{
 				return false;
 			}
 
-			const USMItemDefinition* GemDefinition = ResolveItemDefinition(*EditableItem);
-			if (GemDefinition == nullptr)
+			const USMInternalInventoryFragment* TargetInternalInventoryFragment =
+				TargetSkillDefinition->FindFragmentByClass<USMInternalInventoryFragment>();
+			if (TargetInternalInventoryFragment == nullptr)
 			{
 				return false;
 			}
 
-			const USMGemModifierFragment* GemModifierFragment =
-				GemDefinition->FindFragmentByClass<USMGemModifierFragment>();
-			if (GemModifierFragment == nullptr)
+			if (MovingItemType == ESMItemType::Gem)
 			{
-				return false;
-			}
+				if (bIsNormalItem == false)
+				{
+					return false;
+				}
 
-			if (TargetInternalInventoryFragment->IsGemAllowed() == false)
-			{
-				return false;
-			}
+				const USMItemDefinition* GemDefinition = ResolveItemDefinition(*EditableItem);
+				if (GemDefinition == nullptr)
+				{
+					return false;
+				}
 
-			if (CanApplyGemToSkillByTags(GemModifierFragment, TargetSkillDefinition) == false)
-			{
-				return false;
-			}
-		}
-		else if (MovingItemType == ESMItemType::Skill)
-		{
-			if (bIsSkillItem == false)
-			{
-				return false;
-			}
+				const USMGemModifierFragment* GemModifierFragment =
+					GemDefinition->FindFragmentByClass<USMGemModifierFragment>();
+				if (GemModifierFragment == nullptr)
+				{
+					return false;
+				}
 
-			if (TargetInternalInventoryFragment->IsSameNamedEmptySkillAllowed() == false)
-			{
-				return false;
-			}
+				if (TargetInternalInventoryFragment->IsGemAllowed() == false)
+				{
+					return false;
+				}
 
-			if (IsSameNamedSkill(InItemInstanceId, TargetOwningSkill->BaseItem.InstanceId) == false)
-			{
-				return false;
+				if (CanApplyGemToSkillByTags(GemModifierFragment, TargetSkillDefinition) == false)
+				{
+					return false;
+				}
 			}
+			else if (MovingItemType == ESMItemType::Skill)
+			{
+				if (bIsSkillItem == false)
+				{
+					return false;
+				}
 
-			if (IsSkillActuallyEmpty(InItemInstanceId) == false)
-			{
-				return false;
-			}
+				if (TargetInternalInventoryFragment->IsSameNamedEmptySkillAllowed() == false)
+				{
+					return false;
+				}
 
-			const USMSkillProgressionFragment* SkillProgressionFragment =
-				TargetSkillDefinition->FindFragmentByClass<USMSkillProgressionFragment>();
-			if (SkillProgressionFragment == nullptr)
-			{
-				return false;
-			}
+				if (IsSameNamedSkill(InItemInstanceId, TargetOwningSkill->BaseItem.InstanceId) == false)
+				{
+					return false;
+				}
 
-			const int32 MaxLevel = FMath::Max(1, SkillProgressionFragment->GetMaxLevel());
-			const int32 CurrentLevel = FMath::Max(1, TargetOwningSkill->GetCachedSummary().GetCurrentLevel());
-			if (CurrentLevel >= MaxLevel)
+				if (IsSkillActuallyEmpty(InItemInstanceId) == false)
+				{
+					return false;
+				}
+
+				const USMSkillProgressionFragment* SkillProgressionFragment =
+					TargetSkillDefinition->FindFragmentByClass<USMSkillProgressionFragment>();
+				if (SkillProgressionFragment == nullptr)
+				{
+					return false;
+				}
+
+				const int32 MaxLevel = FMath::Max(1, SkillProgressionFragment->GetMaxLevel());
+				const int32 CurrentLevel = FMath::Max(1, TargetOwningSkill->GetCachedSummary().GetCurrentLevel());
+				if (CurrentLevel >= MaxLevel)
+				{
+					return false;
+				}
+			}
+			else
 			{
 				return false;
 			}
-		}
-		else
-		{
-			return false;
 		}
 	}
 

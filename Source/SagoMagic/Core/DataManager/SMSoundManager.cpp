@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "SMSoundManager.h"
 
 #include "SagoMagic.h"
@@ -123,6 +120,24 @@ void USMSoundManager::PlayBGM(FName SoundID, float FadeInTime, float FadeOutTime
 	
 	CurrentBGMComp = NewComp;
 	CurrentBGMId = SoundID;
+}
+
+void USMSoundManager::PlaySoundUI(FName SoundID)
+{
+	if (!GEngine || !GEngine->GetMainAudioDevice()) return;
+	
+	FSMSoundData* Data = GetSoundData(SoundID);
+	if (!Data || !Data->SoundAsset) return;
+	
+	Data->SoundAsset->SoundClassObject = GetSoundClassByCategory(Data->Category);
+	UGameplayStatics::SpawnSound2D(
+	GetWorld(),
+	Data->SoundAsset,
+	Data->VolumeMultiplier,
+	1.f,
+	0.f,
+	Data->ConcurrencySettings
+	);
 }
 
 void USMSoundManager::StopBGM(float FadeOutTime)

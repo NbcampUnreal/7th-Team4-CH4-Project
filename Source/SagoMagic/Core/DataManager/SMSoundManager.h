@@ -37,7 +37,9 @@ enum class ESMSoundCategory : uint8;
  *
  *   // SFX - 액터에 붙어서 따라다니는 사운드
  *   SM->PlaySoundAttached(TEXT("MonsterAttack"), GetMesh());
- *
+ *	
+ *	// UI - 2D로 나오는 사운드
+ *	SM->PlaySoundUI(TEXT("UI_Click"));
  * ──볼륨 저장/로드 ────────────────────────────────────────────
  *
  *   SetMasterVolume / SetBGMVolume / SetSFXVolume 호출 시
@@ -63,6 +65,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void PlayBGM(FName SoundID, float FadeInTime = 0.5f, float FadeOutTime = 0.5f, bool bRestartIfSame = false);
+	
+	UFUNCTION(BlueprintCallable)
+	void PlaySoundUI(FName SoundID);
 	
 	UFUNCTION(BlueprintCallable)
 	void StopBGM(float FadeOutTime = 0.5f);

@@ -4,12 +4,11 @@
 #include "GCN_LineTraceChain.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
-#include "AbilitySystemComponent.h"
 #include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
+#include "Components/AudioComponent.h"
+#include "Core/DataManager/SMSoundManager.h"
 #include "GameFramework/Character.h"
-#include "GameplayTags/Enemy/SMEnemyTag.h"
-#include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "GAS/SMGameplayAbilityUtils.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -41,6 +40,14 @@ bool AGCN_LineTraceChain::OnRemove_Implementation(AActor* MyTarget, const FGamep
 {
 	SetActorTickEnabled(false);
 
+	// 루프 사운드 정지 (SoundManager가 FadeOut + 파괴 처리)
+	USMSoundManager* SM = USMSoundManager::Get(this);
+	if (IsValid(SM) == true)
+	{
+		SM->StopSoundLoop(ChainAudioComponent, SoundFadeOutDuration);
+	}
+	ChainAudioComponent = nullptr;
+	
 	for (UNiagaraComponent* Comp : ChainBeamComponents)
 	{
 		if (IsValid(Comp) == false) continue;
@@ -70,7 +77,7 @@ void AGCN_LineTraceChain::InitializeChain(AActor* MyTarget, const FGameplayCuePa
 
 	if (IsValid(ChainBeamNiagaraSystem) == false)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("ChainBeamNiagaraSystem is Not valid"))
+		UE_LOG(LogTemp, Warning, TEXT("ChainBeamNiagaraSystem is Not valid"))
 		return;
 	}
 	// MaxChainCount개의 컴포넌트 생성 (구간 수 = 체인 횟수)
@@ -81,9 +88,18 @@ void AGCN_LineTraceChain::InitializeChain(AActor* MyTarget, const FGameplayCuePa
 		Comp->SetAsset(ChainBeamNiagaraSystem);
 		Comp->SetAutoActivate(false);
 		Comp->AttachToComponent(GetRootComponent(),
-								FAttachmentTransformRules::KeepWorldTransform);
+		                        FAttachmentTransformRules::KeepWorldTransform);
 		Comp->RegisterComponent();
 		ChainBeamComponents.Add(Comp);
+	}
+
+	if (IsValid(ChainAudioComponent) == false && ChainBeamComponents.Num() > 0)
+	{
+		USMSoundManager* SM = USMSoundManager::Get(this);
+		if (IsValid(SM) == true)
+		{
+			ChainAudioComponent = SM->PlaySoundLoopAttached(TEXT("ChainBeamAttack"), ChainBeamComponents[0]);
+		}
 	}
 
 	SetActorTickEnabled(true);
@@ -92,39 +108,39 @@ void AGCN_LineTraceChain::InitializeChain(AActor* MyTarget, const FGameplayCuePa
 void AGCN_LineTraceChain::UpdateChain()
 {
 	if (OwnerActor.IsValid() == false) return;
-	
+
 	ACharacter* Character = Cast<ACharacter>(OwnerActor.Get());
 	if (Character == nullptr) return;
-	
+
 	//시전자 소켓 위치 및 조준 방향
 	FVector Origin = GetAttachSocketLocation(Character);
-	
+
 	FVector AimDirection = Character->GetBaseAimRotation().Vector();
-	
+
 	AController* Controller = Character->GetController();
 	if (IsValid(Controller) == true)
 	{
 		//스킬 사용플레이어인 경우 Controller 방향으로
 		AimDirection = Controller->GetControlRotation().Vector();
 	}
-	
+
 	//LineTrace로 첫 번째 적 탐색
-	const FVector TraceEnd = Origin + AimDirection*BeamRange;
-	
+	const FVector TraceEnd = Origin + AimDirection * BeamRange;
+
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(OwnerActor.Get());
-	
+
 	TArray<FHitResult> HitResults;
-	GetWorld()->LineTraceMultiByChannel(HitResults,Origin,TraceEnd,ECC_Pawn,Params);
-	
+	GetWorld()->LineTraceMultiByChannel(HitResults, Origin, TraceEnd, ECC_Pawn, Params);
+
 	//체인 포인트 배열 구성
 	TArray<FVector> ChainPoints;
 	TArray<AActor*> ChainedActors;
 	ChainedActors.Add(OwnerActor.Get()); // 시전자 탐색 제외
-	
+
 	//첫 번째 적 탐색
 	AActor* FirstEnemy = nullptr;
-	for (const auto& Hit: HitResults)
+	for (const auto& Hit : HitResults)
 	{
 		AActor* HitActor = Hit.GetActor();
 		if (IsValid(HitActor) == false) continue;
@@ -133,19 +149,19 @@ void AGCN_LineTraceChain::UpdateChain()
 		FirstEnemy = HitActor;
 		break;
 	}
-	
+
 	ChainPoints.Add(Origin);
-	
+
 	if (IsValid(FirstEnemy) == true)
 	{
 		ChainPoints.Add(FirstEnemy->GetActorLocation());
 		ChainedActors.Add(FirstEnemy);
-		
+
 		for (int32 i = 1; i < MaxChainCount; i++)
 		{
 			AActor* NextEnemy = nullptr;
-			if (FindNearestEnemy(ChainPoints.Last(),ChainedActors,NextEnemy) == false) break;
-			
+			if (FindNearestEnemy(ChainPoints.Last(), ChainedActors, NextEnemy) == false) break;
+
 			ChainPoints.Add(NextEnemy->GetActorLocation());
 			ChainedActors.Add(NextEnemy);
 		}
@@ -155,25 +171,25 @@ void AGCN_LineTraceChain::UpdateChain()
 		//첫 적도 없으면 사거리 끝까지 빔 1개만
 		ChainPoints.Add(TraceEnd);
 	}
-	
+
 	// 구간 수 = ChainPoints.Num() -1
 	const int32 SegmentCount = ChainPoints.Num() - 1;
-	
+
 	//각 컴포넌트 위치 및 Beam End 갱신
 	for (int32 i = 0; i < ChainBeamComponents.Num(); i++)
 	{
 		UNiagaraComponent* Comp = ChainBeamComponents[i];
 		if (IsValid(Comp) == false) continue;
-		
-		if ( i < SegmentCount)
+
+		if (i < SegmentCount)
 		{
 			if (Comp->IsActive() == false)
 			{
 				Comp->Activate(true);
 			}
 			Comp->SetWorldLocation(ChainPoints[i]);
-			
-			Comp->SetVariableVec3(TEXT("BeamEnd"), ChainPoints[i+1]);
+
+			Comp->SetVariableVec3(TEXT("BeamEnd"), ChainPoints[i + 1]);
 		}
 		else
 		{
@@ -184,7 +200,7 @@ void AGCN_LineTraceChain::UpdateChain()
 }
 
 bool AGCN_LineTraceChain::FindNearestEnemy(const FVector& Origin, const TArray<AActor*>& ExcludeActors,
-	AActor*& OutEnemy) const
+                                           AActor*& OutEnemy) const
 {
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
@@ -195,8 +211,8 @@ bool AGCN_LineTraceChain::FindNearestEnemy(const FVector& Origin, const TArray<A
 		Origin,
 		ChainSearchRadius,
 		ObjectTypes,
-		nullptr,        // 필터 클래스 없음, HasAnyTeamTag로 아군 제외
-		ExcludeActors,  // 시전자 + 이미 체인된 적 자동 제외
+		nullptr, // 필터 클래스 없음, HasAnyTeamTag로 아군 제외
+		ExcludeActors, // 시전자 + 이미 체인된 적 자동 제외
 		OverlapActors
 	);
 
@@ -237,5 +253,3 @@ FVector AGCN_LineTraceChain::GetAttachSocketLocation(ACharacter* Character) cons
 	// 못 찾으면 캐릭터 루트 위치 반환
 	return Character->GetActorLocation();
 }
-
-

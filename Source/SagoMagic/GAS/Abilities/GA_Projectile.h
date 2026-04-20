@@ -25,10 +25,7 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Skill")
 	float SpreadAngle = 15.f;
-
-	/** 발사(시전) 사운드 - BP에서 지정 */
-	UPROPERTY(EditDefaultsOnly, Category = "Sound")
-	TObjectPtr<USoundBase> FireSound;
+	
 
 	int32 ProjectileCount = 1;
 

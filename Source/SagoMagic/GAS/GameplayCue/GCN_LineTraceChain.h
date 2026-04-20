@@ -8,6 +8,7 @@
 
 class UNiagaraComponent;
 class UNiagaraSystem;
+class UAudioComponent;
 
 UCLASS()
 class SAGOMAGIC_API AGCN_LineTraceChain : public AGameplayCueNotify_Actor
@@ -59,4 +60,16 @@ private:
 						  AActor*& OutEnemy) const;
 	
 	FVector GetAttachSocketLocation(ACharacter* Character) const;
+	
+	//================================
+	// 사운드 설정
+	//================================
+protected:
+	/** 종료 시 페이드아웃 시간 */
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	float SoundFadeOutDuration = 0.5f;
+
+private:
+	UPROPERTY()
+	TObjectPtr<UAudioComponent> ChainAudioComponent;
 };

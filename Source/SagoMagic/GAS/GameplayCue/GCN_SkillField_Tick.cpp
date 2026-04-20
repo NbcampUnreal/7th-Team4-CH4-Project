@@ -1,11 +1,9 @@
 #include "GAS/GameplayCue/GCN_SkillField_Tick.h"
-#include "Kismet/GameplayStatics.h"
+#include "Core/DataManager/SMSoundManager.h"
 
 bool UGCN_SkillField_Tick::OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
 {
 	Super::OnExecute_Implementation(MyTarget, Parameters);
-
-	if (!TickSound) return false;
 
 	// IsValid=false 여도 포인터가 살아있으면 위치 접근 가능
 	const FVector Location = !Parameters.Location.IsNearlyZero()
@@ -17,6 +15,10 @@ bool UGCN_SkillField_Tick::OnExecute_Implementation(AActor* MyTarget, const FGam
 	UWorld* World = MyTarget ? MyTarget->GetWorld() : nullptr;
 	if (!World) return false;
 
-	UGameplayStatics::PlaySoundAtLocation(World, TickSound, Location);
+	USMSoundManager* SM = USMSoundManager::Get(this);
+	if (IsValid(SM) == true)
+	{
+		SM->PlaySoundAtLocation(TEXT("FieldTick"), Location);
+	}
 	return true;
 }

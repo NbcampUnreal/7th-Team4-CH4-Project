@@ -1,7 +1,7 @@
 #include "GAS/GameplayCue/GCN_ProjectileHit.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
-#include "Kismet/GameplayStatics.h"
+#include "Core/DataManager/SMSoundManager.h"
 
 bool UGCN_ProjectileHit::OnExecute_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) const
 {
@@ -39,9 +39,10 @@ bool UGCN_ProjectileHit::OnExecute_Implementation(AActor* MyTarget, const FGamep
 		NiagaraComp->SetVariableFloat(FName("Scale_All"), Scale_All);
 	}
 
-	if (HitSound)
+	USMSoundManager* SM = USMSoundManager::Get(this);
+	if (IsValid(SM) == true)
 	{
-		UGameplayStatics::PlaySoundAtLocation(MyTarget, HitSound, Location);
+		SM->PlaySoundAtLocation(TEXT("ProjectileCast"), Location);
 	}
 
 	return true;

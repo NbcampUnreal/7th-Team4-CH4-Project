@@ -31,10 +31,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
 	float FadeoutDuration = 2.0f;
 
-	/** 장판 지속 루프 사운드 - BP에서 지정 */
-	UPROPERTY(EditDefaultsOnly, Category = "Sound")
-	TObjectPtr<USoundBase> LoopSound;
-
 	/** 루프 사운드 페이드아웃 시간 */
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
 	float SoundFadeOutDuration = 1.0f;

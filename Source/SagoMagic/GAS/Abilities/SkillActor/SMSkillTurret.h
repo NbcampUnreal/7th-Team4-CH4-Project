@@ -7,7 +7,6 @@
 #include "GameFramework/Actor.h"
 #include "SMSkillTurret.generated.h"
 
-class UNiagaraSystem;
 class ASMASkillProjectile;
 class UNiagaraComponent;
 struct FGameplayEffectSpecHandle;
@@ -37,10 +36,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Turret")
 	TSubclassOf<ASMASkillProjectile> ProjectileClass;
 	
-	/** 투사체에 전달할 폭발 에셋 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Turret")
-	TObjectPtr<UNiagaraSystem> ExplosionSystem;				
-
 	/** 스플래쉬 반경 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Turret")
 	float SplashRadiusCm = 300.0f;

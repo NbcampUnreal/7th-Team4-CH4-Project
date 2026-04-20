@@ -5,7 +5,6 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
 #include "Character/SMPlayerCharacter.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
@@ -128,19 +127,6 @@ void ASMASkillProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCom
 	// 직격 데미지
 	TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpecHandle.Data.Get());
 
-	// 폭발 이펙트 스폰
-	if (ExplosionSystem)
-	{
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-			GetWorld(),
-			ExplosionSystem,
-			GetActorLocation(),
-			FRotator::ZeroRotator,
-			FVector::OneVector,
-			true,
-			true,
-			ENCPoolMethod::None);
-	}
 
 	// 2레벨 이상 스플래쉬 데미지
 	if (SplashSpecHandle.IsValid() && SplashRadiusCm > 0.0f)
@@ -235,11 +221,6 @@ void ASMASkillProjectile::FindAndSetHomingTarget()
 		ProjectileMovement->HomingTargetComponent = BestTarget->GetRootComponent();
 		ProjectileMovement->HomingAccelerationMagnitude = HomingAccelerationMagnitude;
 	}
-}
-
-void ASMASkillProjectile::SetExplosionEffect(UNiagaraSystem* InExplosionSystem)
-{
-	ExplosionSystem = InExplosionSystem;
 }
 
 void ASMASkillProjectile::SetSplashConfig(FGameplayEffectSpecHandle InSplashSpecHandle, float InSplashRadiusCm)

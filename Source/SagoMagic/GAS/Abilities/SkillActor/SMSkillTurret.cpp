@@ -4,7 +4,6 @@
 #include "SMSkillTurret.h"
 
 #include "NiagaraComponent.h"
-#include "NiagaraSystem.h"
 #include "SMASkillProjectile.h"
 #include "GAS/SMGameplayAbilityUtils.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -129,12 +128,6 @@ void ASMSkillTurret::SpawnProjectile(const FVector& Direction)
 	if (!IsValid(Projectile)) return;
 	
 	Projectile->InitProjectile(DamageSpecHandle, RangeCm, Direction, InstigatorActor.Get(), false);
-	
-	// 폭발 이펙트
-	if (ExplosionSystem)
-	{
-		Projectile->SetExplosionEffect(ExplosionSystem);
-	}
 	
 	if (SkillLevel >= 2 && SplashSpecHandle.IsValid())
 	{

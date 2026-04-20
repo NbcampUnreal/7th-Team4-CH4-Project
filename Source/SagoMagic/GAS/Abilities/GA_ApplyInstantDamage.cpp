@@ -6,7 +6,7 @@
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "DrawDebugHelpers.h"
-#include "Kismet/GameplayStatics.h"
+#include "Core/DataManager/SMSoundManager.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 UGA_ApplyInstantDamage::UGA_ApplyInstantDamage()
@@ -37,10 +37,12 @@ void UGA_ApplyInstantDamage::OnSkillEffect(
 
 		if (bIsSeparateMulti)
 		{
-			if (CastSound)
+			USMSoundManager* SM = USMSoundManager::Get(this);
+			if (IsValid(SM) == true)
 			{
-				UGameplayStatics::PlaySoundAtLocation(Avatar, CastSound, Avatar->GetActorLocation());
+				SM->PlaySoundAtLocation(TEXT("InstantDamageCast"), Avatar->GetActorLocation());
 			}
+			
 			return;
 		}
 
@@ -50,9 +52,10 @@ void UGA_ApplyInstantDamage::OnSkillEffect(
 		if (bFound == false) return;
 
 		// 시전 사운드 - 로컬에서 항상 재생
-		if (CastSound)
+		USMSoundManager* SM = USMSoundManager::Get(this);
+		if (IsValid(SM) == true)
 		{
-			UGameplayStatics::PlaySoundAtLocation(Avatar, CastSound, Avatar->GetActorLocation());
+			SM->PlaySoundAtLocation(TEXT("InstantDamageCast"), Avatar->GetActorLocation());
 		}
 
 		for (AActor* Enemy : Enemies)

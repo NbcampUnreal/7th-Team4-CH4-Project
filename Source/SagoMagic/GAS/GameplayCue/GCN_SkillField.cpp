@@ -1,8 +1,8 @@
 #include "GAS/GameplayCue/GCN_SkillField.h"
 #include "NiagaraComponent.h"
 #include "Components/AudioComponent.h"
+#include "Core/DataManager/SMSoundManager.h"
 #include "GAS/Abilities/SkillActor/SMASkillField.h"
-#include "Kismet/GameplayStatics.h"
 
 
 AGCN_SkillField::AGCN_SkillField()
@@ -25,15 +25,14 @@ bool AGCN_SkillField::OnActive_Implementation(AActor* MyTarget, const FGameplayC
 	ASMASkillField* SourceField = Cast<ASMASkillField>(Parameters.EffectContext.GetEffectCauser());
 	const float Lifetime = SourceField ? SourceField->GetFieldDuration() : 5.0f;
 	const float RangCm = SourceField ? SourceField->GetFieldRangeCm() : 0.f;
-	
+
 	// 장판 스폰 위치로 이동
 	const FVector Origin = Parameters.EffectContext.GetOrigin();
 	const FVector FieldLocation = Origin.IsNearlyZero()
-		? (MyTarget ? MyTarget->GetActorLocation() : FVector::ZeroVector)
-		: Origin;
+		                              ? (MyTarget ? MyTarget->GetActorLocation() : FVector::ZeroVector)
+		                              : Origin;
 	SetActorLocation(FieldLocation);
-	
-	
+
 
 	FieldNiagaraComponent->SetAsset(FieldNiagaraSystem);
 
@@ -47,11 +46,13 @@ bool AGCN_SkillField::OnActive_Implementation(AActor* MyTarget, const FGameplayC
 	FieldNiagaraComponent->Activate(true);
 
 	// 루프 사운드 재생
-	if (LoopSound)
+	if (IsValid(LoopAudioComponent) == false)
 	{
-		LoopAudioComponent = UGameplayStatics::SpawnSoundAtLocation(
-			this, LoopSound, FieldLocation, FRotator::ZeroRotator,
-			1.0f, 1.0f, 0.0f, nullptr, nullptr, true);
+		USMSoundManager* SM = USMSoundManager::Get(this);
+		if (IsValid(SM) == true)
+		{
+			LoopAudioComponent = SM->PlaySoundLoopAttached(TEXT("FieldAttack"), FieldNiagaraComponent);
+		}
 	}
 
 	// 지속시간 후 파티클 신규 스폰 중단 → 기존 파티클은 자연 소멸
@@ -80,10 +81,12 @@ bool AGCN_SkillField::OnRemove_Implementation(AActor* MyTarget, const FGameplayC
 	StartFadeout();
 
 	// 루프 사운드 페이드아웃
-	if (IsValid(LoopAudioComponent))
+	USMSoundManager* SM = USMSoundManager::Get(this);
+	if (IsValid(SM) == true)
 	{
-		LoopAudioComponent->FadeOut(SoundFadeOutDuration, 0.0f);
+		SM->StopSoundLoop(LoopAudioComponent, SoundFadeOutDuration);
 	}
+	LoopAudioComponent = nullptr;
 
 	return Super::OnRemove_Implementation(MyTarget, Parameters);
 }

@@ -44,10 +44,7 @@ protected:
 	/** 커서 위치 기준 적 탐색 반경 */
 	UPROPERTY(EditDefaultsOnly, Category = "Skill|DetectionRadius")
 	float DetectionRadius = 300.f;
-
-	/** 시전 사운드 - 항상 재생  */
-	UPROPERTY(EditDefaultsOnly, Category = "Sound")
-	TObjectPtr<USoundBase> CastSound;
+	
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Skill|Debug")
 	bool bShowDebugSphere = true;

@@ -122,13 +122,13 @@ void ASMSkillTurret::SpawnProjectile(const FVector& Direction)
 	UWorld* World = GetWorld();
 	if (!World) return;
 	
-	FActorSpawnParameters SpawnPrams;
-	SpawnPrams.Owner = InstigatorActor.IsValid() ? InstigatorActor.Get() : this;
-	SpawnPrams.Instigator = InstigatorActor.IsValid() ? Cast<APawn>(InstigatorActor.Get()) : nullptr;
-	SpawnPrams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = InstigatorActor.IsValid() ? InstigatorActor.Get() : this;
+	SpawnParams.Instigator = InstigatorActor.IsValid() ? Cast<APawn>(InstigatorActor.Get()) : nullptr;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	
 	ASMASkillProjectile* Projectile = World->SpawnActor<ASMASkillProjectile>(
-		ProjectileClass, GetActorLocation(), Direction.Rotation(), SpawnPrams);
+		ProjectileClass, GetActorLocation(), Direction.Rotation(), SpawnParams);
 	
 	if (!IsValid(Projectile)) return;
 	

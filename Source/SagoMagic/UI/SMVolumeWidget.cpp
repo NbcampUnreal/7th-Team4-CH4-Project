@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "SMVolumeWidget.h"
 
 #include "Components/Slider.h"
@@ -24,11 +21,13 @@ void USMVolumeWidget::NativeConstruct()
 	{
 		SliderBGM->SetValue(SM->GetBGMVolume());
 		SliderBGM->OnValueChanged.AddDynamic(this, &USMVolumeWidget::OnBGMVolumeChanged);
+		UpdatePercentText(TextMaster, SM->GetBGMVolume());
 	}
 	if (SliderSFX)
 	{
 		SliderSFX->SetValue(SM->GetSFXVolume());
 		SliderSFX->OnValueChanged.AddDynamic(this, &USMVolumeWidget::OnSFXVolumeChanged);
+		UpdatePercentText(TextMaster, SM->GetSFXVolume());
 	}
 }
 

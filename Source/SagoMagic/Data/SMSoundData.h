@@ -4,12 +4,16 @@
 #include "Engine/DataTable.h"
 #include "SMSoundData.generated.h"
 
+class USoundBase;
+class USoundConcurrency;
+
 UENUM(BlueprintType)
 enum class ESMSoundCategory : uint8
 {
 	NONE,
 	BGM,
-	SFX
+	SFX,
+	UI
 };
 
 USTRUCT(BlueprintType)

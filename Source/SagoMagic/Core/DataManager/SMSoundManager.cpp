@@ -147,7 +147,10 @@ void USMSoundManager::StopBGM(float FadeOutTime)
 	if (!CurrentBGMComp) return;
 	
 	if (FadeOutTime > 0.f)
+	{
+		CurrentBGMComp->bAutoDestroy = true;
 		CurrentBGMComp->FadeOut(FadeOutTime, 0.f);
+	}
 	else
 	{
 		CurrentBGMComp->Stop();
@@ -195,9 +198,9 @@ void USMSoundManager::LoadAudioSettings()
 {
 	if (!GConfig) return;
 	const FString Section = TEXT("/Script/SagoMagic.AudioSettings");
-	GConfig->SetFloat(*Section, TEXT("MasterVolume"), MasterVolume, GGameUserSettingsIni);
-	GConfig->SetFloat(*Section, TEXT("BGMVolume"), BGMVolume, GGameUserSettingsIni);
-	GConfig->SetFloat(*Section, TEXT("SFXVolume"), SFXVolume, GGameUserSettingsIni);
+	GConfig->GetFloat(*Section, TEXT("MasterVolume"), MasterVolume, GGameUserSettingsIni);
+	GConfig->GetFloat(*Section, TEXT("BGMVolume"), BGMVolume, GGameUserSettingsIni);
+	GConfig->GetFloat(*Section, TEXT("SFXVolume"), SFXVolume, GGameUserSettingsIni);
 	
 	if (MasterSoundClass)
 		MasterSoundClass->Properties.Volume = MasterVolume;

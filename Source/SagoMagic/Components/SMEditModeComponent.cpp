@@ -220,9 +220,34 @@ void USMEditModeComponent::OnGrabEnd(const FInputActionValue& Value)
 		}
 		if (!bIsCurrentPosValid)
 		{
-			RestoreToOriginalPositions();
-			for (auto& [Building, _] : SelectionSnapshot)
-				ApplyHighlight(Building, true);
+			for (auto& [Building, OriGrid] : SelectionSnapshot)
+			{
+				if (!Building) continue;
+				FVector RestorePos = GridManager->GridToWorldWithHeight(OriGrid.X, OriGrid.Y);
+				Building->SetActorLocation(RestorePos);
+				TArray<UMeshComponent*> Meshes;
+				Building->GetComponents<UMeshComponent>(Meshes);
+				for (UMeshComponent* Mesh : Meshes)
+				{
+					for (int32 i = 0; i < Mesh->GetNumMaterials(); ++i)
+					{
+						Mesh->SetMaterial(i, HighLightMaterial);
+					}
+				}
+			}
+			TArray<ASMBaseBuilding*> Actors;
+			TArray<FIntPoint> OldGrids;
+			for (auto& [Building, OriGrid] : SelectionSnapshot)
+			{
+				if (Building)
+				{
+					Actors.Add(Building);
+					OldGrids.Add(OriGrid);
+				}
+			}
+			if (!Actors.IsEmpty())
+				ServerRPC_MoveBuildings(Actors, OldGrids, OldGrids);
+			
 			CurrentIntent = EClickIntent::None;
 			bDragConfirmed = false;
 			bLastDeltaValid = false;
@@ -281,7 +306,17 @@ void USMEditModeComponent::OnGrabEnd(const FInputActionValue& Value)
 				SM_LOG(this, LogSM, Error, TEXT("배치 불가"));
 				RestoreToOriginalPositions();
 				for (auto& [Building, _] : SelectionSnapshot)
-					ApplyHighlight(Building, true);
+				{
+					TArray<UMeshComponent*> Meshes;
+					Building->GetComponents<UMeshComponent>(Meshes);
+					for (UMeshComponent* Mesh : Meshes)
+					{
+						for (int32 i = 0; i < Mesh->GetNumMaterials(); ++i)
+						{
+							Mesh->SetMaterial(i, HighLightMaterial);
+						}
+					}
+				}
 			}
 		}
 		else

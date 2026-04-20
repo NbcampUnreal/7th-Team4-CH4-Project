@@ -86,7 +86,4 @@ private:
 	FGameplayEffectSpecHandle SplashSpecHandle;
 	
 	float SplashRadiusCm = 0.0f;
-	
-	// 스플래쉬 적용시 자기 자신은 제외하기 위한 변수
-	TWeakObjectPtr<AActor> InstigatorActorForSplash;
 };

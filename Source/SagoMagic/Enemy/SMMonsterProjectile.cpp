@@ -15,7 +15,11 @@ ASMMonsterProjectile::ASMMonsterProjectile()
 	// 충돌 콜리전
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
 	CollisionComponent->InitSphereRadius(15.f);
-	CollisionComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+	// QueryOnly: 물리 블로킹 없이 순수 오버랩 쿼리 → WorldStatic(펜스/건물) 포함 모든 오브젝트 감지
+	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	CollisionComponent->SetCollisionObjectType(ECC_WorldDynamic);
+	CollisionComponent->SetCollisionResponseToAllChannels(ECR_Overlap);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore); // 다른 투사체 무시
 	CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &ASMMonsterProjectile::OnProjectileOverlap);
 	SetRootComponent(CollisionComponent);
 
@@ -80,10 +84,10 @@ void ASMMonsterProjectile::OnProjectileOverlap(UPrimitiveComponent* OverlappedCo
 	if (OtherActor == this) return;
 	if (OtherActor == InstigatorActor.Get()) return;
 
-	// 다른 몬스터는 무시 - 플레이어만 타격
-	if (OtherActor->IsA<ASMMonsterBase>()) return;	
+	// 다른 몬스터는 무시
+	if (OtherActor->IsA<ASMMonsterBase>()) return;
 
-	// 플레이어 ASC에 데미지 적용
+	// 대상 ASC에 데미지 적용
 	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OtherActor);
 	if (!TargetASC || !DamageSpecHandle.IsValid()) return;
 

@@ -24,6 +24,7 @@ public:
 	ASMLobbyGameMode();
 
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
+	virtual void BeginPlay() override;
 
 	//로그인 후 처리
 	virtual void PostLogin(APlayerController* NewPlayer) override;
@@ -74,7 +75,12 @@ protected:
 private:
 	int32 MyPort = 0;
 	FString StatusFilePath;
+	bool bSessionCreateRequested = false;
 
 	void WriteStatusFile(int32 PlayerCount);
 	USMSessionSubsystem* GetSessionSubsystem() const;
+	void RequestLobbySession();
+
+	UFUNCTION()
+	void HandleCreateSessionComplete(bool bWasSuccessful);
 };

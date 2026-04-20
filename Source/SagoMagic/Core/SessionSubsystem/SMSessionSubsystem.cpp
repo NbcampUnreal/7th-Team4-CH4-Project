@@ -41,8 +41,12 @@ void USMSessionSubsystem::CreateSession(int32 MaxPlayer)
 {
 	if (IsValidSessionInterface() == false) return;
 
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	const FName SubsystemName = Subsystem ? Subsystem->GetSubsystemName() : NAME_None;
+
 	if (SessionInterface->GetNamedSession(NAME_GameSession))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("[Session] 기존 GameSession이 남아 있어 재생성 전에 DestroySession을 요청합니다."));
 		DestroySession();
 		return;
 	}
@@ -63,9 +67,18 @@ void USMSessionSubsystem::CreateSession(int32 MaxPlayer)
 	Settings->bAllowJoinViaPresence = !bIsDedicated;
 	Settings->bAllowJoinInProgress = true;
 	Settings->BuildUniqueId = 1; 
-	Settings->bIsLANMatch = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL";
+	Settings->bIsLANMatch = SubsystemName == "NULL";
 	
 	bool bSuccess = false;
+
+	UE_LOG(
+		LogTemp,
+		Log,
+		TEXT("[Session] CreateSession 요청 - OSS: %s, Dedicated: %s, LAN: %s, PublicConnections: %d"),
+		*SubsystemName.ToString(),
+		bIsDedicated ? TEXT("true") : TEXT("false"),
+		Settings->bIsLANMatch ? TEXT("true") : TEXT("false"),
+		MaxPlayer);
 	
 	//데디케이트 서버는 로컬 플레이어가 없으므로 인덱스 0으로 직접 호출
 	if (bIsDedicated)
@@ -76,15 +89,25 @@ void USMSessionSubsystem::CreateSession(int32 MaxPlayer)
 	{
 		// 기존 코드
 		const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
-		if (LocalPlayer)
+		if (LocalPlayer && LocalPlayer->GetPreferredUniqueNetId().IsValid())
 		{
 			bSuccess = SessionInterface->CreateSession(
 				*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *Settings);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Session] LocalPlayer 또는 UniqueNetId가 없어 세션을 생성할 수 없습니다."));
 		}
 	}
 
 	if (bSuccess == false)
 	{
+		UE_LOG(
+			LogTemp,
+			Warning,
+			TEXT("[Session] CreateSession 호출이 즉시 실패했습니다. OSS: %s, Dedicated: %s"),
+			*SubsystemName.ToString(),
+			bIsDedicated ? TEXT("true") : TEXT("false"));
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(
 			CreateSessionCompleteDelegateHandle);
 		OnCreateSessionComplete.Broadcast(false);

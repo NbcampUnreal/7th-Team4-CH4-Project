@@ -35,6 +35,23 @@ void ASMLobbyGameMode::InitGame(const FString& MapName, const FString& Options, 
 	}
 }
 
+void ASMLobbyGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	USMSessionSubsystem* SessionSubsystem = GetSessionSubsystem();
+	if (IsValid(SessionSubsystem))
+	{
+		SessionSubsystem->OnCreateSessionComplete.RemoveDynamic(this, &ThisClass::HandleCreateSessionComplete);
+		SessionSubsystem->OnCreateSessionComplete.AddDynamic(this, &ThisClass::HandleCreateSessionComplete);
+	}
+
+	if (IsRunningDedicatedServer())
+	{
+		RequestLobbySession();
+	}
+}
+
 void ASMLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
@@ -49,13 +66,10 @@ void ASMLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 		HostController = NewPlayer;
 
 		UE_LOG(LogTemp, Log, TEXT("[L_Lobby:%d] 첫 번째 접속자 → 방장 지정"), MyPort);
-		
-		USMSessionSubsystem* SessionSubsystem = GetSessionSubsystem();
-		if (IsValid(SessionSubsystem) == true)
+
+		if (!IsRunningDedicatedServer())
 		{
-			SessionSubsystem->CreateSession(MaxPlayers);
-			
-			UE_LOG(LogTemp, Log, TEXT("[L_Lobby:%d] Steam 세션 생성 요청 (MaxPlayers: %d)"), MyPort, MaxPlayers);
+			RequestLobbySession();
 		}
 	}
 
@@ -113,11 +127,19 @@ void ASMLobbyGameMode::Logout(AController* ExitingController)
 	// 마지막 플레이어 퇴장시 Steam 세션 삭제
 	if (PlayerList.IsEmpty() == true)
 	{
-		USMSessionSubsystem* SessionSubsystem = GetSessionSubsystem();
-		if (IsValid(SessionSubsystem) == true)
+		if (!IsRunningDedicatedServer())
 		{
-			SessionSubsystem->DestroySession();
-			UE_LOG(LogTemp, Log, TEXT("[L_Lobby:%d] 인원 0 → Steam 세션 삭제 요청"), MyPort);
+			bSessionCreateRequested = false;
+			USMSessionSubsystem* SessionSubsystem = GetSessionSubsystem();
+			if (IsValid(SessionSubsystem) == true)
+			{
+				SessionSubsystem->DestroySession();
+				UE_LOG(LogTemp, Log, TEXT("[L_Lobby:%d] 인원 0 → Steam 세션 삭제 요청"), MyPort);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("[L_Lobby:%d] 인원 0이지만 Dedicated 서버 세션은 유지합니다."), MyPort);
 		}
 	}
 
@@ -235,4 +257,46 @@ USMSessionSubsystem* ASMLobbyGameMode::GetSessionSubsystem() const
 	if (IsValid(GI) == false) return nullptr;
 	
 	return GI->GetSubsystem<USMSessionSubsystem>();
+}
+
+void ASMLobbyGameMode::RequestLobbySession()
+{
+	if (bSessionCreateRequested)
+	{
+		UE_LOG(LogTemp, Log, TEXT("[L_Lobby:%d] Steam 세션 생성 요청은 이미 처리되었습니다."), MyPort);
+		return;
+	}
+
+	USMSessionSubsystem* SessionSubsystem = GetSessionSubsystem();
+	if (IsValid(SessionSubsystem) == false)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[L_Lobby:%d] SessionSubsystem이 없어 Steam 세션을 생성할 수 없습니다."), MyPort);
+		return;
+	}
+
+	bSessionCreateRequested = true;
+	SessionSubsystem->CreateSession(MaxPlayers);
+
+	UE_LOG(
+		LogTemp,
+		Log,
+		TEXT("[L_Lobby:%d] Steam 세션 생성 요청 (MaxPlayers: %d, Dedicated: %s)"),
+		MyPort,
+		MaxPlayers,
+		IsRunningDedicatedServer() ? TEXT("true") : TEXT("false"));
+}
+
+void ASMLobbyGameMode::HandleCreateSessionComplete(bool bWasSuccessful)
+{
+	UE_LOG(
+		LogTemp,
+		Log,
+		TEXT("[L_Lobby:%d] Steam 세션 생성 콜백 - 성공: %s"),
+		MyPort,
+		bWasSuccessful ? TEXT("true") : TEXT("false"));
+
+	if (!bWasSuccessful)
+	{
+		bSessionCreateRequested = false;
+	}
 }

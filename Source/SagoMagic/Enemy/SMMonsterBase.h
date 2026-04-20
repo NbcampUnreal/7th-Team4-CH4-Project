@@ -8,7 +8,6 @@
 
 #include "SMMonsterBase.generated.h"
 
-class USoundBase;
 class USMMonsterDataAsset;
 class USMMonsterAttributeSet;
 class ASMBaseItemDropActor;
@@ -84,18 +83,18 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "SelfKill")
     float SelfKillDamage = 5.0f;
 
-    // ── 사운드 ──
-    /** 공격 시작 사운드 (근거리: 휘두름, 원거리: 발사) */
+    // ── 사운드 ID (DT_Sound DataTable의 SoundName 컬럼과 일치) ──
+    /** 공격 시작 사운드 ID */
     UPROPERTY(EditDefaultsOnly, Category = "Sound")
-    TObjectPtr<USoundBase> AttackSound;
+    FName AttackSoundID;
 
-    /** 피격 사운드 */
+    /** 피격 사운드 ID */
     UPROPERTY(EditDefaultsOnly, Category = "Sound")
-    TObjectPtr<USoundBase> HitSound;
+    FName HitSoundID;
 
-    /** 사망 사운드 */
+    /** 사망 사운드 ID */
     UPROPERTY(EditDefaultsOnly, Category = "Sound")
-    TObjectPtr<USoundBase> DeathSound;
+    FName DeathSoundID;
     
     /** DamageEffect를 저장해둘 멤버(런타임에 DataAsset에서 가져옴) */
     UPROPERTY()
@@ -105,7 +104,7 @@ public:
     UPROPERTY()
     TObjectPtr<UAnimMontage> CachedAttackMontage;
 
-    //몬스터 사망 탸그 추가 로직
+    //몬스터 사망 태그 추가 로직
     
     UPROPERTY(ReplicatedUsing=OnRep_IsDead)
     bool bIsDead = false;

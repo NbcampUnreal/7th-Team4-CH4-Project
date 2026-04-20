@@ -23,6 +23,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameplayEffect.h"
 #include "Animation/AnimMontage.h"
+#include "Core/DataManager/SMSoundManager.h"
 
 
 ASMMonsterBase::ASMMonsterBase()
@@ -469,24 +470,33 @@ void ASMMonsterBase::HandleClientDeath()
     MonsterAbilitySystemComponent->AddLooseGameplayTag(SMEnemyTag::Enemy_State_Death);
 
     // 사망 사운드 재생
-    if (DeathSound)
+    if (!DeathSoundID.IsNone())
     {
-        UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation());
+        if (USMSoundManager* SM = USMSoundManager::Get(this))
+        {
+            SM->PlaySoundAtLocation(DeathSoundID, GetActorLocation());
+        }
     }
 }
 
 void ASMMonsterBase::PlayHitSound()
 {
-    if (HitSound)
+    if (!HitSoundID.IsNone())
     {
-        UGameplayStatics::PlaySoundAtLocation(this, HitSound, GetActorLocation());
+        if (USMSoundManager* SM = USMSoundManager::Get(this))
+        {
+            SM->PlaySoundAtLocation(HitSoundID, GetActorLocation());
+        }
     }
 }
 
 void ASMMonsterBase::Multicast_PlayAttackSound_Implementation()
 {
-    if (AttackSound)
+    if (!AttackSoundID.IsNone())
     {
-        UGameplayStatics::PlaySoundAtLocation(this, AttackSound, GetActorLocation());
+        if (USMSoundManager* SM = USMSoundManager::Get(this))
+        {
+            SM->PlaySoundAtLocation(AttackSoundID, GetActorLocation());
+        }
     }
 }

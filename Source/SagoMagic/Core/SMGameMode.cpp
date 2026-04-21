@@ -8,6 +8,7 @@
 #include "Building/SMGridManager.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
+#include "Wave/SMWaveManagerSubsystem.h"
 
 ASMGameMode::ASMGameMode()
 {
@@ -47,6 +48,17 @@ void ASMGameMode::Logout(AController* Exiting)
 
 		SpectatorTimerMap.Remove(PC);
 		RespawnTimerMap.Remove(PC);
+		
+		if (AllPlayerController.IsEmpty())
+		{
+			if (USMWaveManagerSubsystem* WaveManager =
+				GetWorld()->GetSubsystem<USMWaveManagerSubsystem>())
+			{
+				WaveManager->StopAllTimers();
+				WaveManager->CleanUp();
+			}
+			ServerTravelToLobby();
+		}
 	}
 }
 

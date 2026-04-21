@@ -32,6 +32,9 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UEditableTextBox> IPInputBox;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UEditableTextBox> NicknameInputBox;
 
 	UPROPERTY()
 	TObjectPtr<USMSessionSubsystem> SessionSubsystem;

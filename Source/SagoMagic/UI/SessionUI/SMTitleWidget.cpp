@@ -5,6 +5,7 @@
 #include "Character/SMTitlePlayerController.h"
 #include "Components/Button.h"
 #include "Components/EditableTextBox.h"
+#include "Core/SMGameInstance.h"
 #include "Core/SessionSubsystem/SMSessionSubsystem.h"
 
 void USMTitleWidget::MenuSetup()
@@ -23,6 +24,10 @@ void USMTitleWidget::MenuSetup()
 	if (IsValid(IPInputBox) == true)
 	{
 		IPInputBox->SetText(FText::FromString(TEXT("127.0.0.1:17777")));
+	}
+	if (IsValid(NicknameInputBox) == true)
+	{
+		NicknameInputBox->SetHintText(FText::FromString(TEXT("닉네임을 입력하세요.")));
 	}
 }
 
@@ -55,6 +60,21 @@ void USMTitleWidget::OnHostButtonClicked()
 		{
 			ServerAddress = InputText;
 		}
+	}
+	
+	if (USMGameInstance* GI = GetGameInstance<USMGameInstance>())
+	{
+		FString Nickname;
+		if (IsValid(NicknameInputBox) == true)
+		{
+			Nickname = NicknameInputBox->GetText().ToString().TrimStartAndEnd();
+		}
+		if (Nickname.IsEmpty() == true)
+		{
+			Nickname = TEXT("Player");
+		}
+		UE_LOG(LogTemp, Warning, TEXT("[MainWidget] NickNameSet : %s"), *Nickname);
+		GI->SetPendingNickname(Nickname);
 	}
 
 	ASMTitlePlayerController* PC = GetSMTitlePlayerController();

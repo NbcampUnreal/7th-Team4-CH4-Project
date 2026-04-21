@@ -804,8 +804,6 @@ void ASMPlayerController::AddBasicSkillToInventory()
 void ASMPlayerController::ClientRPCSetNickName_Implementation()
 {
 	USMGameInstance* GI = GetGameInstance<USMGameInstance>();
-	SM_LOG(this, LogSM, Log, TEXT("GI Valid: %d / PendingNickname: %s"), IsValid(GI),
-	       GI ? *GI->GetPendingNickname() : TEXT("null"));
 	if (IsValid(GI) == false) return;
 
 	FString NickName = GI->GetPendingNickname().IsEmpty() == false ? GI->GetPendingNickname() : TEXT("Player");

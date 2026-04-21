@@ -38,6 +38,9 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<USMSessionSubsystem> SessionSubsystem;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "NickName")
+	int32 NickNameLengthLimit = 6;
 
 	UFUNCTION()
 	void OnHostButtonClicked();

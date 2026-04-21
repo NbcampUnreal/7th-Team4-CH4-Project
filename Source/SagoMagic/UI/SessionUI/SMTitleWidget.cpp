@@ -28,6 +28,8 @@ void USMTitleWidget::MenuSetup()
 	if (IsValid(NicknameInputBox) == true)
 	{
 		NicknameInputBox->SetHintText(FText::FromString(TEXT("닉네임을 입력하세요.")));
+		NicknameInputBox->SetToolTipText(
+			FText::FromString(FString::Printf(TEXT("공백 포함 최대 %d글자"), NickNameLengthLimit)));
 	}
 }
 
@@ -61,20 +63,22 @@ void USMTitleWidget::OnHostButtonClicked()
 			ServerAddress = InputText;
 		}
 	}
-	
+
 	if (USMGameInstance* GI = GetGameInstance<USMGameInstance>())
 	{
-		FString Nickname;
+		FString InputNickname;
+		FString TrimNickname;
 		if (IsValid(NicknameInputBox) == true)
 		{
-			Nickname = NicknameInputBox->GetText().ToString().TrimStartAndEnd();
+			InputNickname = NicknameInputBox->GetText().ToString().TrimStartAndEnd();
+			TrimNickname = InputNickname.Left(NickNameLengthLimit);
 		}
-		if (Nickname.IsEmpty() == true)
+		if (TrimNickname.IsEmpty() == true)
 		{
-			Nickname = TEXT("Player");
+			TrimNickname = TEXT("Player");
 		}
-		UE_LOG(LogTemp, Warning, TEXT("[MainWidget] NickNameSet : %s"), *Nickname);
-		GI->SetPendingNickname(Nickname);
+		
+		GI->SetPendingNickname(TrimNickname);
 	}
 
 	ASMTitlePlayerController* PC = GetSMTitlePlayerController();

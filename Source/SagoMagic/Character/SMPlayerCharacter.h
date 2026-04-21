@@ -233,4 +233,14 @@ public:
 
 	UPROPERTY()
 	FVector ServerStaffTipLocation = FVector::ZeroVector;
+	
+	//================================
+	// 닉네임 위젯 설정
+	//================================
+public:
+	void UpdateNicknameWidget();
+
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UWidgetComponent> NicknameWidgetComp;
 };

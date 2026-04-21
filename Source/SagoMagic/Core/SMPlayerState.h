@@ -100,6 +100,7 @@ protected:
 	UFUNCTION()
 	void OnRep_SelectedMaterialIndex();
 	
+	virtual void OnRep_PlayerName() override;
 	
 private:
 	UPROPERTY(ReplicatedUsing=OnRep_SelectedWeaponIndex)

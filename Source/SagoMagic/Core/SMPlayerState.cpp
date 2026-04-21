@@ -9,6 +9,7 @@
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "SessionSubsystem/SMLobbyGameMode.h"
 
 ASMPlayerState::ASMPlayerState()
 {
@@ -101,6 +102,16 @@ void ASMPlayerState::OnRep_SelectedMaterialIndex()
 	if (IsValid(PlayerCharacter) == false) return;
 
 	PlayerCharacter->ApplyCustomization();
+}
+
+void ASMPlayerState::OnRep_PlayerName()
+{
+	Super::OnRep_PlayerName();
+
+	ASMPlayerCharacter* Character = GetPawn<ASMPlayerCharacter>();
+	if (IsValid(Character) == false) return;
+
+	Character->UpdateNicknameWidget();
 }
 
 void ASMPlayerState::SetSelectedLobbySkillDef(const TSoftObjectPtr<USMItemDefinition>& InDef)

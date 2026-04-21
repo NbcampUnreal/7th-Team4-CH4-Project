@@ -15,6 +15,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SMCharacterWidgetComponent.h"
 #include "Components/SMEditModeComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Core/SMGameMode.h"
 #include "Core/SMPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -25,10 +26,14 @@
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "UI/SMPlayerNicknameWidget.h"
 
 ASMPlayerCharacter::ASMPlayerCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	NicknameWidgetComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("NicknameWidgetComp"));
+	NicknameWidgetComp->SetupAttachment(GetMesh());
 
 	// 네트워크 설정
 	bReplicates = true;
@@ -48,7 +53,7 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	CameraComp->SetupAttachment(SpringArmComp);
-	
+
 	// 캐릭터의 움직임으로 몸 회전 금지
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
@@ -56,19 +61,19 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
-	
+
 	InteractionScannerComp = CreateDefaultSubobject<USMInteractionScannerComponent>(TEXT("InteractionScanner"));
 	InteractionScannerComp->SetupAttachment(RootComponent);
-	
+
 	// InteractionScanner는 공격 못하게 방어
-	
+
 	// 물리 X, 오버랩만 판정
 	InteractionScannerComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	// 모든 채널 무시
 	InteractionScannerComp->SetCollisionResponseToChannels(ECR_Ignore);
 	// 인터렉션만 오버랩 허용
 	InteractionScannerComp->SetCollisionResponseToChannel(ECC_GameTraceChannel2, ECR_Overlap);
-	
+
 	BuildingModeComp = CreateDefaultSubobject<USMBuildingModeComponent>(TEXT("BuildingModeComponent"));
 	EditModeComp = CreateDefaultSubobject<USMEditModeComponent>(TEXT("EditModeComponent"));
 	WidgetComp = CreateDefaultSubobject<USMCharacterWidgetComponent>(TEXT("WidgetComponent"));
@@ -194,7 +199,7 @@ void ASMPlayerCharacter::ToggleBuildMode()
 	ASMPlayerController* PC = Cast<ASMPlayerController>(Controller);
 	if (!PC || !PC->IsLocalController()) return;
 	if (!SMAbilitySystemComponent || !BuildingModeComp) return;
-	
+
 	bool bIsBuildMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Place);
 	bool bIsEditMode = SMAbilitySystemComponent->HasMatchingGameplayTag(SMCharacterTag::State_Build_Edit);
 
@@ -221,7 +226,7 @@ void ASMPlayerCharacter::ToggleBuildMode()
 	BuildingModeComp->EnableBuildMode();
 	SMAbilitySystemComponent->AddLooseGameplayTag(SMCharacterTag::State_Build_Place);
 	ServerRPC_SetBuildModeTag(true);
-	
+
 	SM_LOG(this, LogSM, Log, TEXT("건축 모드 ON"));
 }
 
@@ -379,6 +384,7 @@ void ASMPlayerCharacter::OnRep_PlayerState()
 	// Ability 부여는 서버에서만(클라는 복제)
 	InitializeAbilitySystem();
 	ApplyCustomization();
+	UpdateNicknameWidget();
 }
 
 void ASMPlayerCharacter::InitializeAbilitySystem()
@@ -397,7 +403,7 @@ void ASMPlayerCharacter::InitializeAbilitySystem()
 	{
 		// Owner는 PlayerState
 		SMAbilitySystemComponent->InitAbilityActorInfo(PS, this);
-		
+
 		if (!SMAbilitySystemComponent->HasMatchingGameplayTag(SMGameFlowTag::Team_Player))
 		{
 			SMAbilitySystemComponent->AddLooseGameplayTag(SMGameFlowTag::Team_Player);
@@ -432,10 +438,10 @@ void ASMPlayerCharacter::GiveDefaultAbilities()
 	for (TSubclassOf<UGameplayAbility>& AbilityClass : DefaultAbilities)
 	{
 		if (!AbilityClass) continue;
-		
+
 		// 이미 부여된 Spec이 있으면 스킵
 		if (SMAbilitySystemComponent->FindAbilitySpecFromClass(AbilityClass)) continue;
-		
+
 		// Ability Spec 생성
 		// - InputID 없음 (나중에 Input Binding에서 설정)
 		FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, INDEX_NONE, this);
@@ -557,17 +563,16 @@ void ASMPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		{
 			EIC->BindAction(QuickSlotAction, ETriggerEvent::Started, this, &ThisClass::UseQuickSlot);
 		}
-		
+
 		if (BuildModeAction)
 		{
 			EIC->BindAction(BuildModeAction, ETriggerEvent::Started, this, &ThisClass::ToggleBuildMode);
 		}
-		
+
 		if (EditModeAction)
 		{
 			EIC->BindAction(EditModeAction, ETriggerEvent::Started, this, &ThisClass::ToggleEditMode);
 		}
-		
 	}
 	if (BuildingModeComp)
 	{
@@ -590,7 +595,7 @@ void ASMPlayerCharacter::PawnClientRestart()
 			if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
 			{
 				if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
-						ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
+					ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LocalPlayer))
 				{
 					// 기존 IMC 전부 초기화
 					if (LobbyIMC) Subsystem->RemoveMappingContext(LobbyIMC);
@@ -713,4 +718,17 @@ void ASMPlayerCharacter::BroadcastAttackReleasedEvent()
 void ASMPlayerCharacter::ServerSetStaffTipAimOrigin_Implementation(FVector NewOrigin)
 {
 	ServerStaffTipLocation = NewOrigin;
+}
+
+void ASMPlayerCharacter::UpdateNicknameWidget()
+{
+	if (IsValid(NicknameWidgetComp) == false) return;
+
+	APlayerState* PS = GetPlayerState<APlayerState>();
+	if (IsValid(PS) == false) return;
+
+	USMPlayerNicknameWidget* Widget = Cast<USMPlayerNicknameWidget>(NicknameWidgetComp->GetUserWidgetObject());
+	if (IsValid(Widget) == false) return;
+
+	Widget->SetPlayerNickName(PS->GetPlayerName());
 }

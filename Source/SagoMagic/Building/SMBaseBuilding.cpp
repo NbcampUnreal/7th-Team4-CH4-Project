@@ -116,6 +116,7 @@ void ASMBaseBuilding::InitBuilding(FIntPoint InGridPos, bool bInIsDestructible, 
 		AttributeSet ->InitMaxHealth(InMaxHealth);
 		AttributeSet->InitHealth(InMaxHealth);
 	}
+	OnBuildingPlaced();
 }
 
 void ASMBaseBuilding::HandleDestruction_Implementation()

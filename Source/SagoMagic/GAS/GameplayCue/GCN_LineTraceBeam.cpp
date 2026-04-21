@@ -122,16 +122,19 @@ void AGCN_LineTraceBeam::UpdateBeam()
 	Params.AddIgnoredActor(TargetActor.Get());
 
 	//LineTraceMulti로 아군 관통 처리
-	TArray<FHitResult> HitResults;
-	GetWorld()->LineTraceMultiByChannel(HitResults, Origin, TraceEnd, ECC_Pawn, Params);
-
 	FVector BeamEndPoint = TraceEnd;
 	if (bPenetrate == false)
 	{
-		for (const FHitResult& Hit : HitResults)
+		while (true)
 		{
+			FHitResult Hit;
+			if (GetWorld()->LineTraceSingleByChannel(Hit, Origin, TraceEnd, ECC_Pawn, Params) == false)
+				break;
+
 			AActor* HitActor = Hit.GetActor();
-			if (IsValid(HitActor) == false) continue;
+			if (IsValid(HitActor) == false) break;
+
+			Params.AddIgnoredActor(HitActor);
 
 			if (SMGameplayAbilityUtils::HasTeamTag(HitActor) == true) continue;
 			if (SMGameplayAbilityUtils::IsAvailableEnemy(HitActor) == false) continue;

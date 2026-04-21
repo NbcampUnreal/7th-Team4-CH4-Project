@@ -47,7 +47,7 @@ bool AGCN_LineTraceChain::OnRemove_Implementation(AActor* MyTarget, const FGamep
 		SM->StopSoundLoop(ChainAudioComponent, SoundFadeOutDuration);
 	}
 	ChainAudioComponent = nullptr;
-	
+
 	for (UNiagaraComponent* Comp : ChainBeamComponents)
 	{
 		if (IsValid(Comp) == false) continue;
@@ -55,7 +55,7 @@ bool AGCN_LineTraceChain::OnRemove_Implementation(AActor* MyTarget, const FGamep
 		Comp->DestroyComponent();
 	}
 	ChainBeamComponents.Empty();
-	
+
 	return Super::OnRemove_Implementation(MyTarget, Parameters);
 }
 
@@ -130,9 +130,6 @@ void AGCN_LineTraceChain::UpdateChain()
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(OwnerActor.Get());
 
-	TArray<FHitResult> HitResults;
-	GetWorld()->LineTraceMultiByChannel(HitResults, Origin, TraceEnd, ECC_Pawn, Params);
-
 	//체인 포인트 배열 구성
 	TArray<FVector> ChainPoints;
 	TArray<AActor*> ChainedActors;
@@ -140,12 +137,20 @@ void AGCN_LineTraceChain::UpdateChain()
 
 	//첫 번째 적 탐색
 	AActor* FirstEnemy = nullptr;
-	for (const auto& Hit : HitResults)
+	while (true)
 	{
+		FHitResult Hit;
+		if (GetWorld()->LineTraceSingleByChannel(Hit, Origin, TraceEnd, ECC_Pawn, Params) == false)
+			break;
+
 		AActor* HitActor = Hit.GetActor();
-		if (IsValid(HitActor) == false) continue;
+		if (IsValid(HitActor) == false) break;
+
+		Params.AddIgnoredActor(HitActor);
+
 		if (SMGameplayAbilityUtils::HasTeamTag(HitActor) == true) continue;
 		if (SMGameplayAbilityUtils::IsAvailableEnemy(HitActor) == false) continue;
+
 		FirstEnemy = HitActor;
 		break;
 	}

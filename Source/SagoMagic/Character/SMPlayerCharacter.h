@@ -213,4 +213,11 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Customization")
 	TArray<TObjectPtr<UMaterialInterface>> MaterialOptions;
 	
+public:
+	//SetAimOrigin
+	UFUNCTION(Server, Unreliable)
+	void ServerSetStaffTipAimOrigin(FVector NewOrigin);
+
+	UPROPERTY()
+	FVector ServerStaffTipLocation = FVector::ZeroVector;
 };

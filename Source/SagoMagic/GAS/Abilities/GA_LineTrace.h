@@ -78,4 +78,6 @@ private:
 	float ChainSearchRadius = 800.f;	
 	
 	bool bIsChainAttacking = false;
+	
+	FVector GetStaffTipLocation(APawn* Avatar) const;
 };

@@ -665,3 +665,8 @@ void ASMPlayerCharacter::BroadcastAttackReleasedEvent()
 		SMSkillTag::Event_Input_AttackReleased,
 		EventData);
 }
+
+void ASMPlayerCharacter::ServerSetStaffTipAimOrigin_Implementation(FVector NewOrigin)
+{
+	ServerStaffTipLocation = NewOrigin;
+}

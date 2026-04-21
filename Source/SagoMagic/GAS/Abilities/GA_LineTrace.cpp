@@ -4,6 +4,8 @@
 #include "GA_LineTrace.h"
 #include "DrawDebugHelpers.h"
 #include "AbilitySystemBlueprintLibrary.h"
+#include "Character/SMPlayerCharacter.h"
+#include "GameFramework/Character.h"
 #include "GameplayTags/Character/SMSkillTag.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "GAS/SMAbilitySystemComponent.h"
@@ -70,7 +72,15 @@ void UGA_LineTrace::OnSkillEffect(
 				SMSkillTag::GameplayCue_Skill_LineTrace_Beam, CueParameters);
 		}
 
-		//클라이언트인 경우 타이머만 적용
+		//StaffTip위치 전송을 위한 Timer실행
+		World->GetTimerManager().SetTimer(
+			DamageTickHandle,
+			this,
+			&UGA_LineTrace::ApplyDamageTick,
+			DamageInterval,
+			true
+		);
+
 		World->GetTimerManager().SetTimer(
 			DurationEndHandle,
 			this,
@@ -172,16 +182,20 @@ bool UGA_LineTrace::FindFirstEnemy(UWorld* World, const FGameplayAbilityActorInf
 		CollisionParams.AddIgnoredActor(ActorInfo->AvatarActor.Get());
 	}
 
-	TArray<FHitResult> HitResults;
-	World->LineTraceMultiByChannel(HitResults, Start, End, ECC_Pawn, CollisionParams);
-
-	for (const auto& HitResult : HitResults)
+	while (true)
 	{
-		AActor* HitActor = HitResult.GetActor();
-		if (IsValid(HitActor) == false) continue;
+		FHitResult Hit;
+		if (World->LineTraceSingleByChannel(Hit, Start, End, ECC_Pawn, CollisionParams) == false) break;
+
+		AActor* HitActor = Hit.GetActor();
+		if (IsValid(HitActor) == false) break;
+
+		CollisionParams.AddIgnoredActor(HitActor);
+
 		if (HasAnyTeamTag(HitActor) == true) continue;
 		if (IsAvailableEnemy(HitActor) == false) continue;
-		OutHit = HitResult;
+
+		OutHit = Hit;
 		return true;
 	}
 	return false;
@@ -199,14 +213,26 @@ void UGA_LineTrace::ApplyDamageTick()
 
 	// ApplyDamageTick 호출 시마다 현재 캐릭터 위치 및 컨트롤러 방향으로 AimData 갱신
 	APawn* Avatar = Cast<APawn>(ActorInfo->AvatarActor.Get());
-	if (IsValid(Avatar) == true)
+	if (IsValid(Avatar) == false) return;
+
+	ASMPlayerCharacter* Character = Cast<ASMPlayerCharacter>(Avatar);
+	if (IsValid(Character) == false) return;
+
+	if (Avatar->HasAuthority() == false)
 	{
-		CurrentAimOrigin = Avatar->GetActorLocation();
-		if (AController* Controller = Avatar->GetController())
-		{
-			CurrentAimDirection = Controller->GetControlRotation().Vector();
-		}
+		Character->ServerSetStaffTipAimOrigin(GetStaffTipLocation(Avatar));
+		return;
 	}
+
+	CurrentAimOrigin = Character->ServerStaffTipLocation.IsZero()
+		                   ? Avatar->GetActorLocation()
+		                   : Character->ServerStaffTipLocation;
+
+	if (AController* Controller = Avatar->GetController())
+	{
+		CurrentAimDirection = Controller->GetControlRotation().Vector();
+	}
+
 	if (bIsPenetrate == true)
 	{
 		PenetrateAttack(World, ActorInfo);
@@ -442,4 +468,24 @@ bool UGA_LineTrace::FindNearestEnemy(UWorld* World, const FVector& Origin, float
 		}
 	}
 	return IsValid(OutEnemy); // false면 체인 종료
+}
+
+FVector UGA_LineTrace::GetStaffTipLocation(APawn* Avatar) const
+{
+	ACharacter* Character = Cast<ACharacter>(Avatar);
+	if (IsValid(Character) == false) return Avatar->GetActorLocation();
+
+	TArray<UStaticMeshComponent*> Comps;
+	Character->GetComponents<UStaticMeshComponent>(Comps);
+	for (UStaticMeshComponent* Comp : Comps)
+	{
+		if (IsValid(Comp) == false) continue;
+		if (Comp->GetAttachSocketName() != FName("WeaponSocket")) continue;
+		if (Comp->DoesSocketExist(FName("Staff_Tip")))
+		{
+			return Comp->GetSocketLocation(FName("Staff_Tip"));
+		}
+		break;
+	}
+	return Avatar->GetActorLocation();
 }

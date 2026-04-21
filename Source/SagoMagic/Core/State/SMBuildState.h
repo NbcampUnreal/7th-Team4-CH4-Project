@@ -27,7 +27,7 @@ private:
     void BroadcastNotification(const FText& InMessage, float InDuration);
     
     /** 총 정비 시간 (초) */
-    float Duration = 30.f;
+    float Duration = 20.f;
     
     /** 현재 경과 시간 */
     float Elapsed = 0.f;

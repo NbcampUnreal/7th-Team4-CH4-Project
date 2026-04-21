@@ -669,7 +669,4 @@ void ASMPlayerCharacter::BroadcastAttackReleasedEvent()
 void ASMPlayerCharacter::ServerSetStaffTipAimOrigin_Implementation(FVector NewOrigin)
 {
 	ServerStaffTipLocation = NewOrigin;
-	
-	const FVector Offset = NewOrigin - GetActorLocation();
-	UE_LOG(LogTemp, Log, TEXT("[SMPlayerCharacter] [Server] StaffTip Offset: %s"), *Offset.ToString());
 }

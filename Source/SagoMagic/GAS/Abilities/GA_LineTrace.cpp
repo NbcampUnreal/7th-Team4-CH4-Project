@@ -220,10 +220,6 @@ void UGA_LineTrace::ApplyDamageTick()
 
 	if (Avatar->HasAuthority() == false)
 	{
-		const FVector StaffTip = GetStaffTipLocation(Avatar);
-		const FVector Offset = StaffTip - Avatar->GetActorLocation();
-		UE_LOG(LogTemp, Log, TEXT("[GA_LineTrace] [Client] StaffTip Offset: %s"), *Offset.ToString());
-
 		Character->ServerSetStaffTipAimOrigin(GetStaffTipLocation(Avatar));
 		return;
 	}

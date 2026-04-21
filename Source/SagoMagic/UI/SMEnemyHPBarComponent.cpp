@@ -79,27 +79,20 @@ void USMEnemyHPBarComponent::InitializeHPBar(UAbilitySystemComponent* InASC)
 	}
 }
 
+void USMEnemyHPBarComponent::HandleResolvedDamageNumber(float DamageAmount, const FVector& SpawnLocation)
+{
+	if (DamageAmount <= 0.0f)
+	{
+		return;
+	}
+
+	RevealHPBar();
+	SpawnDamageFloatingText(DamageAmount, SpawnLocation);
+}
+
 void USMEnemyHPBarComponent::OnHPChanged(const FOnAttributeChangeData& Data)
 {
-	SetVisibility(true);
-
-	if (GetWorld())
-	{
-		GetWorld()->GetTimerManager().SetTimer(HideTimerHandle, this, &USMEnemyHPBarComponent::HideHPBar,
-		                                       DisplayDuration, false);
-	}
-	
-	float Damage = Data.OldValue - Data.NewValue; // 데미지 텍스트 추가
-	if (Damage > 0.f)
-	{
-		// 쿨다운 체크 로직
-		float CurrentTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
-		if (CurrentTime - LastDamageTextSpawnTime >= DamageTextSpawnCooldown)
-		{
-			SpawnDamageFloatingText(Damage);
-			LastDamageTextSpawnTime = CurrentTime;
-		}
-	}
+	RevealHPBar();
 	
 	if (USMEnemyHPBarWidget* HPWidget = Cast<USMEnemyHPBarWidget>(GetUserWidgetObject()))
 	{
@@ -111,6 +104,21 @@ void USMEnemyHPBarComponent::OnHPChanged(const FOnAttributeChangeData& Data)
 
 			HPWidget->UpdateHPBar(HPPercent);
 		}
+	}
+}
+
+void USMEnemyHPBarComponent::RevealHPBar()
+{
+	SetVisibility(true);
+
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().SetTimer(
+			HideTimerHandle,
+			this,
+			&USMEnemyHPBarComponent::HideHPBar,
+			DisplayDuration,
+			false);
 	}
 }
 
@@ -138,7 +146,7 @@ void USMEnemyHPBarComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-void USMEnemyHPBarComponent::SpawnDamageFloatingText(float DamageAmount)
+void USMEnemyHPBarComponent::SpawnDamageFloatingText(float DamageAmount, const FVector& SpawnLocation)
 {
 	if (!DamageTextClass) return;
 
@@ -153,14 +161,17 @@ void USMEnemyHPBarComponent::SpawnDamageFloatingText(float DamageAmount)
 		return;
 	}
 	
-	// 몬스터 머리 위 랜덤 위치에 스폰
-	FVector SpawnLocation = Owner->GetActorLocation() + FVector(0.f, 0.f, 100.f);
+	FVector FinalSpawnLocation = SpawnLocation;
+	if (FinalSpawnLocation.IsNearlyZero())
+	{
+		FinalSpawnLocation = Owner->GetActorLocation() + FVector(0.f, 0.f, 100.f);
+	}
 
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	ASMDamageFloatingText* DamageText = World->SpawnActor<ASMDamageFloatingText>(
-		DamageTextClass, SpawnLocation, FRotator::ZeroRotator, Params);
+		DamageTextClass, FinalSpawnLocation, FRotator::ZeroRotator, Params);
 
 	if (DamageText)
 	{

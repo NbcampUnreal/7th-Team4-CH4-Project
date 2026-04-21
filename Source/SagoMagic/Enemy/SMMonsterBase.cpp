@@ -481,6 +481,16 @@ void ASMMonsterBase::PlayHitSound()
     }
 }
 
+void ASMMonsterBase::BroadcastResolvedDamageNumber(float InDamageAmount, const FVector& InSpawnLocation)
+{
+    if (!HasAuthority() || InDamageAmount <= 0.0f)
+    {
+        return;
+    }
+
+    Multicast_ShowResolvedDamageNumber(InDamageAmount, InSpawnLocation);
+}
+
 void ASMMonsterBase::Multicast_PlayAttackSound_Implementation()
 {
     if (!AttackSoundID.IsNone())
@@ -489,5 +499,18 @@ void ASMMonsterBase::Multicast_PlayAttackSound_Implementation()
         {
             SM->PlaySoundAtLocation(AttackSoundID, GetActorLocation());
         }
+    }
+}
+
+void ASMMonsterBase::Multicast_ShowResolvedDamageNumber_Implementation(float InDamageAmount, FVector_NetQuantize InSpawnLocation)
+{
+    if (GetNetMode() == NM_DedicatedServer || InDamageAmount <= 0.0f)
+    {
+        return;
+    }
+
+    if (USMEnemyHPBarComponent* EnemyHPBarComponent = FindComponentByClass<USMEnemyHPBarComponent>())
+    {
+        EnemyHPBarComponent->HandleResolvedDamageNumber(InDamageAmount, InSpawnLocation);
     }
 }

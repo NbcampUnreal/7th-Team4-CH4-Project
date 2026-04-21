@@ -4,6 +4,7 @@
 #include "Abilities/GameplayAbilityTargetTypes.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Character/SMPlayerCharacter.h"
+#include "Core/DataManager/SMSoundManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
@@ -55,6 +56,15 @@ void UGA_Explosion::ActivateAbility(
 	if (AttackMontage != nullptr)
 	{
 		AbilitySystemComponent->PlayMontage(this, ActivationInfo, AttackMontage, 1.0f);
+	}
+
+	// 캐스팅 사운드 — 로컬 클라이언트에서만 재생
+	if (AvatarPawn && AvatarPawn->IsLocallyControlled())
+	{
+		if (USMSoundManager* SM = USMSoundManager::Get(this))
+		{
+			SM->PlaySoundAtLocation(TEXT("ExplosionCast"), AvatarPawn->GetActorLocation());
+		}
 	}
 
 	UAbilityTask_WaitGameplayEvent* ReleaseEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
@@ -302,6 +312,19 @@ void UGA_Explosion::HandleCastFinished()
 	}
 
 	AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+
+	// 폭발 사운드 — 로컬 클라이언트에서만 재생
+	if (APawn* AvatarPawn = Cast<APawn>(AvatarActor))
+	{
+		if (AvatarPawn->IsLocallyControlled())
+		{
+			if (USMSoundManager* SM = USMSoundManager::Get(this))
+			{
+				SM->PlaySoundAtLocation(TEXT("ExplosionBoom"), AvatarActor->GetActorLocation());
+			}
+		}
+	}
+
 	if (AvatarActor->HasAuthority() == false)
 	{
 		return;

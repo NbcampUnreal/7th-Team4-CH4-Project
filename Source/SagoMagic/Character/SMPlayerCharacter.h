@@ -179,6 +179,10 @@ private:
 	FTimerHandle SpeedCheckTimerHandle;
 	void ServerValidateMovementSpeed();
 
+	// 이속 허용 오차 배율 (1.1 = 기준치의 110%까지 허용)
+	UPROPERTY(EditDefaultsOnly, Category = "AntiCheat", meta = (ClampMin = "1.0", ClampMax = "2.0"))
+	float SpeedCheckTolerance = 1.1f;
+
 private:
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputMappingContext> LobbyIMC;

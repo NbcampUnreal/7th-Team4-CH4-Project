@@ -357,12 +357,15 @@ void ASMPlayerCharacter::PossessedBy(AController* NewController)
 			AuthorizedMaxWalkSpeed = MoveComp->MaxWalkSpeed;
 		}
 
-		GetWorldTimerManager().SetTimer(
-			SpeedCheckTimerHandle,
-			this,
-			&ASMPlayerCharacter::ServerValidateMovementSpeed,
-			1.0f,
-			true);
+		if (AuthorizedMaxWalkSpeed > 0.0f)
+		{
+			GetWorldTimerManager().SetTimer(
+				SpeedCheckTimerHandle,
+				this,
+				&ASMPlayerCharacter::ServerValidateMovementSpeed,
+				1.0f,
+				true);
+		}
 	}
 }
 
@@ -462,8 +465,15 @@ void ASMPlayerCharacter::ServerValidateMovementSpeed()
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
 	if (MoveComp == nullptr) return;
 
-	// MaxWalkSpeed가 기준치의 110%를 초과하면 강제 복구
-	if (MoveComp->MaxWalkSpeed > AuthorizedMaxWalkSpeed * 1.1f)
+	// 기준 이속이 비정상이면 현재 값으로 재캐싱 후 중단
+	if (AuthorizedMaxWalkSpeed <= 0.0f)
+	{
+		AuthorizedMaxWalkSpeed = MoveComp->MaxWalkSpeed;
+		return;
+	}
+
+	// MaxWalkSpeed가 허용 오차를 초과하면 강제 복구
+	if (MoveComp->MaxWalkSpeed > AuthorizedMaxWalkSpeed * SpeedCheckTolerance)
 	{
 		MoveComp->MaxWalkSpeed = AuthorizedMaxWalkSpeed;
 	}

@@ -462,8 +462,8 @@ void ASMPlayerCharacter::ServerValidateMovementSpeed()
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
 	if (MoveComp == nullptr) return;
 
-	// MaxWalkSpeed가 기준치의 120%를 초과하면 강제 복구
-	if (MoveComp->MaxWalkSpeed > AuthorizedMaxWalkSpeed * 1.2f)
+	// MaxWalkSpeed가 기준치의 110%를 초과하면 강제 복구
+	if (MoveComp->MaxWalkSpeed > AuthorizedMaxWalkSpeed * 1.1f)
 	{
 		MoveComp->MaxWalkSpeed = AuthorizedMaxWalkSpeed;
 	}

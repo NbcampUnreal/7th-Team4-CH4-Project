@@ -8,7 +8,9 @@
 #include "Building/SMBaseBuilding.h"
 #include "Building/SMBuildPlaceTargetData.h"
 #include "Building/SMFenceBuilding.h"
+#include "Chaos/AABBTree.h"
 #include "Core/SMPlayerState.h"
+#include "Enemy/SMMonsterBase.h"
 #include "GameFramework/PlayerState.h"
 #include "GameplayTags/Character/SMCharacterTag.h"
 #include "Kismet/GameplayStatics.h"
@@ -463,16 +465,21 @@ bool USMBuildingModeComponent::CheckPlacementValidity(const FVector& Location, c
 	QParams.AddIgnoredActor(GetOwner());
 
 	FCollisionObjectQueryParams ObjParams;
-	ObjParams.AddObjectTypesToQuery(ECC_WorldDynamic);
 	ObjParams.AddObjectTypesToQuery(ECC_Pawn);
 
 	FVector Center = Location + FVector(0, 0, BoxExtent.Z + 10.0f);
-	bool bOverlap = GetWorld()->OverlapAnyTestByObjectType(
-		Center, FQuat::Identity, ObjParams,
-		FCollisionShape::MakeBox(BoxExtent), QParams);
-
-	return !bOverlap;
+	TArray<AActor*> IgnoredActors;
+	IgnoredActors.Add(GetOwner());
+	IgnoredActors.Append(GhostActors);
 	
+	TArray<AActor*> OutActors;
+	UKismetSystemLibrary::BoxOverlapActors(
+		GetWorld(), Center, BoxExtent,
+		{UEngineTypes::ConvertToObjectType(ECC_Pawn)},
+		ASMMonsterBase::StaticClass(),
+		IgnoredActors, OutActors);
+	
+	return OutActors.IsEmpty();
 }
 
 void USMBuildingModeComponent::ConvertGhostToCorner(ASMBaseBuilding* Ghost, float Yaw)

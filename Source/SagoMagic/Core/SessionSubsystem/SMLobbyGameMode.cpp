@@ -5,6 +5,7 @@
 
 #include "SMLobbyGameState.h"
 #include "SMPlayerSlotInfo.h"
+#include "Character/SMPlayerController.h"
 #include "Core/SMPlayerState.h"
 
 ASMLobbyGameMode::ASMLobbyGameMode()
@@ -27,9 +28,14 @@ void ASMLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	//bIsHost는 Replicated이므로 클라이언트에 자동 전파
 	NewPlayerState->bIsHost = PlayerList.Num() == 1;
 	NewPlayerState->bIsReady = false;
-	FString NewPlayerName = FString::Printf(TEXT("Player %d"),PlayerList.Num());
+	FString NewPlayerName = FString::Printf(TEXT(""));
 	NewPlayerState->SetPlayerName(NewPlayerName);
-
+	
+	ASMPlayerController* NewSMPlayerController = Cast<ASMPlayerController>(NewPlayer);
+	if (IsValid(NewSMPlayerController) == false) return;
+	
+	NewSMPlayerController->ClientRPCSetNickName();
+	
 	if (PlayerList.Num() == 1)
 	{
 		HostController = NewPlayer;

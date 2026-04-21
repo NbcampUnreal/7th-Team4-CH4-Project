@@ -204,4 +204,12 @@ public:
 	/** L_Play진입 시 선택 스킬을 인벤토리에 초기화(서버 전용) */
 	void AddBasicSkillToInventory();
 	
+	//================================
+	// 닉네임 설정
+	//================================
+	UFUNCTION(Client, Reliable)
+	void ClientRPCSetNickName();
+	
+	UFUNCTION(Server, Reliable)
+	void ServerRPCUpdateNickName(const FString& NickName);
 };

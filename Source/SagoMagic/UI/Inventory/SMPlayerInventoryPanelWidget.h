@@ -187,6 +187,15 @@ protected:
 	/** 선택된 스킬 상태 반영 */
 	void ApplySelectedSkillState();
 
+	/** hover / context floating 위젯 런타임 생성 보장 */
+	void EnsureFloatingWidgetsCreated();
+
+	/** 절대 좌표를 뷰포트 좌표로 변환 */
+	FVector2D ResolveViewportPosition(FVector2D InAbsolutePosition);
+
+	/** floating 위젯이 화면 밖으로 나가지 않도록 뷰포트 내부로 보정 */
+	FVector2D ClampFloatingWidgetToViewport(UUserWidget* InFloatingWidget, FVector2D InViewportPosition);
+
 	/** 호버 아이템 상태 갱신 블루프린트 이벤트 */
 	UFUNCTION(BlueprintImplementableEvent, Category="Player Inventory Panel Widget")
 	void BP_OnHoveredItemChanged();
@@ -217,12 +226,20 @@ protected:
 	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Player Inventory Panel Widget")
 	TObjectPtr<USMQuickSlotBarWidget> QuickSlotBarWidget;
 
+	/** 컨텍스트 메뉴 위젯 클래스 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Player Inventory Panel Widget")
+	TSubclassOf<USMInventoryContextMenuWidget> ContextMenuWidgetClass;
+
 	/** 컨텍스트 메뉴 위젯 */
-	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Player Inventory Panel Widget")
+	UPROPERTY(Transient, BlueprintReadOnly, Category="Player Inventory Panel Widget")
 	TObjectPtr<USMInventoryContextMenuWidget> ContextMenuWidget;
 
+	/** 아이템 호버 정보 위젯 클래스 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Player Inventory Panel Widget")
+	TSubclassOf<USMItemHoverInfoWidget> ItemHoverInfoWidgetClass;
+
 	/** 아이템 호버 정보 위젯 */
-	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Player Inventory Panel Widget")
+	UPROPERTY(Transient, BlueprintReadOnly, Category="Player Inventory Panel Widget")
 	TObjectPtr<USMItemHoverInfoWidget> ItemHoverInfoWidget;
 
 	/** 인벤토리 전용 알림 위젯 */

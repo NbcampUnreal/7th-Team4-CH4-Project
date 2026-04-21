@@ -59,6 +59,10 @@ public:
 	UFUNCTION(BlueprintPure, Category="Inventory Context Menu Widget")
 	bool IsEquippedInQuickSlot() const;
 
+	/** 표시 가능한 컨텍스트 메뉴 액션이 하나라도 있는지 Getter */
+	UFUNCTION(BlueprintPure, Category="Inventory Context Menu Widget")
+	bool HasAnyAvailableAction() const;
+
 	/** 대상 아이템 인스턴스 ID Setter */
 	void SetItemInstanceId(const FGuid& InItemInstanceId)
 	{

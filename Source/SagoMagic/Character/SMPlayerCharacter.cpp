@@ -348,6 +348,22 @@ void ASMPlayerCharacter::PossessedBy(AController* NewController)
 	// 서버에서 호출
 	InitializeAbilitySystem();
 	GiveDefaultAbilities();
+
+	// 이속 핵 방어 — 서버가 기준 이속 캐싱 후 1초마다 검증
+	if (HasAuthority())
+	{
+		if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+		{
+			AuthorizedMaxWalkSpeed = MoveComp->MaxWalkSpeed;
+		}
+
+		GetWorldTimerManager().SetTimer(
+			SpeedCheckTimerHandle,
+			this,
+			&ASMPlayerCharacter::ServerValidateMovementSpeed,
+			1.0f,
+			true);
+	}
 }
 
 void ASMPlayerCharacter::OnRep_PlayerState()
@@ -436,6 +452,20 @@ void ASMPlayerCharacter::OnRep_IsDead()
 	if (bIsDead)
 	{
 		HandleDeath();
+	}
+}
+
+void ASMPlayerCharacter::ServerValidateMovementSpeed()
+{
+	if (!HasAuthority() || bIsDead) return;
+
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	if (MoveComp == nullptr) return;
+
+	// MaxWalkSpeed가 기준치의 120%를 초과하면 강제 복구
+	if (MoveComp->MaxWalkSpeed > AuthorizedMaxWalkSpeed * 1.2f)
+	{
+		MoveComp->MaxWalkSpeed = AuthorizedMaxWalkSpeed;
 	}
 }
 

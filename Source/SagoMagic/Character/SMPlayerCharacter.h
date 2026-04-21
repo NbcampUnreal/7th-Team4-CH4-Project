@@ -174,6 +174,11 @@ protected:
 private:
 	void BroadcastAttackReleasedEvent();
 
+	// 이속 핵 방어 — 서버가 인정하는 기준 이속
+	float AuthorizedMaxWalkSpeed = 0.0f;
+	FTimerHandle SpeedCheckTimerHandle;
+	void ServerValidateMovementSpeed();
+
 private:
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputMappingContext> LobbyIMC;

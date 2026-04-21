@@ -130,9 +130,6 @@ void AGCN_LineTraceChain::UpdateChain()
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(OwnerActor.Get());
 
-	TArray<FHitResult> HitResults;
-	GetWorld()->LineTraceMultiByChannel(HitResults, Origin, TraceEnd, ECC_Pawn, Params);
-
 	//체인 포인트 배열 구성
 	TArray<FVector> ChainPoints;
 	TArray<AActor*> ChainedActors;

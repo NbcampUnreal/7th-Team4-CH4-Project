@@ -122,9 +122,6 @@ void AGCN_LineTraceBeam::UpdateBeam()
 	Params.AddIgnoredActor(TargetActor.Get());
 
 	//LineTraceMulti로 아군 관통 처리
-	TArray<FHitResult> HitResults;
-	GetWorld()->LineTraceMultiByChannel(HitResults, Origin, TraceEnd, ECC_Pawn, Params);
-
 	FVector BeamEndPoint = TraceEnd;
 	if (bPenetrate == false)
 	{

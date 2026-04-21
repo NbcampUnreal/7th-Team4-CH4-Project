@@ -215,7 +215,7 @@ private:
 	
 public:
 	//SetAimOrigin
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, Unreliable)
 	void ServerSetStaffTipAimOrigin(FVector NewOrigin);
 
 	UPROPERTY()

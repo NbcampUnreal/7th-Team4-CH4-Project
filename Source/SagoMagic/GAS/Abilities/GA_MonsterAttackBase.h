@@ -70,19 +70,19 @@ protected:
 
 private:
     /**
-     * 몬스터 앞 방향으로 SphereTrace를 쏴서 타격 대상을 찾습니다.
+     * 몬스터 앞 방향으로 SphereTrace를 쏴서 타격 대상을 찾음
      * @param OutHitResult - 맞은 대상 정보
      * @return 타격 성공 여부
      **/
     bool PerformHitCheck(FHitResult& OutHitResult) const;
 
     /**
-     * 몬스터 AttributeSet에서 현재 AttackPower 값을 읽어옵니다.
-     * AttributeSet이 없으면 기본값 10을 반환합니다.
+     * 몬스터 AttributeSet에서 현재 AttackPower 값을 읽음
+     * AttributeSet이 없으면 기본값 10을 반환
      **/
     float GetMonsterAttackPower() const;
 
-    // 이거 추가
+    
     UFUNCTION()
     void OnMontageCompleted();
 

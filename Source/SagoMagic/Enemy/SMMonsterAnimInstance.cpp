@@ -41,8 +41,5 @@ void USMMonsterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     if (CachedASC)
     {
         bIsAttacking = CachedASC->HasMatchingGameplayTag(AttackingTag);
-        /*bIsAttacking = CachedASC->HasMatchingGameplayTag(
-            FGameplayTag::RequestGameplayTag(FName("Enemy.Attacking"))
-        );*/
     }
 }

@@ -297,18 +297,6 @@ void ASMMonsterBase::HandleDeath(AController* KillerController)
 
     bIsDead = true;
     MonsterAbilitySystemComponent->AddLooseGameplayTag(SMEnemyTag::Enemy_State_Death);
-    // AnimInstance에 사망 알리기
-    //if (USMMonsterAnimInstance* AnimInst =
-    //    Cast<USMMonsterAnimInstance>(GetMesh()->GetAnimInstance()))
-    //{
-    //    AnimInst->bIsDead = true;
-    //}
-
-    // 사망 Montage 재생
-    //if (DeathMontage)
-    //{
-    //    PlayAnimMontage(DeathMontage);
-    //}
 
     // 막타 친 플레이어에게 골드 지급
     if (KillerController)

@@ -12,6 +12,7 @@ class UBorder;
 class UCanvasPanel;
 class UDragDropOperation;
 class USMDragItemPreviewWidget;
+class USMInventoryCellVisualWidget;
 class USMInventoryDragDropOperation;
 
 
@@ -210,6 +211,10 @@ protected:
 	/** 드래그 미리보기 위젯 클래스 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Quick Slot Bar Widget")
 	TSubclassOf<USMDragItemPreviewWidget> DragPreviewWidgetClass;
+
+	/** 퀵슬롯 Shape 프리뷰용 셀 비주얼 위젯 클래스 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Quick Slot Bar Widget")
+	TSubclassOf<USMInventoryCellVisualWidget> PreviewCellVisualWidgetClass;
 
 private:
 	FGameplayMessageListenerHandle QuickSlotUpdatedListenerHandle;

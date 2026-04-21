@@ -7,11 +7,17 @@
 #include "SMGameInstance.generated.h"
 
 /**
- * 세션 생성 서브시스템
- * 스팀과 연동하여 친구 초대 가능
+ * 로컬 정보 저장용 GameInstance
  */
 UCLASS()
 class SAGOMAGIC_API USMGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
+
+public:
+	void SetPendingNickname(const FString& Nickname);
+	const FString& GetPendingNickname() const { return PendingNickname; }
+
+private:
+	FString PendingNickname;
 };

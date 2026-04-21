@@ -13,6 +13,7 @@
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "GameFramework/Pawn.h"
 #include "InputAction.h"
+#include "Core/SMGameInstance.h"
 #include "Core/SMGameMode.h"
 #include "GameplayTags/UI/SMUITag.h"
 #include "GameFramework/PawnMovementComponent.h"
@@ -31,7 +32,7 @@ void ASMPlayerController::BeginPlay()
 
 	// 게임이 종료된 후 로비로 돌아와 다시 컨트롤러를 생성하면 설정들 초기화
 	ResetIgnoreInputFlags();
-	
+
 	SetShowMouseCursor(true);
 
 	FInputModeGameAndUI InputMode;
@@ -178,7 +179,7 @@ void ASMPlayerController::ClientRPC_ShowGameResult_Implementation(bool bIsVictor
 	{
 		HideInventoryWidget();
 	}
-	
+
 	if (ASMHUD* HUD = Cast<ASMHUD>(GetHUD()))
 	{
 		if (USMHUDManager* HUDMgr = HUD->GetHUDManager())
@@ -191,7 +192,7 @@ void ASMPlayerController::ClientRPC_ShowGameResult_Implementation(bool bIsVictor
 void ASMPlayerController::ClientRPC_LockPlayerControl_Implementation()
 {
 	SetIgnoreMoveInput(true);
-	
+
 	if (APawn* ControlledPawn = GetPawn())
 	{
 		if (UPawnMovementComponent* MovementComp = ControlledPawn->GetMovementComponent())
@@ -199,7 +200,7 @@ void ASMPlayerController::ClientRPC_LockPlayerControl_Implementation()
 			MovementComp->StopMovementImmediately();
 		}
 	}
-	
+
 	SM_LOG(this, LogSM, Log, TEXT("게임 종료료 인해 조작 잠김"));
 }
 
@@ -443,7 +444,8 @@ void ASMPlayerController::ServerRPCEquipSkillToQuickSlot_Implementation(const FG
 	}
 
 	FText FailureMessage;
-	if (InventoryComponent->TryGetEquipSkillToQuickSlotFailureNotification(InSkillInstanceId, InSlotIndex, FailureMessage))
+	if (InventoryComponent->TryGetEquipSkillToQuickSlotFailureNotification(
+		InSkillInstanceId, InSlotIndex, FailureMessage))
 	{
 		ClientRPC_ShowNotification(SMUITag::Event_Notification_Inventory, FailureMessage, 2.0f);
 	}
@@ -469,7 +471,8 @@ void ASMPlayerController::ServerRPCEquipSkillToFirstAvailableQuickSlot_Implement
 	}
 
 	FText FailureMessage;
-	if (InventoryComponent->TryGetEquipSkillToFirstAvailableQuickSlotFailureNotification(InSkillInstanceId, FailureMessage))
+	if (InventoryComponent->TryGetEquipSkillToFirstAvailableQuickSlotFailureNotification(
+		InSkillInstanceId, FailureMessage))
 	{
 		ClientRPC_ShowNotification(SMUITag::Event_Notification_Inventory, FailureMessage, 2.0f);
 	}
@@ -656,7 +659,8 @@ void ASMPlayerController::ShowInventoryWidget()
 		}
 		else
 		{
-			if (USMPlayerInventoryPanelWidget* CurrentPanelWidget = InventoryRootWidgetInstance->GetCurrentPanelWidget())
+			if (USMPlayerInventoryPanelWidget* CurrentPanelWidget = InventoryRootWidgetInstance->
+				GetCurrentPanelWidget())
 			{
 				CurrentPanelWidget->PreparePanelForOpen();
 			}
@@ -786,7 +790,7 @@ void ASMPlayerController::AddBasicSkillToInventory()
 	if (IsValid(Inv) == false) return;
 
 	Inv->ResetInventory();
-	
+
 	const TSoftObjectPtr<USMItemDefinition>& SkillDef = PS->GetSelectedLobbySkillDef();
 	if (SkillDef.IsNull()) return;
 
@@ -795,4 +799,28 @@ void ASMPlayerController::AddBasicSkillToInventory()
 	{
 		Inv->EquipSkillToQuickSlot(SkillGuid, 0);
 	}
+}
+
+void ASMPlayerController::ClientRPCSetNickName_Implementation()
+{
+	USMGameInstance* GI = GetGameInstance<USMGameInstance>();
+	if (IsValid(GI) == false) return;
+
+	FString NickName = GI->GetPendingNickname().IsEmpty() == false ? GI->GetPendingNickname() : TEXT("Player");
+
+	ServerRPCUpdateNickName(NickName);
+}
+
+void ASMPlayerController::ServerRPCUpdateNickName_Implementation(const FString& NickName)
+{
+	APlayerState* PS = GetPlayerState<APlayerState>();
+	if (IsValid(PS) == false) return;
+
+	ASMLobbyGameMode* LobbyGM = GetWorld()->GetAuthGameMode<ASMLobbyGameMode>();
+	if (IsValid(LobbyGM) == false) return;
+
+	FString UniqueName = LobbyGM->GenerateUniqueName(this, NickName);
+	PS->SetPlayerName(UniqueName);
+
+	LobbyGM->UpdateLobbyState();
 }

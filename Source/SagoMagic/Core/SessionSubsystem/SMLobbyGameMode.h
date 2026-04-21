@@ -32,6 +32,9 @@ public:
 	//ASMPlayerController.ServerRPCRequestStartGame() RPC에서 호출할 예정
 	void TryStartGame();
 
+	//로비 환경 변화시 로비 상태 업데이트
+	void UpdateLobbyState();
+	
 protected:
 	UPROPERTY()
 	TArray<TObjectPtr<APlayerController>> PlayerList;
@@ -46,8 +49,6 @@ protected:
 	bool IsAllReady() const;
 	//방장 이탈시 새로운 호스트 임명
 	void AssignNewHost();
-	//로비 환경 변화시 로비 상태 업데이트
-	void UpdateLobbyState();
 
 	ASMPlayerState* GetSMPlayerState(APlayerController* PC) const;
 	ASMLobbyGameState* GetLobbyGameState() const;
@@ -62,4 +63,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Skill|Preset")
 	TArray<TSoftObjectPtr<USMItemDefinition>> PresetSkillDefinitions;
 	
+	//================================
+	// 닉네임 설정
+	//================================
+public:
+	/** 기존 플레이어 이름과 중복되지 않는 유니크한 이름 반환 (요청자 본인 제외) */
+	FString GenerateUniqueName(const APlayerController* Requester, const FString& DesiredName) const;
 };

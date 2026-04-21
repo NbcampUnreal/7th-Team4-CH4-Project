@@ -5,6 +5,7 @@
 
 #include "SMLobbyGameState.h"
 #include "SMPlayerSlotInfo.h"
+#include "Character/SMPlayerController.h"
 #include "Core/SMPlayerState.h"
 
 ASMLobbyGameMode::ASMLobbyGameMode()
@@ -27,9 +28,17 @@ void ASMLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	//bIsHost는 Replicated이므로 클라이언트에 자동 전파
 	NewPlayerState->bIsHost = PlayerList.Num() == 1;
 	NewPlayerState->bIsReady = false;
-	FString NewPlayerName = FString::Printf(TEXT("Player %d"),PlayerList.Num());
-	NewPlayerState->SetPlayerName(NewPlayerName);
-
+	NewPlayerState->SetPlayerName(FString());
+	if (PresetSkillDefinitions.IsValidIndex(0))
+	{
+		NewPlayerState->SetSelectedLobbySkillDef(PresetSkillDefinitions[0]);
+	}
+	
+	ASMPlayerController* NewSMPlayerController = Cast<ASMPlayerController>(NewPlayer);
+	if (IsValid(NewSMPlayerController) == false) return;
+	
+	NewSMPlayerController->ClientRPCSetNickName();
+	
 	if (PlayerList.Num() == 1)
 	{
 		HostController = NewPlayer;
@@ -144,4 +153,33 @@ const TSoftObjectPtr<USMItemDefinition>& ASMLobbyGameMode::GetPresetSkillDefinit
 	if (PresetSkillDefinitions.IsValidIndex(Index) == false) return InValidDefinition;
 	
 	return PresetSkillDefinitions[Index];
+}
+
+FString ASMLobbyGameMode::GenerateUniqueName(const APlayerController* Requester, const FString& DesiredName) const
+{
+	// 요청자 본인을 제외한 현재 이름 목록 수집
+	TSet<FString> UsedNames;
+	for (const APlayerController* PC : PlayerList)
+	{
+		if (PC == Requester) continue;
+
+		const APlayerState* PS = PC->GetPlayerState<APlayerState>();
+		if (IsValid(PS) == false) continue;
+
+		UsedNames.Add(PS->GetPlayerName());
+	}
+
+	if (UsedNames.Contains(DesiredName) == false)
+	{
+		return DesiredName;
+	}
+
+	int32 Suffix = 1;
+	FString UniqueName;
+	do
+	{
+		UniqueName = FString::Printf(TEXT("%s %d"), *DesiredName, Suffix++);
+	} while (UsedNames.Contains(UniqueName));
+
+	return UniqueName;
 }

@@ -32,9 +32,15 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UEditableTextBox> IPInputBox;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UEditableTextBox> NicknameInputBox;
 
 	UPROPERTY()
 	TObjectPtr<USMSessionSubsystem> SessionSubsystem;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "NickName")
+	int32 NickNameLengthLimit = 6;
 
 	UFUNCTION()
 	void OnHostButtonClicked();

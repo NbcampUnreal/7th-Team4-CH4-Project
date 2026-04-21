@@ -29,7 +29,7 @@
 void ASMPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	// 게임이 종료된 후 로비로 돌아와 다시 컨트롤러를 생성하면 설정들 초기화
 	ResetIgnoreInputFlags();
 
@@ -807,9 +807,9 @@ void ASMPlayerController::ClientRPCSetNickName_Implementation()
 	SM_LOG(this, LogSM, Log, TEXT("GI Valid: %d / PendingNickname: %s"), IsValid(GI),
 	       GI ? *GI->GetPendingNickname() : TEXT("null"));
 	if (IsValid(GI) == false) return;
-	
+
 	FString NickName = GI->GetPendingNickname().IsEmpty() == false ? GI->GetPendingNickname() : TEXT("Player");
-	
+
 	ServerRPCUpdateNickName(NickName);
 }
 
@@ -817,11 +817,12 @@ void ASMPlayerController::ServerRPCUpdateNickName_Implementation(const FString& 
 {
 	APlayerState* PS = GetPlayerState<APlayerState>();
 	if (IsValid(PS) == false) return;
-	
-	PS->SetPlayerName(NickName);
-	
+
 	ASMLobbyGameMode* LobbyGM = GetWorld()->GetAuthGameMode<ASMLobbyGameMode>();
 	if (IsValid(LobbyGM) == false) return;
+
+	FString UniqueName = LobbyGM->GenerateUniqueName(this, NickName);
+	PS->SetPlayerName(UniqueName);
 
 	LobbyGM->UpdateLobbyState();
 }

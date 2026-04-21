@@ -63,4 +63,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Skill|Preset")
 	TArray<TSoftObjectPtr<USMItemDefinition>> PresetSkillDefinitions;
 	
+	//================================
+	// 닉네임 설정
+	//================================
+public:
+	/** 기존 플레이어 이름과 중복되지 않는 유니크한 이름 반환 (요청자 본인 제외) */
+	FString GenerateUniqueName(const APlayerController* Requester, const FString& DesiredName) const;
 };

@@ -29,6 +29,9 @@ public:
 		int32 InSkillLevel);
 
 protected:
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_PlayFireSound();
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Effects")
 	TObjectPtr<UNiagaraComponent> TurretEffect;
 	

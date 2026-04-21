@@ -726,6 +726,16 @@ bool USMInventoryComponent::CanPlaceItem(const FGuid& InItemInstanceId, const FG
 bool USMInventoryComponent::FindAvailablePosition(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId,
                                                   int32& OutGridX, int32& OutGridY) const
 {
+	return FindAvailablePositionInternal(InItemInstanceId, InTargetContainerId, FGuid(), OutGridX, OutGridY);
+}
+
+bool USMInventoryComponent::FindAvailablePositionInternal(
+	const FGuid& InItemInstanceId,
+	const FGuid& InTargetContainerId,
+	const FGuid& InAdditionalIgnoredItemInstanceId,
+	int32& OutGridX,
+	int32& OutGridY) const
+{
 	const FSMGridContainerState* TargetContainer = FindContainer(InTargetContainerId);
 	if (TargetContainer == nullptr)
 	{
@@ -758,7 +768,9 @@ bool USMInventoryComponent::FindAvailablePosition(const FGuid& InItemInstanceId,
 
 	for (const FSMItemInstanceData& Entry : ItemEntries)
 	{
-		if (Entry.InstanceId == InItemInstanceId || Entry.ParentContainerId != InTargetContainerId)
+		if (Entry.InstanceId == InItemInstanceId ||
+			Entry.InstanceId == InAdditionalIgnoredItemInstanceId ||
+			Entry.ParentContainerId != InTargetContainerId)
 		{
 			continue;
 		}
@@ -768,7 +780,9 @@ bool USMInventoryComponent::FindAvailablePosition(const FGuid& InItemInstanceId,
 
 	for (const FSMSkillItemInstanceData& Entry : SkillEntries)
 	{
-		if (Entry.BaseItem.InstanceId == InItemInstanceId || Entry.BaseItem.ParentContainerId != InTargetContainerId)
+		if (Entry.BaseItem.InstanceId == InItemInstanceId ||
+			Entry.BaseItem.InstanceId == InAdditionalIgnoredItemInstanceId ||
+			Entry.BaseItem.ParentContainerId != InTargetContainerId)
 		{
 			continue;
 		}
@@ -1180,35 +1194,19 @@ bool USMInventoryComponent::FindMainInventorySwapPosition(
 	const FSMSkillItemInstanceData& InIncomingSkill,
 	const FSMSkillItemInstanceData& InEquippedQuickSlotSkill,
 	int32& OutGridX,
-	int32& OutGridY)
+	int32& OutGridY) const
 {
 	if (InIncomingSkill.BaseItem.ParentContainerId != MainInventory.ContainerId)
 	{
 		return false;
 	}
 
-	const FGuid SavedParentContainerId = InIncomingSkill.BaseItem.ParentContainerId;
-	const int32 SavedGridX = InIncomingSkill.BaseItem.GridX;
-	const int32 SavedGridY = InIncomingSkill.BaseItem.GridY;
-
-	FSMSkillItemInstanceData* EditableIncomingSkill = FindEditableSkill(InIncomingSkill.BaseItem.InstanceId);
-	if (EditableIncomingSkill == nullptr)
-	{
-		return false;
-	}
-
-	EditableIncomingSkill->BaseItem.ParentContainerId = FGuid();
-
-	const bool bFoundPosition = FindAvailablePosition(
+	return FindAvailablePositionInternal(
 		InEquippedQuickSlotSkill.BaseItem.InstanceId,
 		MainInventory.ContainerId,
+		InIncomingSkill.BaseItem.InstanceId,
 		OutGridX,
 		OutGridY);
-
-	EditableIncomingSkill->BaseItem.ParentContainerId = SavedParentContainerId;
-	EditableIncomingSkill->BaseItem.GridX = SavedGridX;
-	EditableIncomingSkill->BaseItem.GridY = SavedGridY;
-	return bFoundPosition;
 }
 
 bool USMInventoryComponent::EquipSkillToQuickSlot(const FGuid& InSkillInstanceId, int32 InSlotIndex)
@@ -1803,7 +1801,7 @@ bool USMInventoryComponent::TryGetEquipSkillToQuickSlotFailureNotification(
 		int32 SwapGridX = INDEX_NONE;
 		int32 SwapGridY = INDEX_NONE;
 		if (PreviousSlot == nullptr &&
-			const_cast<USMInventoryComponent*>(this)->FindMainInventorySwapPosition(
+			FindMainInventorySwapPosition(
 				*SkillData,
 				*EquippedQuickSlotSkill,
 				SwapGridX,

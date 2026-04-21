@@ -319,7 +319,12 @@ private:
 	bool FindMainInventorySwapPosition(const FSMSkillItemInstanceData& InIncomingSkill,
 	                                   const FSMSkillItemInstanceData& InEquippedQuickSlotSkill,
 	                                   int32& OutGridX,
-	                                   int32& OutGridY);
+	                                   int32& OutGridY) const;
+
+	/** 빈 위치 탐색 내부 헬퍼 */
+	bool FindAvailablePositionInternal(const FGuid& InItemInstanceId, const FGuid& InTargetContainerId,
+	                                   const FGuid& InAdditionalIgnoredItemInstanceId, int32& OutGridX,
+	                                   int32& OutGridY) const;
 
 	/** 슬롯 인덱스 유효성 검사 */
 	bool IsValidQuickSlotIndex(int32 InSlotIndex) const;

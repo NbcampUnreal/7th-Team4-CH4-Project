@@ -30,7 +30,8 @@ ASMBaseItemDropActor::ASMBaseItemDropActor()
 	: bInitialized(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.bStartWithTickEnabled = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
+	PrimaryActorTick.bAllowTickOnDedicatedServer = false;
 	bReplicates = true;
 
 	RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
@@ -71,7 +72,7 @@ void ASMBaseItemDropActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (GetNetMode() == NM_DedicatedServer || StaticMeshComponent == nullptr || HasValidPayload() == false)
+	if (StaticMeshComponent == nullptr || HasValidPayload() == false)
 	{
 		return;
 	}
@@ -392,7 +393,9 @@ void ASMBaseItemDropActor::RefreshInteractionState()
 		return;
 	}
 
-	InteractionTargetComponent->SetInteractionEnabledRuntime(HasValidPayload());
+	const bool bHasValidItemPayload = HasValidPayload();
+	InteractionTargetComponent->SetInteractionEnabledRuntime(bHasValidItemPayload);
+	SetActorTickEnabled(bHasValidItemPayload && GetNetMode() != NM_DedicatedServer);
 }
 
 bool ASMBaseItemDropActor::HasValidPayload() const

@@ -5,6 +5,7 @@
 
 #include "NiagaraComponent.h"
 #include "SMASkillProjectile.h"
+#include "Core/DataManager/SMSoundManager.h"
 #include "GAS/SMGameplayAbilityUtils.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -97,6 +98,8 @@ void ASMSkillTurret::FireAtNearestEnemy()
 		(NearestEnemy->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 	
 	SpawnProjectile(BaseDirection);
+	// 모든 클라에 소리 재생
+	Multicast_PlayFireSound();
 	
 	
 	if (SkillLevel >= 3)
@@ -148,4 +151,17 @@ void ASMSkillTurret::OnDurationExpired()
 void ASMSkillTurret::FireSecondShot()
 {
 	SpawnProjectile(CachedFireDirection);
+	Multicast_PlayFireSound();
+}
+
+void ASMSkillTurret::Multicast_PlayFireSound_Implementation()
+{
+	// 데디는 사운드 재생 안함
+	if (IsRunningDedicatedServer()) return;
+	
+	USMSoundManager* SM = USMSoundManager::Get(this);
+	if (IsValid(SM))
+	{
+		SM->PlaySoundAtLocation(TEXT("TurretFire"), GetActorLocation());
+	}
 }

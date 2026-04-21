@@ -1,5 +1,6 @@
 #include "SMCharacterWidgetComponent.h"
 #include "AbilitySystemComponent.h"
+#include "Core/DataManager/SMSoundManager.h"
 #include "GAS/AttributeSets/SMPlayerAttributeSet.h"
 #include "UI/SMGoldFloatingText.h"
 
@@ -36,6 +37,11 @@ void USMCharacterWidgetComponent::OnGoldChanged(const FOnAttributeChangeData& Da
 	if (FMath::Abs(Delta) < 0.01f) return;
 	
 	SpawnGoldFloatingText(Delta);
+	
+	if (USMSoundManager* SM = USMSoundManager::Get(this))
+	{
+		SM->PlaySoundUI(TEXT("Coin"));
+	}
 }
 
 void USMCharacterWidgetComponent::SpawnGoldFloatingText(float GoldDelta)

@@ -28,8 +28,7 @@ void ASMLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	//bIsHost는 Replicated이므로 클라이언트에 자동 전파
 	NewPlayerState->bIsHost = PlayerList.Num() == 1;
 	NewPlayerState->bIsReady = false;
-	FString NewPlayerName = FString::Printf(TEXT(""));
-	NewPlayerState->SetPlayerName(NewPlayerName);
+	NewPlayerState->SetPlayerName(FString());
 	
 	ASMPlayerController* NewSMPlayerController = Cast<ASMPlayerController>(NewPlayer);
 	if (IsValid(NewSMPlayerController) == false) return;

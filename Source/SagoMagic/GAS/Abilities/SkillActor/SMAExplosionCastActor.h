@@ -6,6 +6,7 @@
 #include "SMAExplosionCastActor.generated.h"
 
 class UNiagaraComponent;
+class UAudioComponent;
 class UParticleSystemComponent;
 class USceneComponent;
 class UStaticMeshComponent;
@@ -65,6 +66,9 @@ protected:
 	/** 액터 시작 시 초기 연출 상태 설정 */
 	virtual void BeginPlay() override;
 
+	/** 액터 종료 시 루프 사운드 정리 */
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 protected:
 	/** 루트 컴포넌트 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Explosion")
@@ -110,6 +114,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Explosion|Visual")
 	float PostExplosionLifeSpan = 2.0f;
 
+	/** 실제 폭발 판정 반경에 곱할 보정 배율 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Explosion|Gameplay")
+	float ExplosionDamageRadiusMultiplier = 1.5f;
+
 private:
 	/** 복제된 시각 상태 반영 */
 	UFUNCTION()
@@ -136,6 +144,12 @@ private:
 	/** 폭발 적용 대상 유효성 검사 */
 	bool IsValidExplosionTarget(AActor* OtherActor) const;
 
+	/** 차지 루프 사운드 시작 */
+	void PlayCastingLoopSound();
+
+	/** 차지 루프 사운드 정지 */
+	void StopCastingLoopSound();
+
 private:
 	/** 실제 적용할 데미지 스펙 핸들 */
 	FGameplayEffectSpecHandle DamageSpecHandle;
@@ -153,6 +167,10 @@ private:
 
 	/** 현재 누적 캐스팅 시간 */
 	float ElapsedCastTime = 0.0f;
+
+	/** 차지 중 재생되는 루프 사운드 컴포넌트 */
+	UPROPERTY(Transient)
+	TObjectPtr<UAudioComponent> CastingLoopAudioComponent = nullptr;
 
 	/** 기둥 메시 기본 스케일 */
 	FVector PillarBaseScale = FVector::OneVector;

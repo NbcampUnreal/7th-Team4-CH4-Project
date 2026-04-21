@@ -5,9 +5,11 @@
 #include "Building/SMBaseBuilding.h"
 #include "Building/SMBaseCampActor.h"
 #include "Character/SMPlayerCharacter.h"
+#include "Components/AudioComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Core/DataManager/SMSoundManager.h"
 #include "GameplayTags/GameFlow/SMGameFlowTag.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
@@ -68,6 +70,12 @@ void ASMAExplosionCastActor::BeginPlay()
 	}
 }
 
+void ASMAExplosionCastActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	StopCastingLoopSound();
+	Super::EndPlay(EndPlayReason);
+}
+
 void ASMAExplosionCastActor::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -126,6 +134,7 @@ void ASMAExplosionCastActor::CancelCast()
 		return;
 	}
 
+	StopCastingLoopSound();
 	Destroy();
 }
 
@@ -173,6 +182,8 @@ void ASMAExplosionCastActor::ApplyCastStartVisuals()
 	ExplosionCascadeComponent->SetRelativeScale3D(ExplosionScale);
 	ExplosionNiagaraComponent->Deactivate();
 	ExplosionCascadeComponent->Deactivate();
+
+	PlayCastingLoopSound();
 }
 
 void ASMAExplosionCastActor::ApplyExplosionVisuals()
@@ -190,10 +201,17 @@ void ASMAExplosionCastActor::ApplyExplosionVisuals()
 	PillarMeshComponent->SetVisibility(false);
 	ChargeDiskMeshComponent->SetVisibility(false);
 	GroundMagicCircleComponent->Deactivate();
+	StopCastingLoopSound();
+
 	ExplosionNiagaraComponent->SetRelativeScale3D(FVector(GetTargetVisualScale(), GetTargetVisualScale(), GetTargetVisualScale()));
 	ExplosionCascadeComponent->SetRelativeScale3D(FVector(GetTargetVisualScale(), GetTargetVisualScale(), GetTargetVisualScale()));
 	ExplosionNiagaraComponent->Activate(true);
 	ExplosionCascadeComponent->Activate(true);
+
+	if (USMSoundManager* SoundManager = USMSoundManager::Get(this))
+	{
+		SoundManager->PlaySoundAtLocation(TEXT("Explosion"), GetActorLocation());
+	}
 }
 
 void ASMAExplosionCastActor::ApplyCancelVisuals()
@@ -208,6 +226,7 @@ void ASMAExplosionCastActor::ApplyCancelVisuals()
 	GroundMagicCircleComponent->Deactivate();
 	ExplosionNiagaraComponent->Deactivate();
 	ExplosionCascadeComponent->Deactivate();
+	StopCastingLoopSound();
 }
 
 void ASMAExplosionCastActor::UpdateCastingVisuals()
@@ -237,6 +256,8 @@ void ASMAExplosionCastActor::ApplyExplosionDamage()
 		return;
 	}
 
+	const float DamageRadius = ExplosionRadius * FMath::Max(ExplosionDamageRadiusMultiplier, 0.0f);
+
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
 
@@ -251,7 +272,7 @@ void ASMAExplosionCastActor::ApplyExplosionDamage()
 	UKismetSystemLibrary::SphereOverlapActors(
 		this,
 		GetActorLocation(),
-		ExplosionRadius,
+		DamageRadius,
 		ObjectTypes,
 		nullptr,
 		ActorsToIgnore,
@@ -315,4 +336,42 @@ bool ASMAExplosionCastActor::IsValidExplosionTarget(AActor* OtherActor) const
 	}
 
 	return TargetASC->HasMatchingGameplayTag(SMGameFlowTag::Team) == false;
+}
+
+void ASMAExplosionCastActor::PlayCastingLoopSound()
+{
+	if (IsValid(CastingLoopAudioComponent))
+	{
+		return;
+	}
+
+	USMSoundManager* SoundManager = USMSoundManager::Get(this);
+	if (IsValid(SoundManager) == false)
+	{
+		return;
+	}
+
+	CastingLoopAudioComponent = SoundManager->PlaySoundLoopAttached(TEXT("ExplosionLoop"), SceneRoot);
+}
+
+void ASMAExplosionCastActor::StopCastingLoopSound()
+{
+	if (IsValid(CastingLoopAudioComponent) == false)
+	{
+		CastingLoopAudioComponent = nullptr;
+		return;
+	}
+
+	USMSoundManager* SoundManager = USMSoundManager::Get(this);
+	if (IsValid(SoundManager))
+	{
+		SoundManager->StopSoundLoop(CastingLoopAudioComponent, 0.0f);
+	}
+	else
+	{
+		CastingLoopAudioComponent->Stop();
+		CastingLoopAudioComponent->DestroyComponent();
+	}
+
+	CastingLoopAudioComponent = nullptr;
 }

@@ -7,6 +7,7 @@
 #include "GameFramework/Character.h"
 #include "SMPlayerCharacter.generated.h"
 
+class USMCharacterWidgetComponent;
 class USMEditModeComponent;
 struct FOnAttributeChangeData;
 struct FInputActionValue;
@@ -43,6 +44,9 @@ class SAGOMAGIC_API ASMPlayerCharacter : public ACharacter, public IAbilitySyste
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "EditingMode", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USMEditModeComponent> EditModeComp;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Widget", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USMCharacterWidgetComponent> WidgetComp;
 protected:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<UInputMappingContext> DefaultIMC;

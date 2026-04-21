@@ -13,6 +13,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/BuildingModeComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SMCharacterWidgetComponent.h"
 #include "Components/SMEditModeComponent.h"
 #include "Core/SMGameMode.h"
 #include "Core/SMPlayerState.h"
@@ -70,6 +71,7 @@ ASMPlayerCharacter::ASMPlayerCharacter()
 	
 	BuildingModeComp = CreateDefaultSubobject<USMBuildingModeComponent>(TEXT("BuildingModeComponent"));
 	EditModeComp = CreateDefaultSubobject<USMEditModeComponent>(TEXT("EditModeComponent"));
+	WidgetComp = CreateDefaultSubobject<USMCharacterWidgetComponent>(TEXT("WidgetComponent"));
 }
 
 UAbilitySystemComponent* ASMPlayerCharacter::GetAbilitySystemComponent() const
@@ -407,7 +409,9 @@ void ASMPlayerCharacter::InitializeAbilitySystem()
 		// SMASC로부터 플레이어의 체력변화 구독
 		SMAbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
 			AttributeSet->GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
-
+	
+		if (WidgetComp)
+			WidgetComp->InitializeWithASC(SMAbilitySystemComponent);
 		UE_LOG(LogTemp, Log, TEXT("[%s] SMASC initialized from PlayerState"), *GetName());
 	}
 }

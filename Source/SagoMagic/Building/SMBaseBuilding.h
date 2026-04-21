@@ -52,6 +52,9 @@ public:
 	void SetIsBeingMoved(bool bInIsBeingMoved) { bIsBeingMoved = bInIsBeingMoved; }
 	
 	virtual void OnDamageReceived(AActor* Attacker, float Amount) {}
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "Building")
+	void OnBuildingPlaced();
 protected:
 	virtual void BeginPlay() override;
 

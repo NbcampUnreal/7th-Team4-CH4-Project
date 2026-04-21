@@ -71,6 +71,12 @@ public:
 		return DisplayItemType;
 	}
 
+	/** 타입 설명 Getter */
+	const FText& GetTypeDescription() const
+	{
+		return TypeDescription;
+	}
+
 	/** 표시 위치 Getter */
 	const FVector2D& GetScreenPosition() const
 	{
@@ -143,6 +149,10 @@ protected:
 	/** 아이템 종류 */
 	UPROPERTY(BlueprintReadOnly, Category="Item Hover Info Widget")
 	ESMItemType DisplayItemType;
+
+	/** 아이템 타입 설명 */
+	UPROPERTY(BlueprintReadOnly, Category="Item Hover Info Widget")
+	FText TypeDescription;
 
 	/** 현재 표시 위치 */
 	UPROPERTY(BlueprintReadOnly, Category="Item Hover Info Widget")

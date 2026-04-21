@@ -29,6 +29,10 @@ void ASMLobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	NewPlayerState->bIsHost = PlayerList.Num() == 1;
 	NewPlayerState->bIsReady = false;
 	NewPlayerState->SetPlayerName(FString());
+	if (PresetSkillDefinitions.IsValidIndex(0))
+	{
+		NewPlayerState->SetSelectedLobbySkillDef(PresetSkillDefinitions[0]);
+	}
 	
 	ASMPlayerController* NewSMPlayerController = Cast<ASMPlayerController>(NewPlayer);
 	if (IsValid(NewSMPlayerController) == false) return;

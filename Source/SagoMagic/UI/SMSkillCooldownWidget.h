@@ -18,6 +18,8 @@ public:
     UFUNCTION(BlueprintCallable)
     void InitializeWithASC(UAbilitySystemComponent* InASC, FGameplayTag InCooldownTag);
 
+    bool IsOnCooldown() const;
+    
 protected:
     virtual void NativeDestruct() override;
     virtual void NativeTick(const FGeometry& Geometry, float DeltaTime) override;

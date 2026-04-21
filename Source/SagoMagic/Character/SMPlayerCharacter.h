@@ -7,6 +7,7 @@
 #include "GameFramework/Character.h"
 #include "SMPlayerCharacter.generated.h"
 
+class UWidgetComponent;
 class USMCharacterWidgetComponent;
 class USMEditModeComponent;
 struct FOnAttributeChangeData;

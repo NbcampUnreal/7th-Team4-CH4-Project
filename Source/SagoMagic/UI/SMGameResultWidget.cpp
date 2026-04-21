@@ -1,5 +1,6 @@
 ﻿#include "SMGameResultWidget.h"
 #include "Components/TextBlock.h"
+#include "Core/DataManager/SMSoundManager.h"
 
 void USMGameResultWidget::NativeDestruct()
 {
@@ -34,6 +35,11 @@ void USMGameResultWidget::ShowResult(bool bIsVictory, float InReturnDelay)
 
 	if (bIsVictory) BP_OnVictory();
 	else BP_OnDefeat();
+	
+	if (USMSoundManager* SM = USMSoundManager::Get(this))
+	{
+		SM->PlayBGM(bIsVictory ? TEXT("GameWin") : TEXT("GameOver"));
+	}
 	
 	RemainingTime = InReturnDelay; // 서버에서 전달받은 시간 셋팅
  	

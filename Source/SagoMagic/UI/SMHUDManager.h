@@ -86,4 +86,7 @@ private:
     
 	UPROPERTY()
 	TObjectPtr<UAbilitySystemComponent> CachedASC;
+	
+	FDelegateHandle GEAddedHandle;
+	FDelegateHandle GERemovedHandle;
 };

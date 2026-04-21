@@ -43,11 +43,18 @@ void USMHUDManager::NativeDestruct()
 	{
 		QuickSlotListenerHandle.Unregister();
 	}
+
+	if (CachedASC)
+	{
+		CachedASC->OnActiveGameplayEffectAddedDelegateToSelf.Remove(GEAddedHandle);
+		CachedASC->OnAnyGameplayEffectRemovedDelegate().Remove(GERemovedHandle);
+	}
+
 	if (GetWorld())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(ASC_InitTimerHandle);
-	}
-	
+	} 
+
 	Super::NativeDestruct();
 }
 
@@ -84,13 +91,58 @@ void USMHUDManager::TryInitASC()
 void USMHUDManager::InitializeHUD(UAbilitySystemComponent* InPlayerASC)
 {
 	if (!InPlayerASC) return;
-	CachedASC = InPlayerASC; // ASC 캐싱
-    
-	if (WBP_PlayerStatus) 
+
+	if (CachedASC)
+	{
+		CachedASC->OnActiveGameplayEffectAddedDelegateToSelf.Remove(GEAddedHandle);
+		CachedASC->OnAnyGameplayEffectRemovedDelegate().Remove(GERemovedHandle);
+		GEAddedHandle.Reset();
+		GERemovedHandle.Reset();
+	}
+
+	CachedASC = InPlayerASC;
+
+	if (WBP_PlayerStatus)
 	{
 		WBP_PlayerStatus->InitializeStatus(InPlayerASC);
 	}
-    
+
+	// GE 추가될 때마다 쿨타임 위젯 갱신
+	GEAddedHandle = InPlayerASC->OnActiveGameplayEffectAddedDelegateToSelf.AddLambda(
+		[this](UAbilitySystemComponent*, const FGameplayEffectSpec& Spec, FActiveGameplayEffectHandle)
+		{
+			FGameplayTagContainer GrantedTags;
+			Spec.GetAllGrantedTags(GrantedTags);
+
+			for (const FGameplayTag& Tag : GrantedTags)
+			{
+				if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag(TEXT("Cooldown.Skill"))))
+				{
+					RefreshCooldownWidget(CachedASC);
+					return;
+				}
+			}
+		}
+	);
+
+	// GE 제거될 때도 갱신
+	GERemovedHandle = InPlayerASC->OnAnyGameplayEffectRemovedDelegate().AddLambda(
+		[this](const FActiveGameplayEffect& RemovedEffect)
+		{
+			FGameplayTagContainer GrantedTags;
+			RemovedEffect.Spec.GetAllGrantedTags(GrantedTags);
+
+			for (const FGameplayTag& Tag : GrantedTags)
+			{
+				if (Tag.MatchesTag(FGameplayTag::RequestGameplayTag(TEXT("Cooldown.Skill"))))
+				{
+					RefreshCooldownWidget(CachedASC);
+					return;
+				}
+			}
+		}
+	);
+
 	RefreshCooldownWidget(InPlayerASC);
 }
 
@@ -162,29 +214,61 @@ void USMHUDManager::RefreshCooldownWidget(UAbilitySystemComponent* InPlayerASC)
 {
 	if (!WBP_SkillCooldown || !InPlayerASC) return;
 
-	FGameplayTag FoundCooldownTag;
+    // 모든 쿨타임 태그 목록
+    static const TArray<FGameplayTag> AllCooldownTags =
+    {
+        SMSkillTag::Cooldown_Skill_Projectile,
+        SMSkillTag::Cooldown_Skill_SpawnField,
+        SMSkillTag::Cooldown_Skill_LineTrace,
+        SMSkillTag::Cooldown_Skill_ApplyInstantDamage,
+        SMSkillTag::Cooldown_Skill_Explosion,
+        SMSkillTag::Cooldown_Skill_SummonTurret,
+    };
+	
+    FGameplayTag ActiveCooldownTag;
+    if (APlayerController* PC = GetOwningPlayer())
+    {
+        if (APlayerState* PS = PC->GetPlayerState<APlayerState>())
+        {
+            if (USMInventoryComponent* Inv = PS->FindComponentByClass<USMInventoryComponent>())
+            {
+                FGameplayTag ActiveSkillTag = Inv->GetActiveSkillTag();
+                if (ActiveSkillTag.IsValid())
+                {
+                    FString TagString = ActiveSkillTag.ToString();
+                    TagString = TagString.Replace(TEXT("Ability.Skill."), TEXT("Cooldown.Skill."));
+                    ActiveCooldownTag = FGameplayTag::RequestGameplayTag(FName(*TagString), false);
+                }
+            }
+        }
+    }
+	
+    if (ActiveCooldownTag.IsValid())
+    {
+        FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(
+            FGameplayTagContainer(ActiveCooldownTag));
+        if (InPlayerASC->GetActiveEffects(Query).Num() > 0)
+        {
+            WBP_SkillCooldown->InitializeWithASC(InPlayerASC, ActiveCooldownTag);
+            return;
+        }
+    }
+	
+    for (const FGameplayTag& Tag : AllCooldownTags)
+    {
+        if (Tag == ActiveCooldownTag) continue;
 
-	if (APlayerController* PC = GetOwningPlayer())
-	{
-		if (APlayerState* PS = PC->GetPlayerState<APlayerState>())
-		{
-			if (USMInventoryComponent* Inv = PS->FindComponentByClass<USMInventoryComponent>())
-			{
-				FGameplayTag ActiveSkillTag = Inv->GetActiveSkillTag();
-				if (ActiveSkillTag.IsValid())
-				{
-					FString TagString = ActiveSkillTag.ToString();
-					TagString = TagString.Replace(TEXT("Ability.Skill."), TEXT("Cooldown.Skill."));
-					FoundCooldownTag = FGameplayTag::RequestGameplayTag(FName(*TagString), false);
-				}
-			}
-		}
-	}
+        FGameplayEffectQuery Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(
+            FGameplayTagContainer(Tag));
+        if (InPlayerASC->GetActiveEffects(Query).Num() > 0)
+        {
+            WBP_SkillCooldown->InitializeWithASC(InPlayerASC, Tag);
+            return;
+        }
+    }
 
-	if (FoundCooldownTag.IsValid())
-	{
-		WBP_SkillCooldown->InitializeWithASC(InPlayerASC, FoundCooldownTag);
-	}
+    // 살아있는 쿨타임이 아무것도 없으면 위젯 숨김
+    WBP_SkillCooldown->InitializeWithASC(InPlayerASC, FGameplayTag());
 }
 
 void USMHUDManager::OnQuickSlotUpdated(FGameplayTag InChannel, const FSMQuickSlotUpdatedMessage& InMessage)

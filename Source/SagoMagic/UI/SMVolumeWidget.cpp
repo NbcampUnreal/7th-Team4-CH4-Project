@@ -21,34 +21,43 @@ void USMVolumeWidget::NativeConstruct()
 	{
 		SliderBGM->SetValue(SM->GetBGMVolume());
 		SliderBGM->OnValueChanged.AddDynamic(this, &USMVolumeWidget::OnBGMVolumeChanged);
-		UpdatePercentText(TextMaster, SM->GetBGMVolume());
+		UpdatePercentText(TextBGM, SM->GetBGMVolume());
 	}
 	if (SliderSFX)
 	{
 		SliderSFX->SetValue(SM->GetSFXVolume());
 		SliderSFX->OnValueChanged.AddDynamic(this, &USMVolumeWidget::OnSFXVolumeChanged);
-		UpdatePercentText(TextMaster, SM->GetSFXVolume());
+		UpdatePercentText(TextSFX, SM->GetSFXVolume());
 	}
 }
 
 void USMVolumeWidget::OnMasterVolumeChanged(float Value)
 {
 	if (USMSoundManager* SM = USMSoundManager::Get(this))
+	{
 		SM->SetMasterVolume(Value);
+		SM->SaveAudioSettings();
+	}
 	UpdatePercentText(TextMaster, Value);
 }
 
 void USMVolumeWidget::OnBGMVolumeChanged(float Value)
 {
 	if (USMSoundManager* SM = USMSoundManager::Get(this))
+	{
 		SM->SetBGMVolume(Value);
+		SM->SaveAudioSettings();
+	}
 	UpdatePercentText(TextBGM, Value);
 }
 
 void USMVolumeWidget::OnSFXVolumeChanged(float Value)
 {
 	if (USMSoundManager* SM = USMSoundManager::Get(this))
+	{
 		SM->SetSFXVolume(Value);
+		SM->SaveAudioSettings();
+	}
 	UpdatePercentText(TextSFX, Value);
 }
 

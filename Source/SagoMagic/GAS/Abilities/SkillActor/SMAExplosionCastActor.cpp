@@ -190,6 +190,8 @@ void ASMAExplosionCastActor::ApplyExplosionVisuals()
 	PillarMeshComponent->SetVisibility(false);
 	ChargeDiskMeshComponent->SetVisibility(false);
 	GroundMagicCircleComponent->Deactivate();
+	ExplosionNiagaraComponent->SetRelativeScale3D(FVector(GetTargetVisualScale(), GetTargetVisualScale(), GetTargetVisualScale()));
+	ExplosionCascadeComponent->SetRelativeScale3D(FVector(GetTargetVisualScale(), GetTargetVisualScale(), GetTargetVisualScale()));
 	ExplosionNiagaraComponent->Activate(true);
 	ExplosionCascadeComponent->Activate(true);
 }

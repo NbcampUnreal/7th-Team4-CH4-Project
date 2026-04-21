@@ -44,6 +44,9 @@ public:
 	/** BeginPlay 오버라이드 */
 	virtual void BeginPlay() override;
 
+	/** Tick 오버라이드 */
+	virtual void Tick(float DeltaTime) override;
+
 	/** 리플리케이션 프로퍼티 등록 오버라이드 */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -145,6 +148,10 @@ protected:
 	/** 드랍 아이템 Payload */
 	UPROPERTY(ReplicatedUsing=OnRep_ItemDropPayload, VisibleAnywhere, BlueprintReadOnly, Category="Item Drop")
 	FSMItemDropPayload ItemDropPayload;
+
+	/** 초당 회전 속도 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item Drop|Visual")
+	float RotationSpeedDegreesPerSecond = 90.0f;
 
 	/** 드랍 월드 정보 위젯 표시 위치 오프셋 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item Drop|Interaction Widget")

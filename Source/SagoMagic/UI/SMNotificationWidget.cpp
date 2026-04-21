@@ -1,28 +1,26 @@
-﻿#include "UI/SMNotificationWidget.h"
+#include "UI/SMNotificationWidget.h"
 #include "Components/TextBlock.h"
 #include "GameplayTags/UI/SMUITag.h"
+#include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
+
+void USMNotificationWidget::SetListenChannel(const FGameplayTag& InListenChannel)
+{
+    ListenChannel = InListenChannel;
+    RegisterNotificationListener();
+}
 
 void USMNotificationWidget::NativeConstruct()
 {
     Super::NativeConstruct();
     
     SetRenderOpacity(0.0f); // 위젯 디폴트값을 보이지 않게
-
-    // 메시지 시스템 구독
-    if (UGameplayMessageSubsystem::HasInstance(this))
-    {
-       UGameplayMessageSubsystem& MsgSys = UGameplayMessageSubsystem::Get(this);
-       NotificationListenerHandle = MsgSys.RegisterListener<FNotificationMsg>(
-          SMUITag::Event_Notification, this, &ThisClass::OnNotificationReceived);
-    }
+    SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+    RegisterNotificationListener();
 }
 
 void USMNotificationWidget::NativeDestruct()
 {
-    if (NotificationListenerHandle.IsValid())
-    {
-       NotificationListenerHandle.Unregister();
-    }
+    UnregisterNotificationListener();
     Super::NativeDestruct();
 }
 
@@ -104,6 +102,7 @@ void USMNotificationWidget::TryShowNext()
     FNotificationMsg NextMsg; // 큐의 맨 앞에서 메시지를 하나 꺼냄
     if (MessageQueue.Dequeue(NextMsg))
     {
+        SetVisibility(ESlateVisibility::SelfHitTestInvisible);
         if (IsValid(TextBlock_Notification))
         {
             TextBlock_Notification->SetText(NextMsg.Message);
@@ -114,5 +113,43 @@ void USMNotificationWidget::TryShowNext()
         PhaseElapsed = 0.0f;
         
         SetRenderOpacity(0.0f);
+    }
+}
+
+FGameplayTag USMNotificationWidget::ResolveListenChannel() const
+{
+    if (ListenChannel.IsValid())
+    {
+        return ListenChannel;
+    }
+
+    if (GetTypedOuter<USMPlayerInventoryPanelWidget>() != nullptr)
+    {
+        return SMUITag::Event_Notification_Inventory;
+    }
+
+    return SMUITag::Event_Notification;
+}
+
+void USMNotificationWidget::RegisterNotificationListener()
+{
+    UnregisterNotificationListener();
+
+    if (UGameplayMessageSubsystem::HasInstance(this) == false)
+    {
+        return;
+    }
+
+    const FGameplayTag ChannelToListen = ResolveListenChannel();
+    UGameplayMessageSubsystem& MsgSys = UGameplayMessageSubsystem::Get(this);
+    NotificationListenerHandle = MsgSys.RegisterListener<FNotificationMsg>(
+        ChannelToListen, this, &ThisClass::OnNotificationReceived);
+}
+
+void USMNotificationWidget::UnregisterNotificationListener()
+{
+    if (NotificationListenerHandle.IsValid())
+    {
+        NotificationListenerHandle.Unregister();
     }
 }

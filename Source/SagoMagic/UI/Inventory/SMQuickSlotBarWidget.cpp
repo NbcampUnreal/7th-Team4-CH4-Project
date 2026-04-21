@@ -9,6 +9,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/SizeBox.h"
 #include "GameplayTags/Message/SMMessageTag.h"
+#include "GameplayTags/UI/SMUITag.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Inventory/Core/SMContainerTypes.h"
 #include "Inventory/Core/SMItemInstanceTypes.h"
@@ -19,6 +20,7 @@
 #include "UI/Inventory/SMDragItemPreviewWidget.h"
 #include "UI/Inventory/SMInventoryDragDropOperation.h"
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
+#include "UI/SMGameplayMessages.h"
 
 USMQuickSlotBarWidget::USMQuickSlotBarWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -274,6 +276,21 @@ bool USMQuickSlotBarWidget::NativeOnDrop(
 
 	if (CanEquipDraggedSkillToQuickSlot(InventoryOperation, TargetSlotIndex) == false)
 	{
+		FText FailureMessage;
+		if (InventoryComponent->TryGetEquipSkillToQuickSlotFailureNotification(
+			InventoryOperation->GetItemInstanceId(),
+			TargetSlotIndex,
+			FailureMessage) &&
+			UGameplayMessageSubsystem::HasInstance(this))
+		{
+			FNotificationMsg Message;
+			Message.Message = FailureMessage;
+			Message.DisplayDuration = 2.0f;
+
+			UGameplayMessageSubsystem& MessageSubsystem = UGameplayMessageSubsystem::Get(this);
+			MessageSubsystem.BroadcastMessage(SMUITag::Event_Notification_Inventory, Message);
+		}
+
 		if (USMPlayerInventoryPanelWidget* OwningPanel = GetTypedOuter<USMPlayerInventoryPanelWidget>())
 		{
 			OwningPanel->ClearActiveDragState();

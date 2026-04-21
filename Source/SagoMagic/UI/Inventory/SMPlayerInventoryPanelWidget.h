@@ -12,6 +12,7 @@ class USMSkillInventoryWidget;
 class USMQuickSlotBarWidget;
 class USMInventoryContextMenuWidget;
 class USMItemHoverInfoWidget;
+class USMNotificationWidget;
 class USMInventoryDragDropOperation;
 class USMDragItemPreviewWidget;
 
@@ -223,6 +224,10 @@ protected:
 	/** 아이템 호버 정보 위젯 */
 	UPROPERTY(meta=(BindWidgetOptional), BlueprintReadOnly, Category="Player Inventory Panel Widget")
 	TObjectPtr<USMItemHoverInfoWidget> ItemHoverInfoWidget;
+
+	/** 인벤토리 전용 알림 위젯 */
+	UPROPERTY(meta=(BindWidget), BlueprintReadOnly, Category="Player Inventory Panel Widget")
+	TObjectPtr<USMNotificationWidget> InventoryNotificationWidget;
 
 	/** 현재 선택된 스킬 인스턴스 ID */
 	UPROPERTY(BlueprintReadOnly, Category="Player Inventory Panel Widget")

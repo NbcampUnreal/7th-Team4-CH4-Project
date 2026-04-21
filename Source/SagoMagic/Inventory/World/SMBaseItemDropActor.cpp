@@ -4,6 +4,7 @@
 #include "Components/PrimitiveComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Character/SMPlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerState.h"
 #include "Engine/StaticMesh.h"
@@ -22,12 +23,15 @@
 #include "Inventory/Items/Fragments/SMDisplayInfoFragment.h"
 #include "Inventory/Items/Fragments/SMSkillProgressionFragment.h"
 #include "Inventory/Items/Fragments/SMWorldVisualFragment.h"
+#include "GameplayTags/UI/SMUITag.h"
 #include "UI/Inventory/SMInteractionWorldInfoWidget.h"
 
 ASMBaseItemDropActor::ASMBaseItemDropActor()
 	: bInitialized(false)
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
+	PrimaryActorTick.bAllowTickOnDedicatedServer = false;
 	bReplicates = true;
 
 	RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
@@ -62,6 +66,18 @@ void ASMBaseItemDropActor::BeginPlay()
 	}
 
 	RefreshInteractionState();
+}
+
+void ASMBaseItemDropActor::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (StaticMeshComponent == nullptr || HasValidPayload() == false)
+	{
+		return;
+	}
+
+	StaticMeshComponent->AddLocalRotation(FRotator(0.0f, RotationSpeedDegreesPerSecond * DeltaTime, 0.0f));
 }
 
 void ASMBaseItemDropActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -113,9 +129,18 @@ void ASMBaseItemDropActor::HandleInteract(APawn* InInteractingPawn)
 		return;
 	}
 
-	const FGuid AddedItemInstanceId = InventoryComponent->AddItemFromDropPayload(ItemDropPayload);
+	FText FailureMessage;
+	const FGuid AddedItemInstanceId = InventoryComponent->AddItemFromDropPayloadWithFailureMessage(ItemDropPayload, FailureMessage);
 	if (AddedItemInstanceId.IsValid() == false)
 	{
+		if (FailureMessage.IsEmpty() == false)
+		{
+			if (ASMPlayerController* PlayerController = Cast<ASMPlayerController>(InInteractingPawn->GetController()))
+			{
+				PlayerController->ClientRPC_ShowNotification(SMUITag::Event_Notification, FailureMessage, 2.0f);
+			}
+		}
+
 		UE_LOG(LogTemp, Warning, TEXT("Guid for current item is invalid. can't get item from actor %s"),
 		       *InventoryComponent->GetName());
 		return;
@@ -368,7 +393,9 @@ void ASMBaseItemDropActor::RefreshInteractionState()
 		return;
 	}
 
-	InteractionTargetComponent->SetInteractionEnabledRuntime(HasValidPayload());
+	const bool bHasValidItemPayload = HasValidPayload();
+	InteractionTargetComponent->SetInteractionEnabledRuntime(bHasValidItemPayload);
+	SetActorTickEnabled(bHasValidItemPayload && GetNetMode() != NM_DedicatedServer);
 }
 
 bool ASMBaseItemDropActor::HasValidPayload() const

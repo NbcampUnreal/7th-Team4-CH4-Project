@@ -25,16 +25,17 @@ protected:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UHorizontalBox> SlotContainer;
 	
-	UPROPERTY(EditDefaultsOnly, Category="BuildMode|Style")
-	FLinearColor SelectedColor = FLinearColor::White;
-	UPROPERTY(EditDefaultsOnly, Category="BuildMode|Style")
-	FLinearColor DefaultColor = FLinearColor(0.2f, 0.2f, 0.2f, 1.0f);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI|Color")
+	FLinearColor SelectedColor = FLinearColor(1.f, 1.f, 1.f, 1.f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI|Color")
+	FLinearColor DefaultColor = FLinearColor(0.f, 0.f, 0.f, 0.8f);
 
 private:
 	void OnBuildModeMessage(FGameplayTag Channel, const FBuildModeMsg& Message);
-	/** 색상을 칠해주는 핵심 함수 */
+	
 	void UpdateSlotHighlight(int32 SelectedIndex);
-
+	
 	FGameplayMessageListenerHandle BuildModeListenerHandle;
 	
 	UPROPERTY()

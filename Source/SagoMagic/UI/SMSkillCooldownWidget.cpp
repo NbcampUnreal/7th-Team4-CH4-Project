@@ -33,6 +33,11 @@ void USMSkillCooldownWidget::InitializeWithASC(UAbilitySystemComponent* InASC, F
     }
 }
 
+bool USMSkillCooldownWidget::IsOnCooldown() const
+{
+    return bOnCooldown;
+}
+
 void USMSkillCooldownWidget::NativeDestruct()
 {
     UnbindASC();

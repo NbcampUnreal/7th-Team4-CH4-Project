@@ -33,6 +33,9 @@ void USMCharacterWidgetComponent::InitializeWithASC(UAbilitySystemComponent* InA
 
 void USMCharacterWidgetComponent::OnGoldChanged(const FOnAttributeChangeData& Data)
 {
+	APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (!OwnerPawn || !OwnerPawn->IsLocallyControlled()) return;
+	
 	float Delta = Data.NewValue - Data.OldValue;
 	if (FMath::Abs(Delta) < 0.01f) return;
 	

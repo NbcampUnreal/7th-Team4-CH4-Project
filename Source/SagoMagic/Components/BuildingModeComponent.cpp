@@ -9,6 +9,7 @@
 #include "Building/SMBuildPlaceTargetData.h"
 #include "Building/SMFenceBuilding.h"
 #include "Chaos/AABBTree.h"
+#include "Components/WidgetComponent.h"
 #include "Core/SMPlayerState.h"
 #include "Enemy/SMMonsterBase.h"
 #include "GameFramework/PlayerState.h"
@@ -329,23 +330,25 @@ void USMBuildingModeComponent::UpdateGhostTransform()
 	ClearGhostActors();
 	for (int32 i = 0; i < Path.Num(); ++i)
 	{
-		AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(
-			Data->BuildingClass, FTransform::Identity);
-		ASMBaseBuilding* Ghost = Cast<ASMBaseBuilding>(SpawnedActor);
-		if (!Ghost)
-		{
-			if (SpawnedActor) SpawnedActor->Destroy();
-			continue;
-		}
+		ASMBaseBuilding* Ghost = GetWorld()->SpawnActorDeferred<ASMBaseBuilding>(
+			Data->BuildingClass,
+			FTransform::Identity,
+			nullptr, nullptr,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+		if (!Ghost) continue;
+		
+		TArray<UWidgetComponent*> Widgets;
+		Ghost->GetComponents<UWidgetComponent>(Widgets);
+		for (UWidgetComponent* W : Widgets) W->DestroyComponent();
 		
 		Ghost->SetReplicates(false);
 		Ghost->SetActorEnableCollision(false);
+		Ghost->FinishSpawning(FTransform::Identity);
 		
 		if (CornerInfos[i].bIsCorner)
 			ConvertGhostToCorner(Ghost, CornerInfos[i].Yaw);
 		
 		GhostActors.Add(Ghost);
-		
 	}
 
 	for (int32 i = 0; i < Path.Num() && i < GhostActors.Num(); ++i)

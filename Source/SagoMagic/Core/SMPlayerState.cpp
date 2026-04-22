@@ -107,11 +107,24 @@ void ASMPlayerState::OnRep_SelectedMaterialIndex()
 void ASMPlayerState::OnRep_PlayerName()
 {
 	Super::OnRep_PlayerName();
-
-	ASMPlayerCharacter* Character = GetPawn<ASMPlayerCharacter>();
-	if (IsValid(Character) == false) return;
-
-	Character->UpdateNicknameWidget();
+	
+	if (ASMPlayerCharacter* Character = GetPawn<ASMPlayerCharacter>())
+	{
+		Character->UpdateNicknameWidget();
+		return;
+	}
+	
+	//Pawn이 아직 복제가 안되면 다음 프레임에 재시도
+	if (UWorld* World = GetWorld())
+	{
+		FTimerHandle TmpHandle;
+		World->GetTimerManager().SetTimer(TmpHandle, FTimerDelegate::CreateWeakLambda(this,[this]()
+		{
+			if (ASMPlayerCharacter* C = GetPawn<ASMPlayerCharacter>())
+				C->UpdateNicknameWidget();
+		}), 0.1f, false);
+	}
+	
 }
 
 void ASMPlayerState::SetSelectedLobbySkillDef(const TSoftObjectPtr<USMItemDefinition>& InDef)

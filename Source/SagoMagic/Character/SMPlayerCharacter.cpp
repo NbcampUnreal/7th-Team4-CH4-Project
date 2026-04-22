@@ -304,6 +304,8 @@ void ASMPlayerCharacter::ServerRPC_NotifyAttackReleased_Implementation()
 void ASMPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	UpdateNicknameWidget();
 }
 
 void ASMPlayerCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -728,7 +730,19 @@ void ASMPlayerCharacter::UpdateNicknameWidget()
 	if (IsValid(PS) == false) return;
 
 	USMPlayerNicknameWidget* Widget = Cast<USMPlayerNicknameWidget>(NicknameWidgetComp->GetUserWidgetObject());
-	if (IsValid(Widget) == false) return;
-
+	if (!IsValid(Widget))
+	{
+		if (UWorld* World = GetWorld())
+		{
+			FTimerHandle Tmp;
+			World->GetTimerManager().SetTimer(Tmp,
+				FTimerDelegate::CreateWeakLambda(this, [this]()
+				{
+					UpdateNicknameWidget();	
+				}), 0.1f, false);
+		}
+		return;
+	}
+	
 	Widget->SetPlayerNickName(PS->GetPlayerName());
 }

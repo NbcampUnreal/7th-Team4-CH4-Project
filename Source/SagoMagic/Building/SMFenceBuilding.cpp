@@ -10,6 +10,7 @@ void ASMFenceBuilding::ConvertToCorner(float Yaw)
 	if (!HasAuthority()) return;
 	if (bIsCorner) return;
 	if (!CornerMesh) return;
+	if (!MeshComponent) return;
 	
 	MeshComponent->SetStaticMesh(CornerMesh);
 	SetActorRotation(FRotator(0.f, Yaw, 0.f));
@@ -21,6 +22,8 @@ void ASMFenceBuilding::ConvertToCorner(float Yaw)
 void ASMFenceBuilding::ConvertToCornerPreview(float Yaw)
 {
 	if (!CornerMesh) return;
+	if (!MeshComponent) return;
+	
 	MeshComponent->SetStaticMesh(CornerMesh);
 	SetActorRotation(FRotator(0.f, Yaw, 0.f));
 }
@@ -35,7 +38,7 @@ void ASMFenceBuilding::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 
 void ASMFenceBuilding::OnRep_bIsCorner()
 {
-	if (bIsCorner && CornerMesh)
+	if (bIsCorner && CornerMesh && MeshComponent)
 	{
 		MeshComponent->SetStaticMesh(CornerMesh);
 		SetActorRotation(FRotator(0.f, CornerYaw, 0.f));

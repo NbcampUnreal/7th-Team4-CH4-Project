@@ -10,6 +10,7 @@ AGCN_SkillField::AGCN_SkillField()
 	PrimaryActorTick.bCanEverTick = false;
 	// GC - Cleanup 부분에서 Auto Destroy on Remove 부분이 BP에서 덮어쓸 수 있기때문에 코드에서 따로 체크해줌.
 	bAutoDestroyOnRemove = false;
+	// 장판이 여러개 깔릴 수 있으므로 독립된 인스턴스 보장
 	bUniqueInstancePerInstigator = true;
 
 	FieldNiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("FieldNiagaraComponent"));

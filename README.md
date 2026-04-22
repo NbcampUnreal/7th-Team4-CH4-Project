@@ -26,7 +26,7 @@
 
 <br>
 
-## 📌 1. 프로젝트 개요
+## 1. 프로젝트 개요
 
 | 항목 | 내용 |
 |---|---|
@@ -40,7 +40,7 @@
 
 <br>
 
-## 🎮 2. 게임 루프
+## 2. 게임 루프
 
 ```
 [타이틀] → [로비 - 4인 접속/커스터마이징] → [정비 단계] → [웨이브 전투]
@@ -68,7 +68,7 @@
 
 <br>
 
-## 🌊 3. 웨이브 시스템
+## 3. 웨이브 시스템
 
 ### 3-1. 웨이브 타임라인
 
@@ -99,7 +99,7 @@ CombatState::Enter()
 
 <br>
 
-## 🏰 4. 베이스캠프 (ASMBaseCampActor)
+## 4. 베이스캠프 (ASMBaseCampActor)
 
 - GAS + `USMBaseCampAttributeSet`으로 HP 관리, 클라이언트에 `OnRep_Health`로 복제
 - 몬스터만 공격 가능 (아군 태그 시스템으로 플레이어 스킬 피격 방지)
@@ -109,7 +109,7 @@ CombatState::Enter()
 
 <br>
 
-## 💀 5. 플레이어 사망 및 부활
+## 5. 플레이어 사망 및 부활
 
 ```
 HP ≤ 0 감지 (Server, AttributeSet::PostGameplayEffectExecute)
@@ -132,7 +132,7 @@ HP ≤ 0 감지 (Server, AttributeSet::PostGameplayEffectExecute)
 
 <br>
 
-## 🕹 6. 조작 시스템
+## 6. 조작 시스템
 
 | 구분 | 입력 | 행동 |
 |---|---|---|
@@ -153,7 +153,7 @@ HP ≤ 0 감지 (Server, AttributeSet::PostGameplayEffectExecute)
 
 <br>
 
-## 🎒 7. 인벤토리 시스템
+## 7. 인벤토리 시스템
 
 Diablo / Path of Exile 방식의 **격자형(Tetris-style) 인벤토리**
 
@@ -201,7 +201,7 @@ USMInventoryComponent (PlayerState 소속, COND_OwnerOnly 복제)
 
 <br>
 
-## ✨ 8. 스킬 시스템
+## 8. 스킬 시스템
 
 ### 8-1. GAS 스킬 실행 흐름
 
@@ -236,7 +236,7 @@ USMInventoryComponent (PlayerState 소속, COND_OwnerOnly 복제)
 
 <br>
 
-## 💎 9. 젬 시스템
+## 9. 젬 시스템
 
 스킬 내부 인벤토리에 장착해 스탯과 동작 메커니즘을 변화시키는 아이템
 
@@ -281,7 +281,7 @@ BuildSkillSummary()
 
 <br>
 
-## 🏗 10. 건축 시스템
+## 10. 건축 시스템
 
 ### 10-1. 그리드 매니저 (ASMGridManager)
 
@@ -331,7 +331,7 @@ B키 → 건축 모드 진입 (BuildIMC 추가, Tick 활성화)
 
 <br>
 
-## 🤖 11. 몬스터 AI
+## 11. 몬스터 AI
 
 ### 11-1. AI 구조
 
@@ -377,7 +377,7 @@ ASMMonsterAIController
 
 <br>
 
-## 🌐 12. 네트워크 아키텍처
+## 12. 네트워크 아키텍처
 
 ```
 [Dedicated Server]
@@ -426,7 +426,7 @@ ASMMonsterAIController
 
 <br>
 
-## 📊 13. 데이터 시스템
+## 13. 데이터 시스템
 
 ### 13-1. DataTable 목록
 
@@ -460,7 +460,7 @@ PreSpawnForWave()
 
 <br>
 
-## 🔊 14. 사운드 시스템 (USMSoundManager)
+## 14. 사운드 시스템 (USMSoundManager)
 
 GameInstance 서브시스템으로 게임 전체에서 단일 인스턴스로 동작합니다.
 
@@ -479,7 +479,7 @@ USMSoundManager
 
 <br>
 
-## 🖥 15. UI 시스템
+## 15. UI 시스템
 
 `GameplayMessageSubsystem`을 중심으로 서버→클라 복제 없이 로컬에서 UI를 갱신합니다.
 
@@ -494,7 +494,7 @@ USMSoundManager
 
 <br>
 
-## 📁 16. 프로젝트 구조
+## 16. 프로젝트 구조
 
 ```
 SagoMagic/
@@ -536,7 +536,7 @@ SagoMagic/
 
 <br>
 
-## 🗺 17. 맵 구성
+## 17. 맵 구성
 
 | 맵 | 역할 |
 |---|---|
@@ -547,7 +547,7 @@ SagoMagic/
 
 <br>
 
-## 🔧 18. 주요 GameplayTag 구조
+## 18. 주요 GameplayTag 구조
 
 ```
 Team.*                  — 아군 식별 (Player, HQ, Building) — 스킬 피격 제외 기준
@@ -566,7 +566,7 @@ Build.GoldCost          — 건물 배치 골드 차감 SetByCaller 태그
 
 <br>
 
-## 📝 19. 코딩 컨벤션
+## 19. 코딩 컨벤션
 
 - **클래스 접두사**: `A`(Actor), `U`(UObject/Component), `F`(Struct), `E`(Enum), `I`(Interface)
 - **프로젝트 접두사**: `SM` (SagoMagic)
@@ -577,7 +577,7 @@ Build.GoldCost          — 건물 배치 골드 차감 SetByCaller 태그
 
 <br>
 
-## ⚠️ 20. 주요 설계 제약
+## 20. 주요 설계 제약
 
 - `USMSyncDataManager`는 **서버 전용** — 클라이언트에서는 `nullptr` 반환
 - `USMAsyncDataManager`는 **L_Play에서만 생성**
@@ -587,7 +587,7 @@ Build.GoldCost          — 건물 배치 골드 차감 SetByCaller 태그
 
 <br>
 
-## 📄 21. 라이선스
+## 21. 라이선스
 
 본 프로젝트는 팀 내부 개발 프로젝트입니다.  
 외부 공개 및 배포는 팀의 동의가 필요합니다.

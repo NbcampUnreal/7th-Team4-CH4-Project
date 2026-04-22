@@ -11,6 +11,7 @@
 #include "Inventory/Items/Definitions/SMItemDefinition.h"
 #include "Inventory/Items/Fragments/SMDisplayInfoFragment.h"
 #include "Inventory/Items/Fragments/SMGridShapeFragment.h"
+#include "UI/Inventory/SMInventoryCellVisualWidget.h"
 
 USMDragItemPreviewWidget::USMDragItemPreviewWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -22,6 +23,7 @@ USMDragItemPreviewWidget::USMDragItemPreviewWidget(const FObjectInitializer& Obj
 	  , PreviewGrid(nullptr)
 	  , PreviewCellSize(16.0f)
 	  , PreviewCellPadding(1.0f)
+	  , PreviewCellOpacity(1.0f)
 {
 }
 
@@ -139,9 +141,10 @@ void USMDragItemPreviewWidget::RebuildPreviewGrid()
 	PreviewGrid->ClearChildren();
 	PreviewGrid->SetSlotPadding(FMargin(PreviewCellPadding));
 
-	const FLinearColor PreviewCellColor = bCanPlaceOnCurrentCell
-		                                      ? AccentColor
-		                                      : FLinearColor(0.85f, 0.25f, 0.25f, 0.9f);
+	FLinearColor PreviewCellColor = bCanPlaceOnCurrentCell
+		                                ? AccentColor
+		                                : FLinearColor(0.85f, 0.25f, 0.25f, 1.0f);
+	PreviewCellColor.A *= FMath::Clamp(PreviewCellOpacity, 0.0f, 1.0f);
 
 	auto AddPreviewCell = [&](int32 InColumn, int32 InRow)
 	{
@@ -154,14 +157,34 @@ void USMDragItemPreviewWidget::RebuildPreviewGrid()
 		PreviewCellSizeBox->SetWidthOverride(PreviewCellSize);
 		PreviewCellSizeBox->SetHeightOverride(PreviewCellSize);
 
-		UBorder* PreviewCellBorder = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass());
-		if (PreviewCellBorder == nullptr)
+		UWidget* PreviewCellContent = nullptr;
+
+		if (PreviewCellVisualWidgetClass != nullptr)
 		{
-			return;
+			USMInventoryCellVisualWidget* PreviewCellVisualWidget = CreateWidget<USMInventoryCellVisualWidget>(
+				this,
+				PreviewCellVisualWidgetClass);
+			if (PreviewCellVisualWidget != nullptr)
+			{
+				PreviewCellVisualWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+				PreviewCellVisualWidget->UpdateVisualState(true, true, PreviewCellColor);
+				PreviewCellContent = PreviewCellVisualWidget;
+			}
 		}
 
-		PreviewCellBorder->SetBrushColor(PreviewCellColor);
-		PreviewCellSizeBox->SetContent(PreviewCellBorder);
+		if (PreviewCellContent == nullptr)
+		{
+			UBorder* PreviewCellBorder = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass());
+			if (PreviewCellBorder == nullptr)
+			{
+				return;
+			}
+
+			PreviewCellBorder->SetBrushColor(PreviewCellColor);
+			PreviewCellContent = PreviewCellBorder;
+		}
+
+		PreviewCellSizeBox->SetContent(PreviewCellContent);
 
 		if (UUniformGridSlot* PreviewCellSlot =
 			PreviewGrid->AddChildToUniformGrid(PreviewCellSizeBox, InRow, InColumn))

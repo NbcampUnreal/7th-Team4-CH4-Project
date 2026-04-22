@@ -6,6 +6,7 @@
 #include "SMDragItemPreviewWidget.generated.h"
 
 class USMInventoryComponent;
+class USMInventoryCellVisualWidget;
 class UUniformGridPanel;
 
 
@@ -185,12 +186,20 @@ protected:
 	TObjectPtr<UUniformGridPanel> PreviewGrid;
 
 	/** 프리뷰 셀 크기 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory Drag Preview")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory Drag Preview", meta=(ClampMin="1.0"))
 	float PreviewCellSize;
 
 	/** 프리뷰 셀 간격 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory Drag Preview")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory Drag Preview", meta=(ClampMin="0.0"))
 	float PreviewCellPadding;
+
+	/** 프리뷰 셀 투명도 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory Drag Preview", meta=(ClampMin="0.0", ClampMax="1.0"))
+	float PreviewCellOpacity;
+
+	/** 프리뷰 셀 비주얼 위젯 클래스 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Inventory Drag Preview")
+	TSubclassOf<USMInventoryCellVisualWidget> PreviewCellVisualWidgetClass;
 
 private:
 };

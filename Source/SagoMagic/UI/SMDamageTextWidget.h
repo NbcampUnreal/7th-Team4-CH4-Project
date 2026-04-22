@@ -16,6 +16,10 @@ public:
 	void SetDamageText(float DamageAmount);
 
 protected:
+	/** 데미지 값 기준 텍스트 스케일 계산 */
+	float CalculateDamageTextScale(float DamageAmount) const;
+
+protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> TextBlock_Damage;
 };

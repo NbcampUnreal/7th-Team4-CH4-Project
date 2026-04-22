@@ -10,6 +10,7 @@ USMItemHoverInfoWidget::USMItemHoverInfoWidget(const FObjectInitializer& ObjectI
 	  , InventoryComponent(nullptr)
 	  , AccentColor(FLinearColor::White)
 	  , DisplayItemType(ESMItemType::None)
+	  , TypeDescription(FText::GetEmpty())
 	  , ScreenPosition(FVector2D::ZeroVector)
 	  , bIsShowingItemInfo(false)
 {
@@ -49,6 +50,7 @@ void USMItemHoverInfoWidget::HideItemInfo()
 	Description = FText::GetEmpty();
 	AccentColor = FLinearColor::White;
 	DisplayItemType = ESMItemType::None;
+	TypeDescription = FText::GetEmpty();
 	ScreenPosition = FVector2D::ZeroVector;
 	bIsShowingItemInfo = false;
 
@@ -73,6 +75,7 @@ void USMItemHoverInfoWidget::SyncFromInventoryComponent()
 	Description = FText::GetEmpty();
 	AccentColor = FLinearColor::White;
 	DisplayItemType = ESMItemType::None;
+	TypeDescription = FText::GetEmpty();
 
 	if (InventoryComponent == nullptr || ItemInstanceId.IsValid() == false)
 	{
@@ -80,6 +83,8 @@ void USMItemHoverInfoWidget::SyncFromInventoryComponent()
 	}
 
 	FSMItemInstanceData BaseItemData;
+	FSMSkillItemInstanceData SkillData;
+	bool bIsSkillItem = false;
 
 	FSMItemInstanceData ItemData;
 	if (InventoryComponent->GetItemData(ItemInstanceId, ItemData))
@@ -88,16 +93,46 @@ void USMItemHoverInfoWidget::SyncFromInventoryComponent()
 	}
 	else
 	{
-		FSMSkillItemInstanceData SkillData;
 		if (InventoryComponent->GetSkillData(ItemInstanceId, SkillData) == false)
 		{
 			return;
 		}
 
 		BaseItemData = SkillData.BaseItem;
+		bIsSkillItem = true;
 	}
 
 	DisplayItemType = BaseItemData.ItemType;
+
+	switch (DisplayItemType)
+	{
+	case ESMItemType::Gem:
+		TypeDescription = NSLOCTEXT("SMItemHoverInfoWidget", "TypeDescription_Gem", "젬");
+		break;
+
+	case ESMItemType::Skill:
+		if (bIsSkillItem)
+		{
+			const int32 CurrentLevel = FMath::Max(1, SkillData.GetCachedSummary().GetCurrentLevel());
+			const bool bHasEmbeddedGem = SkillData.GetCachedSummary().EmbeddedGemIds.Num() > 0;
+			TypeDescription = bHasEmbeddedGem
+				                  ? FText::Format(
+					                  NSLOCTEXT("SMItemHoverInfoWidget", "TypeDescription_SkillWithGem", "스킬 (레벨 {0}) / 젬 장착됨"),
+					                  FText::AsNumber(CurrentLevel))
+				                  : FText::Format(
+					                  NSLOCTEXT("SMItemHoverInfoWidget", "TypeDescription_Skill", "스킬 (레벨 {0})"),
+					                  FText::AsNumber(CurrentLevel));
+		}
+		else
+		{
+			TypeDescription = NSLOCTEXT("SMItemHoverInfoWidget", "TypeDescription_SkillFallback", "스킬");
+		}
+		break;
+
+	default:
+		TypeDescription = NSLOCTEXT("SMItemHoverInfoWidget", "TypeDescription_None", "None");
+		break;
+	}
 
 	const USMItemDefinition* ItemDefinition = InventoryComponent->ResolveItemDefinition(BaseItemData);
 	if (ItemDefinition == nullptr)

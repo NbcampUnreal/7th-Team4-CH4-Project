@@ -1,6 +1,7 @@
 ﻿#include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
 #include "Blueprint/SlateBlueprintLibrary.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 #include "GameFramework/PlayerController.h"
 #include "Inventory/Components/SMInventoryComponent.h"
 #include "Inventory/Core/SMItemInstanceTypes.h"
@@ -35,13 +36,122 @@ USMPlayerInventoryPanelWidget::USMPlayerInventoryPanelWidget(const FObjectInitia
 void USMPlayerInventoryPanelWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+	EnsureFloatingWidgetsCreated();
+	HideHoveredItemInfo();
+	CloseContextMenu();
 }
 
 void USMPlayerInventoryPanelWidget::NativeDestruct()
 {
 	ClearActiveDragPreview();
+
+	if (ContextMenuWidget != nullptr)
+	{
+		ContextMenuWidget->RemoveFromParent();
+		ContextMenuWidget = nullptr;
+	}
+
+	if (ItemHoverInfoWidget != nullptr)
+	{
+		ItemHoverInfoWidget->RemoveFromParent();
+		ItemHoverInfoWidget = nullptr;
+	}
+
 	UnregisterInventoryMessageListeners();
 	Super::NativeDestruct();
+}
+
+void USMPlayerInventoryPanelWidget::EnsureFloatingWidgetsCreated()
+{
+	APlayerController* OwningPlayerController = GetOwningPlayer();
+	if (OwningPlayerController == nullptr)
+	{
+		return;
+	}
+
+	if (ContextMenuWidget == nullptr && ContextMenuWidgetClass != nullptr)
+	{
+		ContextMenuWidget = CreateWidget<USMInventoryContextMenuWidget>(OwningPlayerController, ContextMenuWidgetClass);
+		if (ContextMenuWidget != nullptr)
+		{
+			ContextMenuWidget->AddToViewport(1000);
+			ContextMenuWidget->SetVisibility(ESlateVisibility::Collapsed);
+			ContextMenuWidget->SetInventoryComponent(InventoryComponent);
+			ContextMenuWidget->SetOwningPanelWidget(this);
+			ContextMenuWidget->SetItemInstanceId(FGuid());
+		}
+	}
+
+	if (ItemHoverInfoWidget == nullptr && ItemHoverInfoWidgetClass != nullptr)
+	{
+		ItemHoverInfoWidget = CreateWidget<USMItemHoverInfoWidget>(OwningPlayerController, ItemHoverInfoWidgetClass);
+		if (ItemHoverInfoWidget != nullptr)
+		{
+			ItemHoverInfoWidget->AddToViewport(1001);
+			ItemHoverInfoWidget->SetIsEnabled(true);
+			ItemHoverInfoWidget->SetVisibility(ESlateVisibility::Collapsed);
+			ItemHoverInfoWidget->InitializeHoverInfoWidget(InventoryComponent);
+		}
+	}
+}
+
+FVector2D USMPlayerInventoryPanelWidget::ResolveViewportPosition(FVector2D InAbsolutePosition)
+{
+	FVector2D PixelPosition = InAbsolutePosition;
+	FVector2D ViewportPosition = InAbsolutePosition;
+	USlateBlueprintLibrary::AbsoluteToViewport(this, InAbsolutePosition, PixelPosition, ViewportPosition);
+	return ViewportPosition;
+}
+
+FVector2D USMPlayerInventoryPanelWidget::ClampFloatingWidgetToViewport(
+	UUserWidget* InFloatingWidget,
+	FVector2D InViewportPosition)
+{
+	if (InFloatingWidget == nullptr)
+	{
+		return InViewportPosition;
+	}
+
+	ForceLayoutPrepass();
+	InFloatingWidget->ForceLayoutPrepass();
+
+	float ViewportScale = UWidgetLayoutLibrary::GetViewportScale(this);
+	if (ViewportScale <= 0.0f)
+	{
+		ViewportScale = 1.0f;
+	}
+
+	const FVector2D ViewportSize = UWidgetLayoutLibrary::GetViewportSize(this) / ViewportScale;
+	if (ViewportSize.X <= 0.0f || ViewportSize.Y <= 0.0f)
+	{
+		return InViewportPosition;
+	}
+
+	FVector2D FloatingWidgetSize = InFloatingWidget->GetDesiredSize();
+	const FVector2D CachedWidgetSize = InFloatingWidget->GetCachedGeometry().GetLocalSize();
+	if (CachedWidgetSize.X > 0.0f && CachedWidgetSize.Y > 0.0f)
+	{
+		FloatingWidgetSize = CachedWidgetSize;
+	}
+
+	FVector2D ClampedPosition = InViewportPosition;
+
+	if (ClampedPosition.X + FloatingWidgetSize.X > ViewportSize.X)
+	{
+		ClampedPosition.X = InViewportPosition.X - FloatingWidgetSize.X;
+	}
+
+	if (ClampedPosition.Y + FloatingWidgetSize.Y > ViewportSize.Y)
+	{
+		ClampedPosition.Y = InViewportPosition.Y - FloatingWidgetSize.Y;
+	}
+
+	const float MaxX = FMath::Max(ViewportSize.X - FloatingWidgetSize.X, 0.0f);
+	const float MaxY = FMath::Max(ViewportSize.Y - FloatingWidgetSize.Y, 0.0f);
+
+	ClampedPosition.X = FMath::Clamp(ClampedPosition.X, 0.0f, MaxX);
+	ClampedPosition.Y = FMath::Clamp(ClampedPosition.Y, 0.0f, MaxY);
+	return ClampedPosition;
 }
 
 void USMPlayerInventoryPanelWidget::InitializePanelWidget(USMInventoryComponent* InInventoryComponent)
@@ -373,7 +483,7 @@ void USMPlayerInventoryPanelWidget::BeginActiveDragPreview(
 	}
 
 	PreviewWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
-	PreviewWidget->SetIsEnabled(false);
+	PreviewWidget->SetIsEnabled(true);
 	UpdateActiveDragPreviewPosition(InOperation, InScreenPosition);
 }
 
@@ -442,16 +552,26 @@ void USMPlayerInventoryPanelWidget::ClearHoveredItem()
 
 void USMPlayerInventoryPanelWidget::OpenContextMenuForItem(const FGuid& InItemInstanceId, FVector2D InScreenPosition)
 {
+	EnsureFloatingWidgetsCreated();
+
 	if (ContextMenuWidget == nullptr)
 	{
 		return;
 	}
 
-	FVector2D PixelPosition = InScreenPosition;
-	FVector2D ViewportPosition = InScreenPosition;
-	USlateBlueprintLibrary::AbsoluteToViewport(this, InScreenPosition, PixelPosition, ViewportPosition);
-	ContextMenuScreenPosition = ViewportPosition;
 	ContextMenuWidget->InitializeContextMenu(InItemInstanceId, InventoryComponent);
+	if (ContextMenuWidget->HasAnyAvailableAction() == false)
+	{
+		CloseContextMenu();
+		return;
+	}
+
+	ContextMenuWidget->SetVisibility(ESlateVisibility::Visible);
+	ContextMenuScreenPosition = ClampFloatingWidgetToViewport(
+		ContextMenuWidget,
+		ResolveViewportPosition(InScreenPosition));
+	ContextMenuWidget->SetAlignmentInViewport(FVector2D::ZeroVector);
+	ContextMenuWidget->SetPositionInViewport(ContextMenuScreenPosition, false);
 	BP_OnContextMenuStateChanged();
 }
 
@@ -462,6 +582,8 @@ void USMPlayerInventoryPanelWidget::CloseContextMenu()
 	if (ContextMenuWidget != nullptr)
 	{
 		ContextMenuWidget->InitializeContextMenu(FGuid(), InventoryComponent);
+		ContextMenuWidget->SetPositionInViewport(FVector2D::ZeroVector, false);
+		ContextMenuWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
 	BP_OnContextMenuStateChanged();
@@ -475,22 +597,29 @@ void USMPlayerInventoryPanelWidget::ShowHoveredItemInfo(const FGuid& InItemInsta
 		return;
 	}
 
+	EnsureFloatingWidgetsCreated();
+
 	const bool bHoveredItemChanged = HoveredItemInstanceId != InItemInstanceId;
 	HoveredItemInstanceId = InItemInstanceId;
-	FVector2D PixelPosition = InScreenPosition;
-	FVector2D ViewportPosition = InScreenPosition;
-	USlateBlueprintLibrary::AbsoluteToViewport(this, InScreenPosition, PixelPosition, ViewportPosition);
 
 	if (ItemHoverInfoWidget != nullptr)
 	{
+		const FVector2D HoverInfoPosition = ResolveViewportPosition(InScreenPosition) + FVector2D(5.0f, 5.0f);
+
 		if (ItemHoverInfoWidget->GetItemInstanceId() == InItemInstanceId && ItemHoverInfoWidget->IsShowingItemInfo())
 		{
-			ItemHoverInfoWidget->UpdateScreenPosition(ViewportPosition);
+			ItemHoverInfoWidget->UpdateScreenPosition(HoverInfoPosition);
 		}
 		else
 		{
-			ItemHoverInfoWidget->ShowItemInfo(InItemInstanceId, ViewportPosition);
+			ItemHoverInfoWidget->ShowItemInfo(InItemInstanceId, HoverInfoPosition);
 		}
+
+		ItemHoverInfoWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+		ItemHoverInfoWidget->SetAlignmentInViewport(FVector2D::ZeroVector);
+		ItemHoverInfoWidget->SetPositionInViewport(
+			ClampFloatingWidgetToViewport(ItemHoverInfoWidget, HoverInfoPosition),
+			false);
 	}
 
 	if (bHoveredItemChanged)
@@ -507,6 +636,8 @@ void USMPlayerInventoryPanelWidget::HideHoveredItemInfo()
 	if (ItemHoverInfoWidget != nullptr)
 	{
 		ItemHoverInfoWidget->HideItemInfo();
+		ItemHoverInfoWidget->SetPositionInViewport(FVector2D::ZeroVector, false);
+		ItemHoverInfoWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
 	if (bWasHovered)
@@ -517,6 +648,8 @@ void USMPlayerInventoryPanelWidget::HideHoveredItemInfo()
 
 void USMPlayerInventoryPanelWidget::InitializeChildWidgets()
 {
+	EnsureFloatingWidgetsCreated();
+
 	FGuid MainInventoryContainerId;
 	if (InventoryComponent != nullptr)
 	{

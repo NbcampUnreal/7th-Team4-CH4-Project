@@ -41,7 +41,22 @@ void USMMonsterAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModC
 	Super::PostGameplayEffectExecute(Data);
     if (Data.EvaluatedData.Attribute == GetHealthAttribute())
     {
+        UAbilitySystemComponent* OwningASC = GetOwningAbilitySystemComponent();
+        ASMMonsterBase* Monster = OwningASC ? Cast<ASMMonsterBase>(OwningASC->GetAvatarActor()) : nullptr;
+        const float DisplayDamage = FMath::Max(0.0f, -Data.EvaluatedData.Magnitude);
+        FVector DamageTextLocation = Monster ? (Monster->GetActorLocation() + FVector(0.0f, 0.0f, 100.0f)) : FVector::ZeroVector;
+
+        if (const FHitResult* HitResult = Data.EffectSpec.GetEffectContext().GetHitResult())
+        {
+            DamageTextLocation = HitResult->ImpactPoint;
+        }
+
         SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
+
+        if (Monster != nullptr && Monster->HasAuthority() && DisplayDamage > 0.0f)
+        {
+            Monster->BroadcastResolvedDamageNumber(DisplayDamage, DamageTextLocation);
+        }
 
         if (GetHealth() <= 0.0f)
         {

@@ -2771,6 +2771,11 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 	float FinalDuration = FMath::Max(0.0f, SkillRuntimeData.Duration + MatchedLevelData->Duration);
 	float FinalCooldown = FMath::Max(0.01f, SkillRuntimeData.Cooldown - MatchedLevelData->Cooldown);
 	FGameplayTagContainer BehaviorTags = MatchedLevelData->BehaviorTags;
+	const bool bIsExplosionSkill = ResolvedSkillTag.MatchesTagExact(SMSkillTag::Ability_Skill_Explosion);
+	float TotalDamageBonusPercent = 0.0f;
+	float TotalRangeOrAreaBonusPercent = 0.0f;
+	float TotalDurationBonusPercent = 0.0f;
+	float ExplosionDurationCastTimeMultiplier = 1.0f;
 
 	for (const FSMItemInstanceData* EmbeddedGemData : EmbeddedGems)
 	{
@@ -2793,7 +2798,7 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 		switch (GemModifierFragment->GetModifierType())
 		{
 		case ESMGemModifierType::Effect:
-			FinalDamage *= 1.0f + (static_cast<float>(GemModifierFragment->GetModifierValue()) / 100.0f);
+			TotalDamageBonusPercent += static_cast<float>(GemModifierFragment->GetModifierValue()) / 100.0f;
 			break;
 		case ESMGemModifierType::TickInterval:
 			FinalTickInterval *= FMath::Max(
@@ -2801,10 +2806,19 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 				1.0f - (static_cast<float>(GemModifierFragment->GetModifierValue()) / 100.0f));
 			break;
 		case ESMGemModifierType::RangeOrArea:
-			FinalRangeOrArea *= 1.0f + (static_cast<float>(GemModifierFragment->GetModifierValue()) / 100.0f);
+			TotalRangeOrAreaBonusPercent += static_cast<float>(GemModifierFragment->GetModifierValue()) / 100.0f;
 			break;
 		case ESMGemModifierType::Duration:
-			FinalDuration *= 1.0f + (static_cast<float>(GemModifierFragment->GetModifierValue()) / 100.0f);
+			if (bIsExplosionSkill)
+			{
+				ExplosionDurationCastTimeMultiplier *= FMath::Max(
+					0.0f,
+					1.0f - (static_cast<float>(GemModifierFragment->GetModifierValue()) / 100.0f));
+			}
+			else
+			{
+				TotalDurationBonusPercent += static_cast<float>(GemModifierFragment->GetModifierValue()) / 100.0f;
+			}
 			break;
 		case ESMGemModifierType::Cooldown:
 			FinalCooldown *= FMath::Max(
@@ -2815,6 +2829,21 @@ bool USMInventoryComponent::BuildSkillSummary(const FGuid& InSkillInstanceId, FS
 		default:
 			break;
 		}
+	}
+
+	FinalDamage *= FMath::Max(0.0f, 1.0f + TotalDamageBonusPercent);
+	FinalRangeOrArea *= FMath::Max(0.0f, 1.0f + TotalRangeOrAreaBonusPercent);
+
+	if (bIsExplosionSkill)
+	{
+		const float BaseExplosionDuration = FMath::Max(0.0f, SkillRuntimeData.Duration);
+		const float CastTimeBeforeDurationGems = FMath::Max((BaseExplosionDuration * 2.0f) - FinalDuration, 0.0f);
+		const float CastTimeAfterDurationGems = CastTimeBeforeDurationGems * ExplosionDurationCastTimeMultiplier;
+		FinalDuration = FMath::Max(0.0f, (BaseExplosionDuration * 2.0f) - CastTimeAfterDurationGems);
+	}
+	else
+	{
+		FinalDuration *= FMath::Max(0.0f, 1.0f + TotalDurationBonusPercent);
 	}
 
 	OutSummary.SetCurrentLevel(CurrentLevel);

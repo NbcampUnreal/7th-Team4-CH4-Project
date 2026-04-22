@@ -36,6 +36,11 @@ bool USMInventoryContextMenuWidget::IsEquippedInQuickSlot() const
 	return bEquippedInQuickSlot;
 }
 
+bool USMInventoryContextMenuWidget::HasAnyAvailableAction() const
+{
+	return bCanOpenSkillInventory || bCanDropItem || bCanDeleteItem;
+}
+
 void USMInventoryContextMenuWidget::InitializeContextMenu(const FGuid& InItemInstanceId,
                                                           USMInventoryComponent* InInventoryComponent)
 {

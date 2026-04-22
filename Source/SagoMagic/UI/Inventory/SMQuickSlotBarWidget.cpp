@@ -18,6 +18,7 @@
 #include "Inventory/Items/Fragments/SMDisplayInfoFragment.h"
 #include "Inventory/Items/Fragments/SMGridShapeFragment.h"
 #include "UI/Inventory/SMDragItemPreviewWidget.h"
+#include "UI/Inventory/SMInventoryCellVisualWidget.h"
 #include "UI/Inventory/SMInventoryDragDropOperation.h"
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 #include "UI/SMGameplayMessages.h"
@@ -618,8 +619,8 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 		const FVector2D EffectivePreviewAreaSize = ResolvePreviewAreaSize(TargetPreviewBoundsWidget, bHasCachedGeometry);
 		bNeedsDeferredRebuild |= (bHasCachedGeometry == false);
 
-		const float PreviewCellSpacing = PreviewCellPadding * 2.0f;
-		const float PreviewOuterPadding = PreviewCellPadding * 2.0f;
+		const float PreviewCellSpacing = 0.0f;
+		const float PreviewOuterPadding = 0.0f;
 		const FVector2D AvailablePreviewAreaSize(
 			FMath::Max(0.0f, EffectivePreviewAreaSize.X - (PreviewOuterPadding * 2.0f)),
 			FMath::Max(0.0f, EffectivePreviewAreaSize.Y - (PreviewOuterPadding * 2.0f)));
@@ -657,15 +658,35 @@ void USMQuickSlotBarWidget::RebuildSlotPreviewVisuals()
 			PreviewCellSizeBox->SetWidthOverride(PreviewCellContentSize);
 			PreviewCellSizeBox->SetHeightOverride(PreviewCellContentSize);
 
-			UBorder* PreviewCellBorder = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass());
-			if (PreviewCellBorder == nullptr)
+			UWidget* PreviewCellContent = nullptr;
+
+			if (PreviewCellVisualWidgetClass != nullptr)
 			{
-				continue;
+				USMInventoryCellVisualWidget* PreviewCellVisualWidget = CreateWidget<USMInventoryCellVisualWidget>(
+					this,
+					PreviewCellVisualWidgetClass);
+				if (PreviewCellVisualWidget != nullptr)
+				{
+					PreviewCellVisualWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+					PreviewCellVisualWidget->UpdateVisualState(true, true, PreviewAccentColor);
+					PreviewCellContent = PreviewCellVisualWidget;
+				}
 			}
 
-			PreviewCellBorder->SetVisibility(ESlateVisibility::HitTestInvisible);
-			PreviewCellBorder->SetBrushColor(PreviewAccentColor);
-			PreviewCellSizeBox->SetContent(PreviewCellBorder);
+			if (PreviewCellContent == nullptr)
+			{
+				UBorder* PreviewCellBorder = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass());
+				if (PreviewCellBorder == nullptr)
+				{
+					continue;
+				}
+
+				PreviewCellBorder->SetVisibility(ESlateVisibility::HitTestInvisible);
+				PreviewCellBorder->SetBrushColor(PreviewAccentColor);
+				PreviewCellContent = PreviewCellBorder;
+			}
+
+			PreviewCellSizeBox->SetContent(PreviewCellContent);
 
 			if (UCanvasPanelSlot* PreviewCanvasSlot = Cast<UCanvasPanelSlot>(TargetPreviewCanvas->AddChild(PreviewCellSizeBox)))
 			{

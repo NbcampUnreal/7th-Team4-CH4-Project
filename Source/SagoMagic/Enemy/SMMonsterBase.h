@@ -122,8 +122,15 @@ public:
     /** AttributeSet의 OnRep_Health에서 호출 — 클라이언트 피격 사운드 */
     void PlayHitSound();
 
+    /** 서버에서 확정된 데미지 숫자를 관련 클라이언트에 전달 */
+    void BroadcastResolvedDamageNumber(float InDamageAmount, const FVector& InSpawnLocation);
+
     /** 서버→모든 클라이언트 공격 사운드 재생 (ServerOnly GA에서 호출) */
     UFUNCTION(NetMulticast, Unreliable)
     void Multicast_PlayAttackSound();
+
+    /** 서버에서 확정된 데미지 숫자 표시 이벤트 */
+    UFUNCTION(NetMulticast, Unreliable)
+    void Multicast_ShowResolvedDamageNumber(float InDamageAmount, FVector_NetQuantize InSpawnLocation);
     
 };

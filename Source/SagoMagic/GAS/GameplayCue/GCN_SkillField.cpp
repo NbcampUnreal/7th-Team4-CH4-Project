@@ -10,6 +10,7 @@ AGCN_SkillField::AGCN_SkillField()
 	PrimaryActorTick.bCanEverTick = false;
 	// GC - Cleanup 부분에서 Auto Destroy on Remove 부분이 BP에서 덮어쓸 수 있기때문에 코드에서 따로 체크해줌.
 	bAutoDestroyOnRemove = false;
+	bUniqueInstancePerInstigator = true;
 
 	FieldNiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("FieldNiagaraComponent"));
 	SetRootComponent(FieldNiagaraComponent);
@@ -64,7 +65,12 @@ bool AGCN_SkillField::OnActive_Implementation(AActor* MyTarget, const FGameplayC
 		false
 	);
 	// 파티클이 다 사라질 시간까지 액터 유지 제발
-	SetLifeSpan(Lifetime + FadeoutDuration);
+	GetWorldTimerManager().SetTimer(
+		ReturnToPoolTimerHandle,
+		this,
+		&AGCN_SkillField::GameplayCueFinishedCallback,
+		Lifetime + FadeoutDuration,
+		false);
 
 	return true;
 }
@@ -87,8 +93,20 @@ bool AGCN_SkillField::OnRemove_Implementation(AActor* MyTarget, const FGameplayC
 		SM->StopSoundLoop(LoopAudioComponent, SoundFadeOutDuration);
 	}
 	LoopAudioComponent = nullptr;
+	
+	GetWorldTimerManager().SetTimer(
+		ReturnToPoolTimerHandle,
+		this,
+		&AGCN_SkillField::GameplayCueFinishedCallback,
+		FadeoutDuration,
+		false);
 
 	return Super::OnRemove_Implementation(MyTarget, Parameters);
+}
+
+void AGCN_SkillField::GameplayCueFinishedCallback()
+{
+	Destroy();
 }
 
 void AGCN_SkillField::StartFadeout()

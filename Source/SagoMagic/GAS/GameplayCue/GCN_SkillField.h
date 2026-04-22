@@ -21,6 +21,7 @@ public:
 	virtual bool OnActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
 	virtual bool WhileActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
 	virtual bool OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
+	virtual void GameplayCueFinishedCallback() override;
 
 protected:
 	/** BP에서 장판 나이아가라 에셋 지정 */
@@ -48,6 +49,7 @@ private:
 
 	// 페이드아웃 시작 타이머
 	FTimerHandle FadeoutTimerHandle;
+	FTimerHandle ReturnToPoolTimerHandle;
 
 	// 파티클 신규 스폰 중단 기존 파티클은 자연스럽게 소멸
 	void StartFadeout();

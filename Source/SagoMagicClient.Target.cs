@@ -10,5 +10,8 @@ public class SagoMagicClientTarget : TargetRules
 		DefaultBuildSettings = BuildSettingsVersion.V5;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_6;
 		ExtraModuleNames.Add("SagoMagic");
+
+		bUseLoggingInShipping = true;
+		bOverrideBuildEnvironment = true;
 	}
 }

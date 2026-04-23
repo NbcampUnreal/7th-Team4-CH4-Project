@@ -1,6 +1,7 @@
 ﻿#include "Inventory/World/SMBaseItemDropActor.h"
 
 #include "Net/UnrealNetwork.h"
+#include "TimerManager.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -66,6 +67,17 @@ void ASMBaseItemDropActor::BeginPlay()
 	}
 
 	RefreshInteractionState();
+
+	if (HasAuthority())
+	{
+		StartLifetimeTimer();
+	}
+}
+
+void ASMBaseItemDropActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	ClearLifetimeTimer();
+	Super::EndPlay(EndPlayReason);
 }
 
 void ASMBaseItemDropActor::Tick(float DeltaTime)
@@ -148,6 +160,7 @@ void ASMBaseItemDropActor::HandleInteract(APawn* InInteractingPawn)
 
 	UE_LOG(LogTemp, Log, TEXT("Successfully added item from drop payload to inventory. ItemInstanceId: %s"),
 	       *AddedItemInstanceId.ToString());
+	ClearLifetimeTimer();
 	Destroy();
 }
 
@@ -277,6 +290,46 @@ void ASMBaseItemDropActor::ApplyWorldVisual()
 
 		InteractionTargetComponent->SetHighlightOverlayMaterial(HighlightOverlayMaterial);
 	}
+}
+
+void ASMBaseItemDropActor::StartLifetimeTimer()
+{
+	if (HasAuthority() == false || LifetimeSeconds <= 0.0f)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	World->GetTimerManager().ClearTimer(LifetimeTimerHandle);
+	World->GetTimerManager().SetTimer(
+		LifetimeTimerHandle,
+		this,
+		&ASMBaseItemDropActor::HandleLifetimeExpired,
+		LifetimeSeconds,
+		false);
+}
+
+void ASMBaseItemDropActor::ClearLifetimeTimer()
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(LifetimeTimerHandle);
+	}
+}
+
+void ASMBaseItemDropActor::HandleLifetimeExpired()
+{
+	if (HasAuthority() == false || IsActorBeingDestroyed())
+	{
+		return;
+	}
+
+	Destroy();
 }
 
 bool ASMBaseItemDropActor::BuildInteractionWorldInfoData(FSMInteractionWorldInfoData& OutDisplayData) const

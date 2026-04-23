@@ -44,6 +44,9 @@ public:
 	/** BeginPlay 오버라이드 */
 	virtual void BeginPlay() override;
 
+	/** EndPlay 오버라이드 */
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 	/** Tick 오버라이드 */
 	virtual void Tick(float DeltaTime) override;
 
@@ -114,6 +117,15 @@ protected:
 	/** 월드 비주얼 적용 */
 	void ApplyWorldVisual();
 
+	/** 드랍 수명 타이머 시작 */
+	void StartLifetimeTimer();
+
+	/** 드랍 수명 타이머 정리 */
+	void ClearLifetimeTimer();
+
+	/** 드랍 수명 만료 처리 */
+	void HandleLifetimeExpired();
+
 	/** 월드 상호작용 정보 데이터 구성 */
 	bool BuildInteractionWorldInfoData(FSMInteractionWorldInfoData& OutDisplayData) const;
 
@@ -157,7 +169,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item Drop|Interaction Widget")
 	FVector InteractionInfoWidgetOffset = FVector(0.0f, 0.0f, 120.0f);
 
+	/** 월드 드랍 유지 시간(초) */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Item Drop|Lifetime", meta=(ClampMin="0.0"))
+	float LifetimeSeconds = 60.0f;
+
 private:
 	/** 초기화 여부 */
 	bool bInitialized;
+
+	/** 월드 드랍 수명 타이머 핸들 */
+	FTimerHandle LifetimeTimerHandle;
 };

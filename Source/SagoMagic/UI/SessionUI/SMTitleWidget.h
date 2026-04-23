@@ -7,7 +7,6 @@
 #include "SMTitleWidget.generated.h"
 
 class ASMTitlePlayerController;
-class USMSessionSubsystem;
 class UEditableTextBox;
 class UButton;
 /**
@@ -35,20 +34,12 @@ private:
 	
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UEditableTextBox> NicknameInputBox;
-
-	UPROPERTY()
-	TObjectPtr<USMSessionSubsystem> SessionSubsystem;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "NickName")
 	int32 NickNameLengthLimit = 6;
 
 	UFUNCTION()
 	void OnHostButtonClicked();
-
-	UFUNCTION()
-	void OnCreateSessionComplete(bool bWasSuccessful);
-
-	void TearDown();
 
 	ASMTitlePlayerController* GetSMTitlePlayerController() const;
 };

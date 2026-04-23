@@ -4,11 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "Interfaces/OnlineSessionInterface.h"
 #include "SMTitlePlayerController.generated.h"
 
 class USMTitleWidget;
-class USMSessionSubsystem;
 /**
  * 타이틀전용 플레이어 컨트롤러
  * L_Title에서 IP입력을 받아서 dedicate server에 연결하는 역할을 합니다.
@@ -38,18 +36,5 @@ private:
 	UPROPERTY(EditDefaultsOnly,Category = "Server|Maps")
 	FString MainMapName = TEXT("L_Title");
 	
-	UPROPERTY()
-	TObjectPtr<USMSessionSubsystem> SessionSubsystem;
-	
 	void ShowMainWidget();
-	
-	UFUNCTION()
-	void OnCreateSessionComplete(bool bWasSuccessful);
-	void OnJoinSessionComplete(EOnJoinSessionCompleteResult::Type Result);
-	
-	void TravelToServer();
-	
-	void BindSessionDelegates();
-	void UnbindSessionDelegates();
-	
 };

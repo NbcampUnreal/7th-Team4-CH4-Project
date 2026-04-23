@@ -6,21 +6,9 @@
 #include "Components/Button.h"
 #include "Components/EditableTextBox.h"
 #include "Core/SMGameInstance.h"
-#include "Core/SessionSubsystem/SMSessionSubsystem.h"
 
 void USMTitleWidget::MenuSetup()
 {
-	UGameInstance* GI = GetGameInstance();
-	if (IsValid(GI) == true)
-	{
-		SessionSubsystem = GI->GetSubsystem<USMSessionSubsystem>();
-		if (SessionSubsystem)
-		{
-			SessionSubsystem->OnCreateSessionComplete.AddDynamic(
-				this, &ThisClass::OnCreateSessionComplete);
-		}
-	}
-
 	if (IsValid(IPInputBox) == true)
 	{
 		IPInputBox->SetText(FText::FromString(TEXT("127.0.0.1:17777")));
@@ -48,7 +36,6 @@ bool USMTitleWidget::Initialize()
 
 void USMTitleWidget::NativeDestruct()
 {
-	TearDown();
 	Super::NativeDestruct();
 }
 
@@ -77,7 +64,7 @@ void USMTitleWidget::OnHostButtonClicked()
 		{
 			TrimNickname = TEXT("Player");
 		}
-		
+
 		GI->SetPendingNickname(TrimNickname);
 	}
 
@@ -85,28 +72,6 @@ void USMTitleWidget::OnHostButtonClicked()
 	if (PC)
 	{
 		PC->SetPendingServerAddress(ServerAddress);
-	}
-
-	if (SessionSubsystem)
-	{
-		SessionSubsystem->CreateSession(4);
-	}
-}
-
-void USMTitleWidget::OnCreateSessionComplete(bool bWasSuccessful)
-{
-	if (bWasSuccessful == false)
-	{
-		HostButton->SetIsEnabled(true);
-	}
-}
-
-void USMTitleWidget::TearDown()
-{
-	if (SessionSubsystem)
-	{
-		SessionSubsystem->OnCreateSessionComplete.RemoveDynamic(
-			this, &ThisClass::OnCreateSessionComplete);
 	}
 }
 

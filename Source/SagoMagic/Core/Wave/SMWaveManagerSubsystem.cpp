@@ -11,6 +11,8 @@
 #include "Data/SMWaveData.h"
 #include "Enemy/SMMonsterAIController.h"
 #include "Engine/AssetManager.h"
+#include "Gas/AttributeSets/SMMonsterAttributeSet.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 bool USMWaveManagerSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 {
@@ -245,6 +247,24 @@ void USMWaveManagerSubsystem::TickActivation()
     
     //AI 재시작
     Monster->SpawnDefaultController();
+
+    // 스탯 적용
+    USMSyncDataManager* DM = USMSyncDataManager::Get(this);
+    if (DM && Monster->MonsterAttributeSet)
+    {
+        FSMMonsterData MonsterData = DM->GetMonsterData(Monster->MonsterType);
+        Monster->MonsterAttributeSet->InitMaxHealth(MonsterData.MaxHP);
+        Monster->MonsterAttributeSet->InitHealth(MonsterData.MaxHP);
+        Monster->MonsterAttributeSet->InitAttackPower(MonsterData.AttackDamage);
+        Monster->MonsterAttributeSet->InitMoveSpeed(MonsterData.MoveSpeed);
+        Monster->MonsterAttributeSet->InitDropGold(MonsterData.DropGold);
+
+        // MoveSpeed도 여기서 갱신
+        if (Monster->GetCharacterMovement())
+        {
+            Monster->GetCharacterMovement()->MaxWalkSpeed = MonsterData.MoveSpeed;
+        }
+    }
     
     AliveMonsters.Add(Monster);
     

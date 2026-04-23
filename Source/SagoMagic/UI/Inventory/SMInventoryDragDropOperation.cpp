@@ -3,6 +3,11 @@
 #include "UI/Inventory/SMDragItemPreviewWidget.h"
 #include "UI/Inventory/SMPlayerInventoryPanelWidget.h"
 
+namespace
+{
+	constexpr float MaxDragPivotFraction = 0.9999f;
+}
+
 USMInventoryDragDropOperation::USMInventoryDragDropOperation()
 	: SourceGridX(0)
 	  , SourceGridY(0)
@@ -42,8 +47,8 @@ void USMInventoryDragDropOperation::InitializeOperation(
 	PivotShapeLocalY = InPivotShapeLocalY;
 	ShapeWidth = FMath::Max(1, InShapeWidth);
 	ShapeHeight = FMath::Max(1, InShapeHeight);
-	PivotCellFraction.X = FMath::Clamp(InPivotCellFraction.X, 0.0f, 1.0f);
-	PivotCellFraction.Y = FMath::Clamp(InPivotCellFraction.Y, 0.0f, 1.0f);
+	PivotCellFraction.X = FMath::Clamp(InPivotCellFraction.X, 0.0f, MaxDragPivotFraction);
+	PivotCellFraction.Y = FMath::Clamp(InPivotCellFraction.Y, 0.0f, MaxDragPivotFraction);
 	DragPreviewWidget = InDragPreviewWidget;
 
 	FVector2D StartPointerLocal = FVector2D::ZeroVector;
@@ -125,9 +130,12 @@ bool USMInventoryDragDropOperation::CalculateCurrentPivotOffset(int32& OutPivotO
 		static_cast<float>(CurrentWidth) * 0.5f,
 		static_cast<float>(CurrentHeight) * 0.5f);
 	const FVector2D CurrentPointerLocal = CurrentCenter + PointerFromCenter;
+	const FVector2D ClampedPointerLocal(
+		FMath::Clamp(CurrentPointerLocal.X, 0.0f, static_cast<float>(CurrentWidth) - (1.0f - MaxDragPivotFraction)),
+		FMath::Clamp(CurrentPointerLocal.Y, 0.0f, static_cast<float>(CurrentHeight) - (1.0f - MaxDragPivotFraction)));
 
-	OutPivotOffsetX = FMath::FloorToInt(CurrentPointerLocal.X);
-	OutPivotOffsetY = FMath::FloorToInt(CurrentPointerLocal.Y);
+	OutPivotOffsetX = FMath::FloorToInt(ClampedPointerLocal.X);
+	OutPivotOffsetY = FMath::FloorToInt(ClampedPointerLocal.Y);
 	return true;
 }
 

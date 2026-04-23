@@ -168,8 +168,8 @@ void ASMGameMode::BroadcastGameResult(bool bIsVictory)
 void ASMGameMode::ServerTravelToLobby()
 {
 	SM_LOG(this, LogSM, Log, TEXT("[GameMode] 시간이 초과되어 모든 플레이어를 로비로 이동시킵니다."));
-	
-	GetWorld()->ServerTravel(LobbyMapName);
+	FString URL = FString::Printf(TEXT("%s?MaxPlayers=%d"), *LobbyMapName, LobbyMaxPlayers);
+	GetWorld()->ServerTravel(URL);
 }
 
 void ASMGameMode::OnBaseCampDestroyed()

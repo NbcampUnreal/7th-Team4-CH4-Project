@@ -90,6 +90,9 @@ private:
 	/** 다 같이 이동할 로비 맵 이름 */
 	UPROPERTY(EditDefaultsOnly, Category = "Game Result")
 	FString LobbyMapName = TEXT("L_Lobby");
+	/** 이동 후 L_Lobby에 입장 가능한 최대 플레이어 수 */
+	UPROPERTY(EditDefaultsOnly, Category = "Map")
+	int32 LobbyMaxPlayers = 4;
 
 	/** 로비 이동용 타이머 핸들 */
 	FTimerHandle ReturnToLobbyTimerHandle;

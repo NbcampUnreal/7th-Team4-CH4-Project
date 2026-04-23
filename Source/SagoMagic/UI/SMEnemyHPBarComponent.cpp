@@ -2,9 +2,11 @@
 #include "UI/SMEnemyHPBarWidget.h"
 #include "AbilitySystemInterface.h"
 #include "AbilitySystemComponent.h"
+#include "Blueprint/UserWidget.h"
 #include "SMDamageFloatingText.h"
 #include "TimerManager.h"
 #include "GAS/AttributeSets/SMMonsterAttributeSet.h"
+#include "UObject/ConstructorHelpers.h"
 
 
 USMEnemyHPBarComponent::USMEnemyHPBarComponent()
@@ -12,6 +14,20 @@ USMEnemyHPBarComponent::USMEnemyHPBarComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 	SetWidgetSpace(EWidgetSpace::World);
 	SetDrawAtDesiredSize(false);
+
+	static ConstructorHelpers::FClassFinder<UUserWidget> DefaultHPBarWidgetClass(
+		TEXT("/Game/SagoMagic/UI/Enemy/WBP_EnemyHPBar"));
+	if (DefaultHPBarWidgetClass.Succeeded())
+	{
+		SetWidgetClass(DefaultHPBarWidgetClass.Class);
+	}
+
+	static ConstructorHelpers::FClassFinder<ASMDamageFloatingText> DefaultDamageTextClass(
+		TEXT("/Game/SagoMagic/UI/Enemy/BP_DamageFloatingText"));
+	if (DefaultDamageTextClass.Succeeded())
+	{
+		DamageTextClass = DefaultDamageTextClass.Class;
+	}
 }
 
 void USMEnemyHPBarComponent::BeginPlay()

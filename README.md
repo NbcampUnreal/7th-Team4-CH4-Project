@@ -15,10 +15,12 @@
   ![Platform](https://img.shields.io/badge/Platform-PC-EF9421?style=flat-square)
   ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-  [🎥**시연 영상**]() | 
-  [📄**최종 기획서**]() | 
-  [📊**발표 자료**]() | 
-  [📦**게임 패키징**]() |
+  [🎥**시연 영상**](https://youtu.be/11NvUDFDwIE?si=7EqfNG1Lt5ieRw9K) | 
+  [📄**기능 기획서(필수)**](https://www.notion.so/teamsparta/ver-2-3362dc3ef5148013811ee4bd9c28205d) |
+  [📄**기능 기획서(도전)**](https://www.notion.so/teamsparta/ver-2-3392dc3ef51480faa997d5f22175e76c) |
+  [📊**발표 자료**](https://www.canva.com/design/DAHHiVhB08M/icFDoNHq8O5WApR6Pd9RGg/edit) | 
+  [📦**게임 패키징(서버)**](https://drive.google.com/file/d/1mJyKENK7O3nlUiQSO09mg-pw7SmfpErd/view?usp=drive_link) |
+  [📦**게임 패키징(클라)**](https://drive.google.com/file/d/1m9pm-QaL-CIlj_-8AV06nEPv75UZtqIR/view?usp=drive_link) |
   [💻**저장소**](https://github.com/NbcampUnreal/7th-Team4-CH4-Project)
 
 </div>
